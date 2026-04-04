@@ -76,4 +76,8 @@ public class JointSymbol extends AbstractGateSymbol {
     public String getDefaultLabel() {
         return "Joint";
     }
+    @Override
+    public double getPreferredWidth(){return 50;}
+    @Override
+    public double getPreferredHeight(){return 50;}
 }

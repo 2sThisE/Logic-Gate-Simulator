@@ -19,7 +19,6 @@ public interface GateSymbol {
 
     /**
      * 노드의 상태에 따라 동적으로 핀 이름을 반환합니다.
-     * 기본적으로는 정적 핀 이름을 호출합니다.
      */
     default String getInPinName(VisualNode vn, int index) {
         return getInPinName(index);
@@ -28,4 +27,10 @@ public interface GateSymbol {
     default String getOutPinName(VisualNode vn, int index) {
         return getOutPinName(index);
     }
+
+    /**
+     * 심볼의 권장 너비와 높이입니다. ✨
+     */
+    default double getPreferredWidth() { return 80; }
+    default double getPreferredHeight() { return 50; }
 }

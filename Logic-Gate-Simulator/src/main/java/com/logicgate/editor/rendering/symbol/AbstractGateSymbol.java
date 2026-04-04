@@ -106,4 +106,14 @@ public abstract class AbstractGateSymbol implements GateSymbol {
     public String getOutPinName(int index) {
         return "Output " + index;
     }
+
+    @Override
+    public double getPreferredWidth() {
+        return 80;
+    }
+
+    @Override
+    public double getPreferredHeight() {
+        return 50;
+    }
 }

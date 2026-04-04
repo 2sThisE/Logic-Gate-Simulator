@@ -22,17 +22,15 @@ public class VisualNode {
         this.y = y;
         
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
-        if (label == null || label.isEmpty()) {
-            this.label = symbol != null ? symbol.getDefaultLabel() : node.getClass().getSimpleName();
+        
+        if (symbol != null) {
+            this.width = symbol.getPreferredWidth();
+            this.height = symbol.getPreferredHeight();
+            this.label = (label == null || label.isEmpty()) ? symbol.getDefaultLabel() : label;
         } else {
-            this.label = label;
-        }
-
-        if (node instanceof InputPin || node instanceof OutputPin) {
-            width = 50;
-        } else if (node instanceof Joint) {
-            width = 30;
-            height = 30;
+            this.width = 80;
+            this.height = 50;
+            this.label = (label == null || label.isEmpty()) ? node.getClass().getSimpleName() : label;
         }
     }
 

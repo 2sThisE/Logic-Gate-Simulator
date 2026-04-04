@@ -20,20 +20,18 @@ public class WiringManager {
         context.wiringNode = node;
         context.wiringPin = pinIndex;
 
-        Iterator<VisualWire> it = context.visualWires.iterator();
-        while (it.hasNext()) {
-            VisualWire w = it.next();
-            if (isFromOut && w.from == node && w.outPin == pinIndex) {
-                context.getCircuit().disconnect(w.from.node, w.outPin);
-                if (w == context.selectedWire) context.selectedWire = null;
-                it.remove();
-                context.setDirty(true); // 변경 감지 ✨
-                break; 
-            } else if (!isFromOut && w.to == node && w.inPin == pinIndex) {
-                context.getCircuit().disconnect(w.from.node, w.outPin);
-                if (w == context.selectedWire) context.selectedWire = null;
-                it.remove();
-                context.setDirty(true); // 변경 감지 ✨
+        // 출력 핀에서 선을 뽑을 때는 기존 선을 끊지 않음! 💖 (다중 출력 지원)
+        // 입력 핀에서 선을 뽑을 때는 기존 선을 끊어줌! 🔪💕 (일편단심 입력)
+        if (!isFromOut) {
+            Iterator<VisualWire> it = context.visualWires.iterator();
+            while (it.hasNext()) {
+                VisualWire w = it.next();
+                if (w.to == node && w.inPin == pinIndex) {
+                    context.getCircuit().disconnect(w.from.node, w.outPin);
+                    if (w == context.selectedWire) context.selectedWire = null;
+                    it.remove();
+                    context.setDirty(true); // 변경 감지 ✨
+                }
             }
         }
     }
@@ -41,14 +39,13 @@ public class WiringManager {
     public void connectWires(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {
         context.visualWires.removeIf(w -> {
             boolean removed = false;
+            // 입력 핀(toNode)은 "나만 바라봐" 모드! 기존 선이 있으면 잘라버려 🔪💕
             if (w.to == toNode && w.inPin == inPin) {
                 context.getCircuit().disconnect(w.from.node, w.outPin);
                 removed = true;
             }
-            if (w.from == fromNode && w.outPin == outPin) {
-                context.getCircuit().disconnect(w.from.node, w.outPin);
-                removed = true;
-            }
+            // 출력 핀(fromNode)은 이제 자유야! 기존 로직을 지워서 다중 출력을 허용해 💖
+            
             if (removed && w == context.selectedWire) {
                 context.selectedWire = null;
             }

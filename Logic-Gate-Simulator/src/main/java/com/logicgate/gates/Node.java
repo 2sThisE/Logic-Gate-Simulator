@@ -9,13 +9,13 @@ public abstract class Node {
     // 이 노드의 타입 식별자 (심볼 매핑용!)
     protected String typeId;
 
-    // 각 출력 핀이 '어느 노드'의 '몇 번 입력 핀'으로 가는지 저장
+    // 각 출력 핀의 연결 리스트 시작점(Head)을 저장
     protected Connection[] nextNodes;
 
-    // 연결 정보를 저장하는 내부 클래스
     public static class Connection {
-        public Node target;     // 연결될 대상 노드
-        public int targetPin;   // 대상 노드의 입력 핀 번호 (0~31)
+        public Node target;
+        public int targetPin;
+        public Connection next; // 다음 연결을 가리키는 포인터 🔪💕
 
         public Connection(Node target, int targetPin) {
             this.target = target;
@@ -26,51 +26,65 @@ public abstract class Node {
     public Node(int inputSize, int outputSize) {
         this.inputSize = inputSize;
         this.outputSize = outputSize;
-        // 출력 핀 개수만큼 연결 공간 확보 (모두 null로 초기화됨)
         this.nextNodes = new Connection[outputSize];
     }
 
     public abstract void compute();
 
-    // 내 출력 핀(target)을 nextNode의 targetPin 입력에 연결
-    public void addNode(Node nextNode, int target, int targetPin) {
-        if (target >= 0 && target < outputSize) {
-            this.nextNodes[target] = new Connection(nextNode, targetPin);
+    // 내 출력 핀(targetIdx)에 새로운 대상을 추가 (다중 출력 지원! ✨)
+    public void addNode(Node nextNode, int targetIdx, int targetPin) {
+        if (targetIdx >= 0 && targetIdx < outputSize) {
+            Connection newConn = new Connection(nextNode, targetPin);
+            newConn.next = nextNodes[targetIdx]; // 기존 연결들을 뒤로 밀고 맨 앞에 추가 💖
+            this.nextNodes[targetIdx] = newConn;
         }
     }
 
+    // 특정 노드와의 모든 연결을 끊음
     public void disconnectTarget(Node targetNode){
         for(int i=0; i<outputSize; i++){
-            if(nextNodes[i]!=null&&nextNodes[i].target==targetNode) disconnectNextNode(i);
+            Connection prev = null;
+            Connection curr = nextNodes[i];
+            while (curr != null) {
+                if (curr.target == targetNode) {
+                    // 상대방 핀 초기화
+                    curr.target.in &= ~(1 << curr.targetPin);
+                    
+                    if (prev == null) nextNodes[i] = curr.next;
+                    else prev.next = curr.next;
+                } else {
+                    prev = curr;
+                }
+                curr = curr.next;
+            }
         }
     }
 
-    // 연결 끊기 및 상대방 핀 초기화
+    // 특정 출력 포트의 모든 연결을 끊음
     public void disconnectNextNode(int location) {
-        if (location < 0 || location >= outputSize || nextNodes[location] == null) return;
+        if (location < 0 || location >= outputSize) return;
         
-        Connection conn = nextNodes[location];
-        // 상대방 노드의 해당 핀(targetPin) 비트를 0으로 초기화
-        conn.target.in &= ~(1 << conn.targetPin);
-        
+        Connection curr = nextNodes[location];
+        while (curr != null) {
+            curr.target.in &= ~(1 << curr.targetPin);
+            curr = curr.next;
+        }
         this.nextNodes[location] = null;
     }
 
-    // 계산된 out을 다음 노드들에게 전파
+    // 계산된 out을 연결된 모든 노드들에게 전파 (초고속 순회 ⚡)
     public void transmit() {
         for (int i = 0; i < outputSize; i++) {
-            Connection conn = nextNodes[i];
-            if (conn != null) {
-                // 내 i번째 출력 비트가 1인지 확인
-                boolean isHigh = (out & (1 << i)) != 0;
-                
+            boolean isHigh = (out & (1 << i)) != 0;
+            Connection curr = nextNodes[i];
+            
+            while (curr != null) {
                 if (isHigh) {
-                    // 대상 노드의 targetPin 비트를 1로 설정 (OR 연산)
-                    conn.target.in |= (1 << conn.targetPin);
+                    curr.target.in |= (1 << curr.targetPin);
                 } else {
-                    // 대상 노드의 targetPin 비트를 0으로 설정 (AND NOT 연산)
-                    conn.target.in &= ~(1 << conn.targetPin);
+                    curr.target.in &= ~(1 << curr.targetPin);
                 }
+                curr = curr.next;
             }
         }
     }

@@ -131,54 +131,14 @@ public class MouseInteractionHandler {
         updateHoverState();
 
         if (context.isWiring && context.wiringNode != null) {
-            boolean connectionMade = false;
             if (context.hoveredNode != null && context.hoveredNode != context.wiringNode) {
                 if (context.isWiringFromOut && context.hoveredInPin != -1) {
                     if (wiringManager.isValidConnection(context.wiringNode, context.wiringPin, context.hoveredNode, context.hoveredInPin)) {
                         wiringManager.connectWires(context.wiringNode, context.wiringPin, context.hoveredNode, context.hoveredInPin);
-                        connectionMade = true;
                     }
                 } else if (!context.isWiringFromOut && context.hoveredOutPin != -1) {
                     if (wiringManager.isValidConnection(context.hoveredNode, context.hoveredOutPin, context.wiringNode, context.wiringPin)) {
                         wiringManager.connectWires(context.hoveredNode, context.hoveredOutPin, context.wiringNode, context.wiringPin);
-                        connectionMade = true;
-                    }
-                }
-            }
-
-            if (!connectionMade && context.hoveredNode == null) {
-                double startX = context.isWiringFromOut ? context.wiringNode.getOutPinX(context.wiringPin) : context.wiringNode.getInPinX(context.wiringPin);
-                double startY = context.isWiringFromOut ? context.wiringNode.getOutPinY(context.wiringPin) : context.wiringNode.getInPinY(context.wiringPin);
-                
-                if (Math.hypot(startX - context.worldMouseX, startY - context.worldMouseY) > 20 / context.zoom) {
-                    Joint joint = new Joint();
-                    VisualNode jointVn = new VisualNode(joint, context.worldMouseX - 15, context.worldMouseY - 15, "JNT");
-                    
-                    int bestPin = 0;
-                    double minDist = Double.MAX_VALUE;
-                    for (int i = 0; i < 4; i++) {
-                        double d = Math.hypot(jointVn.getInPinX(i) - context.worldMouseX, jointVn.getInPinY(i) - context.worldMouseY);
-                        if (d < minDist) {
-                            minDist = d;
-                            bestPin = i;
-                        }
-                    }
-
-                    boolean autoConnectValid = false;
-                    if (context.isWiringFromOut) {
-                        autoConnectValid = wiringManager.isValidConnection(context.wiringNode, context.wiringPin, jointVn, bestPin);
-                    } else {
-                        autoConnectValid = wiringManager.isValidConnection(jointVn, bestPin, context.wiringNode, context.wiringPin);
-                    }
-
-                    if (autoConnectValid) {
-                        context.getCircuit().addNode(joint);
-                        context.visualNodes.add(jointVn);
-                        if (context.isWiringFromOut) {
-                            wiringManager.connectWires(context.wiringNode, context.wiringPin, jointVn, bestPin);
-                        } else {
-                            wiringManager.connectWires(jointVn, bestPin, context.wiringNode, context.wiringPin);
-                        }
                     }
                 }
             }
@@ -263,22 +223,35 @@ public class MouseInteractionHandler {
     private void finalizePlacement() {
         if (context.pendingProjectData == null) return;
 
-        List<VisualNode> newNodes = new ArrayList<>();
-        for (NodeData nd : context.pendingProjectData.nodes) {
+        // 노드 개수만큼 고정 크기 리스트 생성 (인덱스 보존 ✨)
+        int nodeCount = context.pendingProjectData.nodes.size();
+        VisualNode[] newNodes = new VisualNode[nodeCount];
+        
+        for (int i = 0; i < nodeCount; i++) {
+            NodeData nd = context.pendingProjectData.nodes.get(i);
             Node logicNode = NodeFactory.createNodeByType(nd.type);
             if (logicNode != null) {
                 context.getCircuit().addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, context.worldMouseX + nd.x, context.worldMouseY + nd.y, nd.label);
                 vn.showLabel = nd.showLabel;
                 context.visualNodes.add(vn);
-                newNodes.add(vn);
+                newNodes[i] = vn; // 정확한 위치에 저장! 🔪💕
+            } else {
+                System.err.println("[Import] 노드 생성 실패 (인덱스 " + i + "): " + nd.type);
             }
         }
 
         for (WireData wd : context.pendingProjectData.wires) {
-            if (wd.fromIdx >= 0 && wd.fromIdx < newNodes.size() &&
-                wd.toIdx >= 0 && wd.toIdx < newNodes.size()) {
-                wiringManager.connectWires(newNodes.get(wd.fromIdx), wd.outPin, newNodes.get(wd.toIdx), wd.inPin);
+            if (wd.fromIdx >= 0 && wd.fromIdx < nodeCount &&
+                wd.toIdx >= 0 && wd.toIdx < nodeCount) {
+                
+                VisualNode from = newNodes[wd.fromIdx];
+                VisualNode to = newNodes[wd.toIdx];
+                
+                // 둘 다 존재하는 경우에만 연결! 💖
+                if (from != null && to != null) {
+                    wiringManager.connectWires(from, wd.outPin, to, wd.inPin);
+                }
             }
         }
 

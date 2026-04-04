@@ -41,4 +41,8 @@ public class InputPinSymbol extends AbstractGateSymbol {
     public String getDefaultLabel() {
         return "Switch";
     }
+    @Override
+    public double getPreferredWidth(){return 50;}
+    @Override
+    public double getPreferredHeight(){return 50;}
 }
