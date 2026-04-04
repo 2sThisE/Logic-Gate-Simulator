@@ -1,31 +1,13 @@
 package com.logicgate.ui;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.logicgate.Circuit;
-import com.logicgate.gates.And;
-import com.logicgate.gates.InputPin;
-import com.logicgate.gates.Joint;
-import com.logicgate.gates.Nand;
-import com.logicgate.gates.Node;
-import com.logicgate.gates.Nor;
-import com.logicgate.gates.Not;
-import com.logicgate.gates.Or;
-import com.logicgate.gates.OutputPin;
-import com.logicgate.gates.Xnor;
-import com.logicgate.gates.Xor;
+import com.logicgate.gates.*;
 
 import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -33,6 +15,17 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 public class MainController {
 
@@ -79,6 +72,12 @@ public class MainController {
     private VisualNode wiringNode = null;
     private int wiringPin = -1;
 
+    // [추가] 붙여넣기(불러오기) 배치 상태 변수
+    private boolean isPlacingImport = false;
+    private ProjectData pendingProjectData = null;
+
+    private final Set<KeyCode> activeKeys = new HashSet<>();
+
     @FXML
     public void initialize() {
         circuit = new Circuit();
@@ -91,11 +90,28 @@ public class MainController {
         simulationCanvas.setFocusTraversable(true);
         simulationCanvas.setOnMouseEntered(e -> simulationCanvas.requestFocus());
 
+        // [수정] 캔버스 및 윈도우 전체의 포커스 유실을 감지하여 키 상태 초기화 (키 고임 현상 방지)
+        simulationCanvas.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) activeKeys.clear();
+        });
+        simulationCanvas.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.windowProperty().addListener((obs2, oldWin, newWin) -> {
+                    if (newWin != null) {
+                        newWin.focusedProperty().addListener((obs3, oldF, newF) -> {
+                            if (!newF) activeKeys.clear();
+                        });
+                    }
+                });
+            }
+        });
+
         simulationCanvas.setOnMousePressed(this::handleMousePressed);
         simulationCanvas.setOnMouseDragged(this::handleMouseDragged);
         simulationCanvas.setOnMouseReleased(this::handleMouseReleased);
         simulationCanvas.setOnScroll(this::handleMouseScrolled);
         simulationCanvas.setOnKeyPressed(this::handleKeyPressed);
+        simulationCanvas.setOnKeyReleased(this::handleKeyReleased);
         
         simulationCanvas.setOnMouseMoved(e -> { 
             screenMouseX = e.getX(); 
@@ -108,6 +124,7 @@ public class MainController {
         timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
+                updateCamera();
                 draw(gc);
             }
         };
@@ -116,19 +133,51 @@ public class MainController {
         circuit.startSimulation();
     }
 
+    private void updateCamera() {
+        if (activeKeys.isEmpty()) return;
+
+        double moveX = 0;
+        double moveY = 0;
+
+        // 방향키 및 WASD 지원
+        if (activeKeys.contains(KeyCode.UP)    || activeKeys.contains(KeyCode.W)) moveY += 1;
+        if (activeKeys.contains(KeyCode.DOWN)  || activeKeys.contains(KeyCode.S)) moveY -= 1;
+        if (activeKeys.contains(KeyCode.LEFT)  || activeKeys.contains(KeyCode.A)) moveX += 1;
+        if (activeKeys.contains(KeyCode.RIGHT) || activeKeys.contains(KeyCode.D)) moveX -= 1;
+
+        if (moveX != 0 || moveY != 0) {
+            // 대각선 이동 시 속도가 빨라지지 않도록 정규화
+            double length = Math.hypot(moveX, moveY);
+            double speed = 10.0 / zoom;
+            
+            cameraX += (moveX / length) * speed;
+            cameraY += (moveY / length) * speed;
+            
+            updateWorldCoordinates();
+            updateHoverState();
+        }
+    }
+
     private void updateWorldCoordinates() {
         worldMouseX = (screenMouseX - cameraX) / zoom;
         worldMouseY = (screenMouseY - cameraY) / zoom;
     }
 
     private void updateHoverState() {
+        // 배치 모드 중에는 기존 노드 호버를 막음
+        if (isPlacingImport) {
+            hoveredNode = null;
+            hoveredInPin = -1;
+            hoveredOutPin = -1;
+            return;
+        }
+
         hoveredNode = null;
         hoveredInPin = -1;
         hoveredOutPin = -1;
 
         // 핀의 기본 반지름(4) + 여유값(4) = 8로 고정.
-        // 이렇게 하면 확대/축소와 상관없이 부품 대비 일정한 클릭 범위를 가집니다.
-        final double pinDetectionRadius = 6.0;
+        final double pinDetectionRadius = 8.0;
 
         for (int i = visualNodes.size() - 1; i >= 0; i--) {
             VisualNode vn = visualNodes.get(i);
@@ -148,12 +197,13 @@ public class MainController {
                 }
             }
 
-            // 입력 핀 검사
+            // 입력 핀 검사 (이미 찾은 출력 핀과 거리가 같아도(-1로 초기화하지 않고) 둘 다 저장)
             for (int inIdx = 0; inIdx < vn.node.getInputSize(); inIdx++) {
                 double px = vn.getInPinX(inIdx);
                 double py = vn.getInPinY(inIdx);
                 double dist = Math.hypot(px - worldMouseX, py - worldMouseY);
                 if (dist < pinDetectionRadius && dist <= minDistance) {
+                    // 출력 핀보다 더 가까운 입력을 찾은 경우에만 출력 핀 선택을 취소
                     if (dist < minDistance) hoveredOutPin = -1;
                     
                     minDistance = dist;
@@ -191,18 +241,29 @@ public class MainController {
 
     @FXML
     public void saveProject() {
+        if (visualNodes.isEmpty()) return;
+
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("회로 저장");
+        fileChooser.setTitle("회로 저장 (상대 좌표)");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
         File file = fileChooser.showSaveDialog(simulationCanvas.getScene().getWindow());
 
         if (file != null) {
             try {
+                // 기준점(가장 좌상단 좌표) 찾기
+                double minX = Double.MAX_VALUE;
+                double minY = Double.MAX_VALUE;
+                for (VisualNode vn : visualNodes) {
+                    minX = Math.min(minX, vn.x);
+                    minY = Math.min(minY, vn.y);
+                }
+
                 ProjectData data = new ProjectData();
                 for (VisualNode vn : visualNodes) {
+                    // 상대 좌표로 저장 (x - minX, y - minY)
                     data.nodes.add(new NodeData(
                         vn.node.getClass().getSimpleName(),
-                        vn.x, vn.y, vn.label
+                        vn.x - minX, vn.y - minY, vn.label
                     ));
                 }
                 for (VisualWire vw : visualWires) {
@@ -224,46 +285,50 @@ public class MainController {
     @FXML
     public void loadProject() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("회로 불러오기");
+        fileChooser.setTitle("붙여넣을 회로 선택");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
         File file = fileChooser.showOpenDialog(simulationCanvas.getScene().getWindow());
 
         if (file != null) {
             try {
                 String json = Files.readString(file.toPath());
-                ProjectData data = gson.fromJson(json, ProjectData.class);
-
-                // 현재 회로 초기화
-                for (VisualNode vn : new ArrayList<>(visualNodes)) {
-                    removeNode(vn);
-                }
-                visualNodes.clear();
-                visualWires.clear();
-
-                // 노드 복구
-                for (NodeData nd : data.nodes) {
-                    Node logicNode = createNodeByType(nd.type);
-                    if (logicNode != null) {
-                        circuit.addNode(logicNode);
-                        visualNodes.add(new VisualNode(logicNode, nd.x, nd.y, nd.label));
-                    }
-                }
-
-                // 전선 복구
-                for (WireData wd : data.wires) {
-                    if (wd.fromIdx >= 0 && wd.fromIdx < visualNodes.size() &&
-                        wd.toIdx >= 0 && wd.toIdx < visualNodes.size()) {
-                        connectWires(visualNodes.get(wd.fromIdx), wd.outPin, visualNodes.get(wd.toIdx), wd.inPin);
-                    }
-                }
-                
-                selectedNode = null;
-                selectedWire = null;
+                pendingProjectData = gson.fromJson(json, ProjectData.class);
+                isPlacingImport = true; // 배치 모드 활성화
                 updateHoverState();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void finalizePlacement() {
+        if (pendingProjectData == null) return;
+
+        List<VisualNode> newNodes = new ArrayList<>();
+        // 1. 노드 생성 및 배치
+        for (NodeData nd : pendingProjectData.nodes) {
+            Node logicNode = createNodeByType(nd.type);
+            if (logicNode != null) {
+                circuit.addNode(logicNode);
+                // 현재 마우스 월드 좌표 + 저장된 상대 좌표
+                VisualNode vn = new VisualNode(logicNode, worldMouseX + nd.x, worldMouseY + nd.y, nd.label);
+                visualNodes.add(vn);
+                newNodes.add(vn);
+            }
+        }
+
+        // 2. 전선 연결
+        for (WireData wd : pendingProjectData.wires) {
+            if (wd.fromIdx >= 0 && wd.fromIdx < newNodes.size() &&
+                wd.toIdx >= 0 && wd.toIdx < newNodes.size()) {
+                connectWires(newNodes.get(wd.fromIdx), wd.outPin, newNodes.get(wd.toIdx), wd.inPin);
+            }
+        }
+
+        // 배치 완료 후 모드 해제
+        isPlacingImport = false;
+        pendingProjectData = null;
+        updateHoverState();
     }
 
     private Node createNodeByType(String type) {
@@ -329,12 +394,9 @@ public class MainController {
     }
 
     private void handleKeyPressed(KeyEvent event) {
-        double panSpeed = 30.0;
+        activeKeys.add(event.getCode());
+
         switch (event.getCode()) {
-            case UP:    cameraY += panSpeed; break;
-            case DOWN:  cameraY -= panSpeed; break;
-            case LEFT:  cameraX += panSpeed; break;
-            case RIGHT: cameraX -= panSpeed; break;
             case ESCAPE:
                 // 모든 드래그 및 선 긋기 상태 강제 취소
                 isWiring = false;
@@ -344,6 +406,9 @@ public class MainController {
                 isPanning = false;
                 selectedNode = null;
                 selectedWire = null;
+                // 배치 모드 취소
+                isPlacingImport = false;
+                pendingProjectData = null;
                 updateHoverState();
                 break;
             case DELETE:
@@ -360,9 +425,10 @@ public class MainController {
                 break;
             default: break;
         }
-        // 방향키 조작 후 마우스 위치가 변하지 않았어도 월드 좌표는 변함
-        updateWorldCoordinates(); 
-        updateHoverState();
+    }
+
+    private void handleKeyReleased(KeyEvent event) {
+        activeKeys.remove(event.getCode());
     }
 
     private void handleMousePressed(MouseEvent event) {
@@ -372,6 +438,12 @@ public class MainController {
         updateHoverState();
 
         if (event.getButton() == MouseButton.PRIMARY) {
+            // [추가] 배치 모드일 때 클릭 시 최종 배치
+            if (isPlacingImport) {
+                finalizePlacement();
+                return;
+            }
+
             if (hoveredNode != null) {
                 // 선 긋기 시작 (핀 클릭 시)
                 if (hoveredOutPin != -1) {
@@ -664,6 +736,43 @@ public class MainController {
             }
             
             vn.draw(gc, isHovered, isSelected, isHovered ? hoveredInPin : -1, isHovered ? hoveredOutPin : -1, selectedWire, isConnectionInvalid);
+        }
+
+        // [추가] 6. 붙여넣기 미리보기(Ghost Preview)
+        if (isPlacingImport && pendingProjectData != null) {
+            gc.setGlobalAlpha(0.5); // 반투명
+            
+            // 미리보기 노드들
+            for (NodeData nd : pendingProjectData.nodes) {
+                double previewX = worldMouseX + nd.x;
+                double previewY = worldMouseY + nd.y;
+                Node dummyNode = createNodeByType(nd.type);
+                VisualNode dummyVn = new VisualNode(dummyNode, previewX, previewY, nd.label);
+                dummyVn.draw(gc, false, false, -1, -1, null, false);
+            }
+
+            // 미리보기 전선들
+            gc.setStroke(Color.web("#AAAAAA"));
+            gc.setLineWidth(2);
+            for (WireData wd : pendingProjectData.wires) {
+                NodeData fromNd = pendingProjectData.nodes.get(wd.fromIdx);
+                NodeData toNd = pendingProjectData.nodes.get(wd.toIdx);
+                
+                // 좌표 계산용 임시 노드
+                VisualNode fromVn = new VisualNode(createNodeByType(fromNd.type), worldMouseX + fromNd.x, worldMouseY + fromNd.y, "");
+                VisualNode toVn = new VisualNode(createNodeByType(toNd.type), worldMouseX + toNd.x, worldMouseY + toNd.y, "");
+                
+                double x1 = fromVn.getOutPinX(wd.outPin);
+                double y1 = fromVn.getOutPinY(wd.outPin);
+                double x2 = toVn.getInPinX(wd.inPin);
+                double y2 = toVn.getInPinY(wd.inPin);
+                
+                gc.beginPath();
+                gc.moveTo(x1, y1);
+                gc.bezierCurveTo(x1 + 50, y1, x2 - 50, y2, x2, y2);
+                gc.stroke();
+            }
+            gc.setGlobalAlpha(1.0);
         }
 
         gc.restore();
