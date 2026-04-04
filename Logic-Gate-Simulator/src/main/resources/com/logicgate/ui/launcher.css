@@ -1,0 +1,57 @@
+.root {
+    -fx-background-color: #1E1E1E;
+}
+
+.title-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00FFFF;
+}
+
+.subtitle-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #AAAAAA;
+}
+
+.separator {
+    -fx-opacity: 0.1;
+}
+
+.section-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+}
+
+.new-project-label {
+    -fx-text-fill: #4CAF50;
+}
+
+.existing-project-label {
+    -fx-text-fill: #2196F3;
+}
+
+.text-field {
+    -fx-background-color: #2D2D2D;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #666666;
+}
+
+.btn-create {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.btn-open {
+    -fx-background-color: #2196F3;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-padding: 10;
+}
+
+.copyright-label {
+    -fx-font-size: 9px;
+    -fx-text-fill: #444444;
+}

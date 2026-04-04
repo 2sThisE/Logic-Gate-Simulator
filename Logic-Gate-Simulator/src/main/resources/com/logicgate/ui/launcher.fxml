@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+
+<VBox spacing="25" alignment="CENTER" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" 
+      fx:controller="com.logicgate.ui.LauncherController">
+    <stylesheets>
+        <URL value="@launcher.css" />
+    </stylesheets>
+    
+    <padding>
+        <Insets top="30" right="40" bottom="30" left="40"/>
+    </padding>
+    
+    <VBox alignment="CENTER" spacing="5">
+        <Label text="LOGIC GATE SIMULATOR" styleClass="title-label"/>
+        <Label text="Select or Create a Project" styleClass="subtitle-label"/>
+    </VBox>
+    
+    <Separator styleClass="separator"/>
+
+    <VBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="NEW PROJECT" styleClass="section-label, new-project-label"/>
+        <HBox spacing="10" alignment="CENTER">
+            <TextField fx:id="projectNameField" promptText="Project Name" HBox.hgrow="ALWAYS" />
+            <Button text="CREATE" onAction="#createNewProject" styleClass="btn-create"/>
+        </HBox>
+    </VBox>
+
+    <VBox spacing="10" alignment="CENTER_LEFT">
+        <Label text="EXISTING PROJECT" styleClass="section-label, existing-project-label"/>
+        <Button text="OPEN PROJECT DIRECTORY" onAction="#openExistingProject" maxWidth="Infinity" styleClass="btn-open"/>
+    </VBox>
+
+    <Label text="© 2026 LogicGate Studio" styleClass="copyright-label"/>
+
+</VBox>

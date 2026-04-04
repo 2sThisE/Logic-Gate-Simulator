@@ -1,0 +1,210 @@
+package com.logicgate.editor.io;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.logicgate.editor.model.VisualNode;
+import com.logicgate.editor.model.VisualWire;
+import com.logicgate.editor.state.EditorContext;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
+public class ProjectManager {
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private final EditorContext context;
+
+    public ProjectManager(EditorContext context) {
+        this.context = context;
+    }
+
+    public void initNewProject() {
+        if (context.projectRoot == null) return;
+
+        File prjFile = new File(context.projectRoot, "project.prj");
+        File modsDir = new File(context.projectRoot, "mods");
+        
+        if (!modsDir.exists()) {
+            modsDir.mkdirs();
+        }
+
+        ProjectConfig config = new ProjectConfig(context.projectRoot.getName());
+        context.projectConfig = config;
+        try {
+            Files.writeString(prjFile.toPath(), gson.toJson(config));
+            File lgsFile = new File(context.projectRoot, "circuit.lgs");
+            if (!lgsFile.exists()) {
+                lgsFile.createNewFile();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        context.setDirty(false); // 초기화 ✨
+    }
+
+    public void loadProject() {
+        if (context.projectRoot == null) return;
+
+        File prjFile = new File(context.projectRoot, "project.prj");
+        if (prjFile.exists()) {
+            try {
+                String json = Files.readString(prjFile.toPath());
+                ProjectConfig config = gson.fromJson(json, ProjectConfig.class);
+                context.projectConfig = config;
+                System.out.println("프로젝트 설정 로드: " + config.name);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        File lgsFile = new File(context.projectRoot, "circuit.lgs");
+        if (lgsFile.exists() && lgsFile.length() > 0) {
+            loadBinaryCircuit(lgsFile);
+        }
+        context.setDirty(false); // 초기화 ✨
+    }
+
+    public void saveCurrentProject() {
+        if (context.projectRoot == null) return;
+        
+        File lgsFile = new File(context.projectRoot, "circuit.lgs");
+        saveBinaryCircuit(lgsFile);
+        System.out.println("프로젝트 바이너리 저장 완료: " + lgsFile.getAbsolutePath());
+        context.setDirty(false); // 초기화 ✨
+    }
+
+    private void saveBinaryCircuit(File file) {
+        try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
+            // 1. Header
+            dos.writeInt(0x4C475321); // Magic Number
+            dos.writeInt(1);          // Version
+
+            // 2. Nodes
+            dos.writeInt(context.visualNodes.size());
+            for (VisualNode vn : context.visualNodes) {
+                dos.writeUTF(vn.node.getClass().getName()); // getSimpleName() 대신 getName() 사용 💖
+                dos.writeDouble(vn.x);
+                dos.writeDouble(vn.y);
+                dos.writeUTF(vn.label != null ? vn.label : "");
+                dos.writeBoolean(vn.showLabel);
+            }
+
+            // 3. Wires
+            dos.writeInt(context.visualWires.size());
+            for (VisualWire vw : context.visualWires) {
+                dos.writeInt(context.visualNodes.indexOf(vw.from));
+                dos.writeInt(vw.outPin);
+                dos.writeInt(context.visualNodes.indexOf(vw.to));
+                dos.writeInt(vw.inPin);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadBinaryCircuit(File file) {
+        try (java.io.DataInputStream dis = new java.io.DataInputStream(new java.io.FileInputStream(file))) {
+            if (dis.readInt() != 0x4C475321) throw new IOException("유효하지 않은 LGS 파일입니다.");
+            int version = dis.readInt();
+
+            context.visualNodes.clear();
+            context.visualWires.clear();
+            context.getCircuit().clear(); // 회로 엔진도 초기화
+
+            int nodeCount = dis.readInt();
+            for (int i = 0; i < nodeCount; i++) {
+                String type = dis.readUTF();
+                double x = dis.readDouble();
+                double y = dis.readDouble();
+                String label = dis.readUTF();
+                boolean showLabel = dis.readBoolean();
+
+                com.logicgate.gates.Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(type);
+                if (logicNode != null) {
+                    context.getCircuit().addNode(logicNode);
+                    VisualNode vn = new VisualNode(logicNode, x, y, label);
+                    vn.showLabel = showLabel;
+                    context.visualNodes.add(vn);
+                }
+            }
+
+            int wireCount = dis.readInt();
+            for (int i = 0; i < wireCount; i++) {
+                int fromIdx = dis.readInt();
+                int outPin = dis.readInt();
+                int toIdx = dis.readInt();
+                int inPin = dis.readInt();
+
+                if (fromIdx >= 0 && fromIdx < context.visualNodes.size() &&
+                    toIdx >= 0 && toIdx < context.visualNodes.size()) {
+                    
+                    VisualNode fromVn = context.visualNodes.get(fromIdx);
+                    VisualNode toVn = context.visualNodes.get(toIdx);
+                    
+                    context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
+                    context.visualWires.add(new VisualWire(fromVn, outPin, toVn, inPin));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void exportJson(Window window) {
+        if (context.visualNodes.isEmpty()) return;
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("회로 내보내기 (JSON)");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
+        File file = fileChooser.showSaveDialog(window);
+
+        if (file != null) {
+            try {
+                double minX = Double.MAX_VALUE;
+                double minY = Double.MAX_VALUE;
+                for (VisualNode vn : context.visualNodes) {
+                    minX = Math.min(minX, vn.x);
+                    minY = Math.min(minY, vn.y);
+                }
+
+                ProjectData data = new ProjectData();
+                for (VisualNode vn : context.visualNodes) {
+                    data.nodes.add(new NodeData(
+                        vn.node.getClass().getSimpleName(),
+                        vn.x - minX, vn.y - minY, vn.label, vn.showLabel
+                    ));
+                }
+                for (VisualWire vw : context.visualWires) {
+                    data.wires.add(new WireData(
+                        context.visualNodes.indexOf(vw.from),
+                        vw.outPin,
+                        context.visualNodes.indexOf(vw.to),
+                        vw.inPin
+                    ));
+                }
+                String json = gson.toJson(data);
+                Files.writeString(file.toPath(), json);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void importJson(Window window) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("회로 가져오기 (JSON)");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
+        File file = fileChooser.showOpenDialog(window);
+
+        if (file != null) {
+            try {
+                String json = Files.readString(file.toPath());
+                context.pendingProjectData = gson.fromJson(json, ProjectData.class);
+                context.isPlacingImport = true;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}

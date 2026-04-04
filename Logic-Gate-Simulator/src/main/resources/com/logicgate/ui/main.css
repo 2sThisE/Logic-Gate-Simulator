@@ -1,0 +1,64 @@
+.root {
+    -fx-base: #2B2B2B;
+    -fx-background: #2B2B2B;
+}
+
+.menu-bar {
+    -fx-background-color: #202020;
+}
+
+.menu-bar .label {
+    -fx-text-fill: white;
+}
+
+.sidebar {
+    -fx-background-color: #333333;
+}
+
+.tree-view {
+    -fx-background-color: #333333;
+    -fx-border-color: transparent;
+}
+
+.tree-view .tree-cell {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+}
+
+.tree-view .tree-cell:filled:selected {
+    -fx-background-color: #4A90E2;
+}
+
+.usage-label {
+    -fx-font-size: 10px;
+    -fx-text-fill: gray;
+}
+
+.canvas-area {
+    -fx-background-color: #2B2B2B;
+}
+
+.property-section {
+    -fx-background-color: #444444;
+    -fx-padding: 15;
+    -fx-background-radius: 5;
+}
+
+.property-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: white;
+}
+
+.section-header {
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.text-field {
+    -fx-background-color: #2D2D2D;
+    -fx-text-fill: white;
+}
+
+.check-box {
+    -fx-text-fill: white;
+}
