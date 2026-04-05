@@ -72,16 +72,43 @@ public class MouseInteractionHandler {
                     wiringManager.startWiring(context.hoveredNode, context.hoveredInPin, false);
                     return;
                 } else {
-                    context.setSelectedNode(context.hoveredNode);
+                    if (event.getClickCount() == 2 && context.hoveredNode.group != null) {
+                        context.selectedNodes.clear();
+                        String targetGroup = context.hoveredNode.group;
+                        for (VisualNode vn : context.visualNodes) {
+                            if (targetGroup.equals(vn.group)) {
+                                context.selectedNodes.add(vn);
+                            }
+                        }
+                    } else if (event.isShiftDown()) {
+                        if (context.selectedNodes.contains(context.hoveredNode)) {
+                            context.selectedNodes.remove(context.hoveredNode);
+                        } else {
+                            context.selectedNodes.add(context.hoveredNode);
+                        }
+                    } else {
+                        if (!context.selectedNodes.contains(context.hoveredNode)) {
+                            context.selectedNodes.clear();
+                            context.selectedNodes.add(context.hoveredNode);
+                        }
+                    }
+                    
+                    context.setSelectedNode(context.selectedNodes.isEmpty() ? null : context.selectedNodes.get(context.selectedNodes.size() - 1));
                     context.selectedWire = null;
                     
                     if (context.hoveredNode.node instanceof InputPin) {
                         InputPin pin = (InputPin) context.hoveredNode.node;
                         pin.setState(pin.getOut() == 0);
                     }
+                    context.historyManager.saveState();
                     context.draggingNode = context.hoveredNode;
-                    context.dragOffsetX = context.worldMouseX - context.hoveredNode.x;
-                    context.dragOffsetY = context.worldMouseY - context.hoveredNode.y;
+                    context.dragOffsetX = context.worldMouseX; // 기준점 저장 💖
+                    context.dragOffsetY = context.worldMouseY;
+                    
+                    // 선택된 모든 노드의 시작 위치 저장 ✨
+                    for (VisualNode vn : context.selectedNodes) {
+                        vn.setDragStart(vn.x, vn.y);
+                    }
                     return; 
                 }
             }
@@ -95,13 +122,53 @@ public class MouseInteractionHandler {
                 if (distanceToSegment(context.worldMouseX, context.worldMouseY, p1x, p1y, p2x, p2y) < 10 / context.zoom) {
                     context.selectedWire = wire;
                     context.setSelectedNode(null);
+                    context.selectedNodes.clear();
                     return;
                 }
             }
 
             context.setSelectedNode(null);
+            context.selectedNodes.clear();
             context.selectedWire = null;
             
+            context.isSelecting = true;
+            context.selectionStartX = context.worldMouseX;
+            context.selectionStartY = context.worldMouseY;
+            context.selectionEndX = context.worldMouseX;
+            context.selectionEndY = context.worldMouseY;
+        } else if (event.getButton() == MouseButton.SECONDARY || event.getButton() == MouseButton.MIDDLE) {
+            if (event.getButton() == MouseButton.SECONDARY) {
+                if (context.hoveredNode != null) {
+                    if (!context.selectedNodes.contains(context.hoveredNode)) {
+                        context.selectedNodes.clear();
+                        context.selectedNodes.add(context.hoveredNode);
+                        context.setSelectedNode(context.hoveredNode);
+                        context.selectedWire = null;
+                    }
+                    if (context.onContextMenuRequested != null) {
+                        context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
+                    }
+                    return;
+                } else {
+                    // 노드가 없으면 선이라도 있는지 확인 🔪💕
+                    for (VisualWire wire : context.visualWires) {
+                        double p1x = wire.from.getOutPinX(wire.outPin);
+                        double p1y = wire.from.getOutPinY(wire.outPin);
+                        double p2x = wire.to.getInPinX(wire.inPin);
+                        double p2y = wire.to.getInPinY(wire.inPin);
+                        
+                        if (distanceToSegment(context.worldMouseX, context.worldMouseY, p1x, p1y, p2x, p2y) < 10 / context.zoom) {
+                            context.selectedWire = wire;
+                            context.setSelectedNode(null);
+                            context.selectedNodes.clear();
+                            if (context.onContextMenuRequested != null) {
+                                context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
             context.isPanning = true;
             context.panStartX = context.screenMouseX - context.cameraX;
             context.panStartY = context.screenMouseY - context.cameraY;
@@ -115,8 +182,16 @@ public class MouseInteractionHandler {
         updateHoverState();
 
         if (context.draggingNode != null) {
-            context.draggingNode.x = context.worldMouseX - context.dragOffsetX;
-            context.draggingNode.y = context.worldMouseY - context.dragOffsetY;
+            double dx = context.worldMouseX - context.dragOffsetX;
+            double dy = context.worldMouseY - context.dragOffsetY;
+            
+            for (VisualNode vn : context.selectedNodes) {
+                vn.x = vn.getDragStartX() + dx;
+                vn.y = vn.getDragStartY() + dy;
+            }
+        } else if (context.isSelecting) {
+            context.selectionEndX = context.worldMouseX;
+            context.selectionEndY = context.worldMouseY;
         } else if (context.isPanning) {
             context.cameraX = context.screenMouseX - context.panStartX;
             context.cameraY = context.screenMouseY - context.panStartY;
@@ -129,6 +204,27 @@ public class MouseInteractionHandler {
         context.screenMouseY = event.getY();
         context.updateWorldCoordinates();
         updateHoverState();
+
+        if (context.isSelecting) {
+            double x1 = Math.min(context.selectionStartX, context.selectionEndX);
+            double y1 = Math.min(context.selectionStartY, context.selectionEndY);
+            double x2 = Math.max(context.selectionStartX, context.selectionEndX);
+            double y2 = Math.max(context.selectionStartY, context.selectionEndY);
+            
+            context.selectedNodes.clear();
+            for (VisualNode vn : context.visualNodes) {
+                // 노드가 선택 영역에 완전히 포함되는지 확인 (너비 80, 높이 50 기준) 💖
+                if (vn.x >= x1 && vn.y >= y1 && (vn.x + vn.width) <= x2 && (vn.y + vn.height) <= y2) {
+                    context.selectedNodes.add(vn);
+                }
+            }
+            if (!context.selectedNodes.isEmpty()) {
+                context.setSelectedNode(context.selectedNodes.get(context.selectedNodes.size() - 1));
+            } else {
+                context.setSelectedNode(null);
+            }
+            context.isSelecting = false;
+        }
 
         if (context.isWiring && context.wiringNode != null) {
             if (context.hoveredNode != null && context.hoveredNode != context.wiringNode) {
@@ -223,6 +319,11 @@ public class MouseInteractionHandler {
     private void finalizePlacement() {
         if (context.pendingProjectData == null) return;
 
+        context.historyManager.saveState();
+
+        // 그룹 이름 재매핑을 위한 맵 (원본 그룹명 -> 새 그룹명) 🔪💕
+        java.util.Map<String, String> groupRemap = new java.util.HashMap<>();
+
         // 노드 개수만큼 고정 크기 리스트 생성 (인덱스 보존 ✨)
         int nodeCount = context.pendingProjectData.nodes.size();
         VisualNode[] newNodes = new VisualNode[nodeCount];
@@ -234,10 +335,24 @@ public class MouseInteractionHandler {
                 context.getCircuit().addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, context.worldMouseX + nd.x, context.worldMouseY + nd.y, nd.label);
                 vn.showLabel = nd.showLabel;
+                
+                // 그룹 정보가 있다면 독립적인 새 그룹으로 재할당 💖
+                if (nd.group != null && !nd.group.isEmpty()) {
+                    if (!groupRemap.containsKey(nd.group)) {
+                        String newGroupName = nd.group;
+                        int suffix = 1;
+                        // 현재 회로에 이미 존재하는 그룹명인지 확인 🔪
+                        while (isGroupExists(newGroupName)) {
+                            newGroupName = nd.group + "_" + suffix;
+                            suffix++;
+                        }
+                        groupRemap.put(nd.group, newGroupName);
+                    }
+                    vn.group = groupRemap.get(nd.group);
+                }
+
                 context.visualNodes.add(vn);
-                newNodes[i] = vn; // 정확한 위치에 저장! 🔪💕
-            } else {
-                System.err.println("[Import] 노드 생성 실패 (인덱스 " + i + "): " + nd.type);
+                newNodes[i] = vn; 
             }
         }
 
@@ -259,6 +374,14 @@ public class MouseInteractionHandler {
         context.pendingProjectData = null;
         context.setDirty(true); // 가져오기 완료 후 변경 감지 ✨
         updateHoverState();
+    }
+
+    private boolean isGroupExists(String name) {
+        if (name == null || name.isEmpty()) return false;
+        for (VisualNode vn : context.visualNodes) {
+            if (name.equals(vn.group)) return true;
+        }
+        return false;
     }
 
     private double distanceToSegment(double px, double py, double x1, double y1, double x2, double y2) {

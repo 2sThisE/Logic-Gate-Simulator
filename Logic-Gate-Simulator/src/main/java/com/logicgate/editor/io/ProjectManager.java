@@ -40,6 +40,7 @@ public class ProjectManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        context.historyManager.clear();
         context.setDirty(false); // 초기화 ✨
     }
 
@@ -62,6 +63,7 @@ public class ProjectManager {
         if (lgsFile.exists() && lgsFile.length() > 0) {
             loadBinaryCircuit(lgsFile);
         }
+        context.historyManager.clear();
         context.setDirty(false); // 초기화 ✨
     }
 
@@ -78,7 +80,7 @@ public class ProjectManager {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             // 1. Header
             dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(1);          // Version
+            dos.writeInt(2);          // Version
 
             // 2. Nodes
             dos.writeInt(context.visualNodes.size());
@@ -88,6 +90,7 @@ public class ProjectManager {
                 dos.writeDouble(vn.y);
                 dos.writeUTF(vn.label != null ? vn.label : "");
                 dos.writeBoolean(vn.showLabel);
+                dos.writeUTF(vn.group != null ? vn.group : "");
             }
 
             // 3. Wires
@@ -119,12 +122,18 @@ public class ProjectManager {
                 double y = dis.readDouble();
                 String label = dis.readUTF();
                 boolean showLabel = dis.readBoolean();
+                String group = null;
+                if (version >= 2) {
+                    group = dis.readUTF();
+                    if (group.isEmpty()) group = null;
+                }
 
                 com.logicgate.gates.Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(type);
                 if (logicNode != null) {
                     context.getCircuit().addNode(logicNode);
                     VisualNode vn = new VisualNode(logicNode, x, y, label);
                     vn.showLabel = showLabel;
+                    vn.group = group;
                     context.visualNodes.add(vn);
                 }
             }
@@ -172,7 +181,7 @@ public class ProjectManager {
                 for (VisualNode vn : context.visualNodes) {
                     data.nodes.add(new NodeData(
                         vn.node.getClass().getSimpleName(),
-                        vn.x - minX, vn.y - minY, vn.label, vn.showLabel
+                        vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
                     ));
                 }
                 for (VisualWire vw : context.visualWires) {
@@ -204,6 +213,57 @@ public class ProjectManager {
                 context.isPlacingImport = true;
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    public void copyToClipboard() {
+        if (context.selectedNodes.isEmpty()) return;
+
+        double minX = Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE;
+        for (VisualNode vn : context.selectedNodes) {
+            minX = Math.min(minX, vn.x);
+            minY = Math.min(minY, vn.y);
+        }
+
+        ProjectData data = new ProjectData();
+        java.util.List<VisualNode> copiedNodes = new java.util.ArrayList<>(context.selectedNodes);
+        
+        for (VisualNode vn : copiedNodes) {
+            data.nodes.add(new NodeData(
+                vn.node.getClass().getName(), // 복원 안정성을 위해 FQN 사용
+                vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
+            ));
+        }
+
+        for (VisualWire vw : context.visualWires) {
+            int fromIdx = copiedNodes.indexOf(vw.from);
+            int toIdx = copiedNodes.indexOf(vw.to);
+            if (fromIdx != -1 && toIdx != -1) {
+                data.wires.add(new WireData(fromIdx, vw.outPin, toIdx, vw.inPin));
+            }
+        }
+
+        String json = gson.toJson(data);
+        javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+        content.putString(json);
+        javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    public void pasteFromClipboard() {
+        javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+        if (clipboard.hasString()) {
+            String json = clipboard.getString();
+            try {
+                ProjectData data = gson.fromJson(json, ProjectData.class);
+                if (data != null && data.nodes != null) { // 유효성 검사
+                    context.pendingProjectData = data;
+                    context.isPlacingImport = true;
+                }
+            } catch (Exception e) {
+                // JSON 파싱 실패 시 무시 (외부 텍스트 복사 등)
+                System.out.println("붙여넣기 데이터가 올바른 JSON 회로 형식이 아닙니다.");
             }
         }
     }

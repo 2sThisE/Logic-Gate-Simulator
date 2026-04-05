@@ -87,7 +87,7 @@ public class CanvasRenderer {
 
         for (VisualNode vn : context.visualNodes) {
             boolean isHovered = (vn == context.hoveredNode);
-            boolean isSelected = (vn == context.getSelectedNode());
+            boolean isSelected = (vn == context.getSelectedNode() || context.selectedNodes.contains(vn));
             
             boolean isConnectionInvalid = false;
             if (context.isWiring && isHovered) {
@@ -132,6 +132,19 @@ public class CanvasRenderer {
                 gc.stroke();
             }
             gc.setGlobalAlpha(1.0);
+        }
+
+        if (context.isSelecting) {
+            double x1 = Math.min(context.selectionStartX, context.selectionEndX);
+            double y1 = Math.min(context.selectionStartY, context.selectionEndY);
+            double width = Math.abs(context.selectionEndX - context.selectionStartX);
+            double height = Math.abs(context.selectionEndY - context.selectionStartY);
+
+            gc.setFill(Color.web("#4A90E2", 0.3));
+            gc.fillRect(x1, y1, width, height);
+            gc.setStroke(Color.web("#4A90E2", 0.8));
+            gc.setLineWidth(1 / context.zoom);
+            gc.strokeRect(x1, y1, width, height);
         }
 
         gc.restore();

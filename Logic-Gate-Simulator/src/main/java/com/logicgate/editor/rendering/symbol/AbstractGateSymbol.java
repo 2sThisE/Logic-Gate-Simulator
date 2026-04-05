@@ -18,7 +18,7 @@ public abstract class AbstractGateSymbol implements GateSymbol {
         if (path != null && !path.isEmpty()) {
             gc.appendSVGPath(path);
         }
-        gc.fill();
+        // gc.fill();
         gc.stroke();
         
         drawExtra(gc, vn);

@@ -40,6 +40,9 @@ public class MainController {
     @FXML
     private CheckBox showLabelCheckBox;
 
+    private TextField groupNameField;
+    private javafx.scene.control.ContextMenu contextMenu;
+
     private Circuit circuit;
     private EditorContext context;
     private ProjectManager projectManager;
@@ -66,6 +69,7 @@ public class MainController {
 
         setupComponentTreeView();
         setupPropertyPane();
+        setupContextMenu();
 
         simulationCanvas.widthProperty().bind(canvasPane.widthProperty());
         simulationCanvas.heightProperty().bind(canvasPane.heightProperty());
@@ -88,7 +92,10 @@ public class MainController {
             }
         });
 
-        simulationCanvas.setOnMousePressed(mouseHandler::handleMousePressed);
+        simulationCanvas.setOnMousePressed(e -> {
+            if (contextMenu != null && contextMenu.isShowing()) contextMenu.hide();
+            mouseHandler.handleMousePressed(e);
+        });
         simulationCanvas.setOnMouseDragged(mouseHandler::handleMouseDragged);
         simulationCanvas.setOnMouseReleased(mouseHandler::handleMouseReleased);
         simulationCanvas.setOnScroll(mouseHandler::handleMouseScrolled);
@@ -96,6 +103,10 @@ public class MainController {
 
         simulationCanvas.setOnKeyPressed(keyboardHandler::handleKeyPressed);
         simulationCanvas.setOnKeyReleased(keyboardHandler::handleKeyReleased);
+
+        context.onContextMenuRequested = this::updateAndShowContextMenu;
+        context.onCopyRequested = projectManager::copyToClipboard;
+        context.onPasteRequested = projectManager::pasteFromClipboard;
         
         timer = new AnimationTimer() {
             @Override
@@ -109,12 +120,122 @@ public class MainController {
         circuit.startSimulation();
     }
 
+    private void setupContextMenu() {
+        contextMenu = new javafx.scene.control.ContextMenu();
+    }
+
+    private void updateAndShowContextMenu(double screenX, double screenY) {
+        if (contextMenu.isShowing()) contextMenu.hide();
+        contextMenu.getItems().clear();
+
+        javafx.scene.control.MenuItem deleteItem = new javafx.scene.control.MenuItem("삭제");
+
+        if (!context.selectedNodes.isEmpty()) {
+            javafx.scene.control.MenuItem groupItem = new javafx.scene.control.MenuItem("그룹화");
+            javafx.scene.control.MenuItem ungroupItem = new javafx.scene.control.MenuItem("그룹화 취소");
+
+            boolean hasUngrouped = false;
+            boolean hasGrouped = false;
+
+            for (VisualNode vn : context.selectedNodes) {
+                if (vn.group == null) {
+                    hasUngrouped = true;
+                } else {
+                    hasGrouped = true;
+                }
+            }
+
+            if (hasUngrouped) {
+                contextMenu.getItems().add(groupItem);
+                groupItem.setOnAction(e -> {
+                    context.historyManager.saveState();
+                    String targetGroup = null;
+                    for (VisualNode vn : context.selectedNodes) {
+                        if (vn.group != null) {
+                            targetGroup = vn.group;
+                            break;
+                        }
+                    }
+                    if (targetGroup == null) {
+                        int n = 1;
+                        while (true) {
+                            targetGroup = "Group " + n;
+                            if (!isGroupExists(targetGroup, null)) break;
+                            n++;
+                        }
+                    }
+                    for (VisualNode vn : context.selectedNodes) {
+                        vn.group = targetGroup;
+                    }
+                    context.setDirty(true);
+                    updatePropertyPane();
+                });
+            } else if (hasGrouped) {
+                contextMenu.getItems().add(ungroupItem);
+                ungroupItem.setOnAction(e -> {
+                    context.historyManager.saveState();
+                    for (VisualNode vn : context.selectedNodes) {
+                        vn.group = null;
+                    }
+                    context.setDirty(true);
+                    updatePropertyPane();
+                });
+            }
+            
+            contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+            contextMenu.getItems().add(deleteItem);
+            deleteItem.setOnAction(e -> {
+                context.historyManager.saveState();
+                for (VisualNode vn : new java.util.ArrayList<>(context.selectedNodes)) {
+                    removeNode(vn);
+                }
+                context.selectedNodes.clear();
+                context.setSelectedNode(null);
+            });
+        } else if (context.selectedWire != null) {
+            contextMenu.getItems().add(deleteItem);
+            deleteItem.setOnAction(e -> {
+                context.historyManager.saveState();
+                context.getCircuit().disconnect(context.selectedWire.from.node, context.selectedWire.outPin);
+                context.visualWires.remove(context.selectedWire);
+                context.selectedWire = null;
+                context.setDirty(true);
+            });
+        } else {
+            return; // 아무것도 선택되지 않았으면 표시 안 함
+        }
+
+        contextMenu.show(simulationCanvas, screenX, screenY);
+    }
+
+    private void removeNode(VisualNode vn) {
+        context.getCircuit().removeNode(vn.node);
+        context.visualNodes.remove(vn);
+        context.visualWires.removeIf(w -> {
+            boolean related = w.from == vn || w.to == vn;
+            if (related && w == context.selectedWire) context.selectedWire = null;
+            return related;
+        });
+        context.setDirty(true);
+    }
+
+    private boolean isGroupExists(String name, String excludeGroup) {
+        if (name == null || name.isEmpty()) return false;
+        for (VisualNode vn : context.visualNodes) {
+            if (name.equals(vn.group) && (excludeGroup == null || !excludeGroup.equals(vn.group))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void setupPropertyPane() {
         context.onSelectionChanged = this::updatePropertyPane;
         
         labelTextField.textProperty().addListener((obs, oldVal, newVal) -> {
             VisualNode selected = context.getSelectedNode();
-            if (selected != null) {
+            if (selected != null && !newVal.equals(selected.label)) {
+                context.historyManager.saveState();
                 selected.label = newVal;
                 context.setDirty(true);
             }
@@ -122,8 +243,44 @@ public class MainController {
         
         showLabelCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
             VisualNode selected = context.getSelectedNode();
-            if (selected != null) {
+            if (selected != null && selected.showLabel != newVal) {
+                context.historyManager.saveState();
                 selected.showLabel = newVal;
+                context.setDirty(true);
+            }
+        });
+        
+        propertyPane.getChildren().add(new javafx.scene.control.Label("Group Name:"));
+        groupNameField = new TextField();
+        propertyPane.getChildren().add(groupNameField);
+        
+        groupNameField.textProperty().addListener((obs, oldVal, newVal) -> {
+            VisualNode selected = context.getSelectedNode();
+            if (selected != null && selected.group != null && !newVal.equals(selected.group)) {
+                context.historyManager.saveState();
+                String oldGroup = selected.group;
+                
+                String targetName = newVal;
+                int suffix = 1;
+                while (isGroupExists(targetName, oldGroup)) {
+                    targetName = newVal + "-" + suffix;
+                    suffix++;
+                }
+
+                for (VisualNode vn : context.visualNodes) {
+                    if (oldGroup.equals(vn.group)) {
+                        vn.group = targetName;
+                    }
+                }
+                
+                if (!targetName.equals(newVal)) {
+                    final String finalName = targetName;
+                    javafx.application.Platform.runLater(() -> {
+                        groupNameField.setText(finalName);
+                        groupNameField.positionCaret(finalName.length());
+                    });
+                }
+                
                 context.setDirty(true);
             }
         });
@@ -137,10 +294,23 @@ public class MainController {
             propertyPane.setDisable(true);
             labelTextField.setText("");
             showLabelCheckBox.setSelected(false);
+            if (groupNameField != null) {
+                groupNameField.setText("");
+                groupNameField.setDisable(true);
+            }
         } else {
             propertyPane.setDisable(false);
             labelTextField.setText(selected.label);
             showLabelCheckBox.setSelected(selected.showLabel);
+            if (groupNameField != null) {
+                if (selected.group != null) {
+                    groupNameField.setText(selected.group);
+                    groupNameField.setDisable(false);
+                } else {
+                    groupNameField.setText("");
+                    groupNameField.setDisable(true);
+                }
+            }
         }
     }
 
@@ -286,6 +456,7 @@ public class MainController {
     }
 
     private void spawnNode(Node logicNode, String label) {
+        context.historyManager.saveState();
         circuit.addNode(logicNode);
         
         double spawnX = ((simulationCanvas.getWidth() / 2) - context.cameraX) / context.zoom;

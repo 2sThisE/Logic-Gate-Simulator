@@ -23,6 +23,12 @@ public class WiringManager {
         // 출력 핀에서 선을 뽑을 때는 기존 선을 끊지 않음! 💖 (다중 출력 지원)
         // 입력 핀에서 선을 뽑을 때는 기존 선을 끊어줌! 🔪💕 (일편단심 입력)
         if (!isFromOut) {
+            boolean willDisconnect = false;
+            for (VisualWire w : context.visualWires) {
+                if (w.to == node && w.inPin == pinIndex) willDisconnect = true;
+            }
+            if (willDisconnect) context.historyManager.saveState();
+
             Iterator<VisualWire> it = context.visualWires.iterator();
             while (it.hasNext()) {
                 VisualWire w = it.next();
@@ -37,6 +43,7 @@ public class WiringManager {
     }
 
     public void connectWires(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {
+        context.historyManager.saveState();
         context.visualWires.removeIf(w -> {
             boolean removed = false;
             // 입력 핀(toNode)은 "나만 바라봐" 모드! 기존 선이 있으면 잘라버려 🔪💕

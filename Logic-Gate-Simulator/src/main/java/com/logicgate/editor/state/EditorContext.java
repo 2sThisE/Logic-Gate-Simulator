@@ -38,8 +38,21 @@ public class EditorContext {
     
     // Selection state
     private VisualNode selectedNode = null;
+    public final List<VisualNode> selectedNodes = new ArrayList<>();
     public VisualWire selectedWire = null;
     public Runnable onSelectionChanged;
+
+    // Selection Area state
+    public boolean isSelecting = false;
+    public double selectionStartX, selectionStartY;
+    public double selectionEndX, selectionEndY;
+
+    // Context Menu callback
+    public java.util.function.BiConsumer<Double, Double> onContextMenuRequested;
+    
+    // Clipboard callbacks
+    public Runnable onCopyRequested;
+    public Runnable onPasteRequested;
 
     // Dirty state (저장 여부 표시용 ✨)
     public Runnable onDirtyChanged;
@@ -76,9 +89,11 @@ public class EditorContext {
     public ProjectData pendingProjectData = null;
 
     public final Set<KeyCode> activeKeys = new HashSet<>();
+    public final HistoryManager historyManager;
 
     public EditorContext(Circuit circuit) {
         this.circuit = circuit;
+        this.historyManager = new HistoryManager(this);
     }
 
     public Circuit getCircuit() { return circuit; }

@@ -29,14 +29,52 @@ public class KeyboardInteractionHandler {
                 break;
             case DELETE:
             case BACK_SPACE:
-                if (context.getSelectedNode() != null) {
+                if (!context.selectedNodes.isEmpty()) {
+                    context.historyManager.saveState();
+                    for (VisualNode vn : new java.util.ArrayList<>(context.selectedNodes)) {
+                        removeNode(vn);
+                    }
+                    context.selectedNodes.clear();
+                    context.setSelectedNode(null);
+                } else if (context.getSelectedNode() != null) {
+                    context.historyManager.saveState();
                     removeNode(context.getSelectedNode());
                     context.setSelectedNode(null);
                 } else if (context.selectedWire != null) {
+                    context.historyManager.saveState();
                     context.getCircuit().disconnect(context.selectedWire.from.node, context.selectedWire.outPin);
                     context.visualWires.remove(context.selectedWire);
                     context.selectedWire = null;
                     context.setDirty(true); // 변경 감지 ✨
+                }
+                break;
+            case Z:
+                if (event.isControlDown()) {
+                    if (event.isShiftDown()) {
+                        context.historyManager.redo();
+                    } else {
+                        context.historyManager.undo();
+                    }
+                }
+                break;
+            case A:
+                if (event.isControlDown()) {
+                    context.selectedNodes.clear();
+                    context.selectedNodes.addAll(context.visualNodes);
+                    if (!context.selectedNodes.isEmpty()) {
+                        context.setSelectedNode(context.selectedNodes.get(context.selectedNodes.size() - 1));
+                    }
+                    context.selectedWire = null;
+                }
+                break;
+            case C:
+                if (event.isControlDown() && context.onCopyRequested != null) {
+                    context.onCopyRequested.run();
+                }
+                break;
+            case V:
+                if (event.isControlDown() && context.onPasteRequested != null) {
+                    context.onPasteRequested.run();
                 }
                 break;
             default: break;

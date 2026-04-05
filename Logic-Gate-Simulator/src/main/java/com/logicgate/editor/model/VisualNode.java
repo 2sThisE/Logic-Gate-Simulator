@@ -15,6 +15,9 @@ public class VisualNode {
     public double width = 80, height = 50;
     public String label;
     public boolean showLabel = false;
+    public String group = null;
+    
+    private double dragStartX, dragStartY;
 
     public VisualNode(Node node, double x, double y, String label) {
         this.node = node;
@@ -33,6 +36,14 @@ public class VisualNode {
             this.label = (label == null || label.isEmpty()) ? node.getClass().getSimpleName() : label;
         }
     }
+
+    public void setDragStart(double x, double y) {
+        this.dragStartX = x;
+        this.dragStartY = y;
+    }
+
+    public double getDragStartX() { return dragStartX; }
+    public double getDragStartY() { return dragStartY; }
 
     public boolean contains(double px, double py) {
         return px >= x && px <= x + width && py >= y && py <= y + height;
