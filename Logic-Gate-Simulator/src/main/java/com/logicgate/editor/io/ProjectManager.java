@@ -44,7 +44,7 @@ public class ProjectManager {
         context.setDirty(false); // 초기화 ✨
     }
 
-    public void loadProject() {
+    public void loadProjectConfigOnly() {
         if (context.projectRoot == null) return;
 
         File prjFile = new File(context.projectRoot, "project.prj");
@@ -58,7 +58,10 @@ public class ProjectManager {
                 e.printStackTrace();
             }
         }
+    }
 
+    public void loadCircuitOnly() {
+        if (context.projectRoot == null) return;
         File lgsFile = new File(context.projectRoot, "circuit.lgs");
         if (lgsFile.exists() && lgsFile.length() > 0) {
             loadBinaryCircuit(lgsFile);

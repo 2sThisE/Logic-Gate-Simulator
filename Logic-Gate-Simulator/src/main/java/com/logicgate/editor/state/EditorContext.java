@@ -87,6 +87,7 @@ public class EditorContext {
     // Placing state
     public boolean isPlacingImport = false;
     public ProjectData pendingProjectData = null;
+    public String placingNodeTypeId = null; // 단일 부품 연속 배치 모드용 💖
 
     public final Set<KeyCode> activeKeys = new HashSet<>();
     public final HistoryManager historyManager;

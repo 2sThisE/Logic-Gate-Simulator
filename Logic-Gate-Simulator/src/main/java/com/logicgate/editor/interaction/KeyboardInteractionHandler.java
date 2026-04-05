@@ -26,6 +26,7 @@ public class KeyboardInteractionHandler {
                 context.selectedWire = null;
                 context.isPlacingImport = false;
                 context.pendingProjectData = null;
+                context.placingNodeTypeId = null; // 배치 모드 취소 ✨
                 break;
             case DELETE:
             case BACK_SPACE:

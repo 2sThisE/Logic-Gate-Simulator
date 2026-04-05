@@ -360,10 +360,12 @@ public class MainController {
         context.projectRoot = projectRoot;
         if (isNewProject) {
             projectManager.initNewProject();
+            loadModsAndUpdateTree();
         } else {
-            projectManager.loadProject();
+            projectManager.loadProjectConfigOnly();
+            loadModsAndUpdateTree();
+            projectManager.loadCircuitOnly();
         }
-        loadModsAndUpdateTree();
     }
 
     private void loadModsAndUpdateTree() {
@@ -411,10 +413,9 @@ public class MainController {
         };
 
         if (typeId != null) {
-            Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(typeId);
-            if (logicNode != null) {
-                spawnNode(logicNode, "");
-            }
+            context.placingNodeTypeId = typeId;
+            context.setSelectedNode(null);
+            context.selectedNodes.clear();
         }
     }
 

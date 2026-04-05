@@ -63,6 +63,29 @@ public class MouseInteractionHandler {
                 finalizePlacement();
                 return;
             }
+            
+            // 단일 부품 배치 모드 처리 💖
+            if (context.placingNodeTypeId != null) {
+                Node logicNode = NodeFactory.createNodeByType(context.placingNodeTypeId);
+                if (logicNode != null) {
+                    context.historyManager.saveState();
+                    context.getCircuit().addNode(logicNode);
+                    
+                    double nodeWidth = 80;
+                    double nodeHeight = 50;
+                    if (logicNode instanceof InputPin || logicNode instanceof com.logicgate.gates.OutputPin) {
+                        nodeWidth = 50;
+                    } else if (logicNode instanceof Joint) {
+                        nodeWidth = 30;
+                        nodeHeight = 30;
+                    }
+                    
+                    VisualNode vn = new VisualNode(logicNode, context.worldMouseX - (nodeWidth / 2), context.worldMouseY - (nodeHeight / 2), "");
+                    context.visualNodes.add(vn);
+                    context.setDirty(true);
+                }
+                return; // 배치 후 연속 배치를 위해 리턴 (선택 모드 진입 방지)
+            }
 
             if (context.hoveredNode != null) {
                 if (context.hoveredOutPin != -1) {
@@ -131,6 +154,14 @@ public class MouseInteractionHandler {
             context.selectionEndX = context.worldMouseX;
             context.selectionEndY = context.worldMouseY;
         } else if (event.getButton() == MouseButton.SECONDARY || event.getButton() == MouseButton.MIDDLE) {
+            
+            // 우클릭 시 배치 모드 취소 기능 추가 ✨
+            if (event.getButton() == MouseButton.SECONDARY && context.placingNodeTypeId != null) {
+                context.placingNodeTypeId = null;
+                updateHoverState();
+                return;
+            }
+
             if (event.getButton() == MouseButton.SECONDARY) {
                 if (context.hoveredNode != null) {
                     if (!context.selectedNodes.contains(context.hoveredNode)) {
@@ -238,6 +269,15 @@ public class MouseInteractionHandler {
 
     private void updateHoverState() {
         if (context.isPlacingImport) {
+            context.hoveredNode = null;
+            context.hoveredInPin = -1;
+            context.hoveredOutPin = -1;
+            context.hoveredPinName = null;
+            return;
+        }
+        
+        // 배치 모드 중일 때는 호버(선택) 표시가 안 되도록 무시 💖
+        if (context.placingNodeTypeId != null) {
             context.hoveredNode = null;
             context.hoveredInPin = -1;
             context.hoveredOutPin = -1;

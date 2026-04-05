@@ -1,57 +1,130 @@
 .root {
-    -fx-background-color: #1E1E1E;
+    -fx-background-color: #1e1e1e;
+    -fx-font-family: "Segoe UI", "Malgun Gothic", sans-serif;
 }
 
-.title-label {
-    -fx-font-size: 20px;
+.sidebar {
+    -fx-background-color: #252526;
+    -fx-border-color: transparent #333333 transparent transparent;
+    -fx-border-width: 1px;
+}
+
+.app-title {
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
-    -fx-text-fill: #00FFFF;
+    -fx-text-fill: #007acc;
+    -fx-padding: 0 0 20 0;
 }
 
-.subtitle-label {
+.menu-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 14px;
+    -fx-padding: 10 15 10 15;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.menu-btn:hover {
+    -fx-background-color: #2a2d2e;
+    -fx-text-fill: #ffffff;
+}
+
+.content-area {
+    -fx-background-color: #1e1e1e;
+}
+
+.section-title {
+    -fx-font-size: 24px;
+    -fx-text-fill: #ffffff;
+}
+
+.field-label {
+    -fx-text-fill: #cccccc;
     -fx-font-size: 12px;
-    -fx-text-fill: #AAAAAA;
 }
 
-.separator {
-    -fx-opacity: 0.1;
+.input-field {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #555555;
+    -fx-border-radius: 2px;
+    -fx-background-radius: 2px;
+    -fx-padding: 8px;
 }
 
-.section-label {
+.input-field:focused {
+    -fx-border-color: #007acc;
+}
+
+.browse-btn {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #555555;
+    -fx-padding: 8px 12px;
+    -fx-cursor: hand;
+}
+
+.browse-btn:hover {
+    -fx-background-color: #3e3e42;
+}
+
+.primary-btn {
+    -fx-background-color: #007acc;
+    -fx-text-fill: white;
+    -fx-padding: 8px 20px;
     -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-background-radius: 2px;
+    -fx-border-color: transparent;
+}
+
+.primary-btn:hover {
+    -fx-background-color: #0098ff;
+}
+
+.cancel-btn {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 8px 20px;
+    -fx-cursor: hand;
+    -fx-background-radius: 2px;
+    -fx-border-color: transparent;
+}
+
+.cancel-btn:hover {
+    -fx-background-color: #3e3e42;
+}
+
+.recent-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-control-inner-background: #1e1e1e;
+    -fx-control-inner-background-alt: #1e1e1e;
+}
+
+.recent-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 10px;
+    -fx-border-color: transparent transparent #333333 transparent;
+    -fx-border-width: 1px;
+    -fx-cursor: hand;
+}
+
+.recent-list .list-cell:filled:hover {
+    -fx-background-color: #2a2d2e;
+}
+
+.recent-list .list-cell:filled:selected {
+    -fx-background-color: #007acc;
+}
+
+.recent-list .list-cell:filled:selected .label {
+    -fx-text-fill: #ffffff;
+}
+
+.help-text {
+    -fx-text-fill: #888888;
     -fx-font-size: 11px;
-}
-
-.new-project-label {
-    -fx-text-fill: #4CAF50;
-}
-
-.existing-project-label {
-    -fx-text-fill: #2196F3;
-}
-
-.text-field {
-    -fx-background-color: #2D2D2D;
-    -fx-text-fill: white;
-    -fx-prompt-text-fill: #666666;
-}
-
-.btn-create {
-    -fx-background-color: #4CAF50;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-cursor: hand;
-}
-
-.btn-open {
-    -fx-background-color: #2196F3;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-cursor: hand;
-    -fx-padding: 10;
-}
-
-.copyright-label {
-    -fx-font-size: 9px;
-    -fx-text-fill: #444444;
 }

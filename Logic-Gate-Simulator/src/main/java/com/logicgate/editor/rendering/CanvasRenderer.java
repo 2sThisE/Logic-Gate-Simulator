@@ -108,8 +108,10 @@ public class CanvasRenderer {
                 double previewX = context.worldMouseX + nd.x;
                 double previewY = context.worldMouseY + nd.y;
                 Node dummyNode = NodeFactory.createNodeByType(nd.type);
-                VisualNode dummyVn = new VisualNode(dummyNode, previewX, previewY, nd.label);
-                dummyVn.draw(gc, false, false, -1, -1, null, false);
+                if (dummyNode != null) {
+                    VisualNode dummyVn = new VisualNode(dummyNode, previewX, previewY, nd.label);
+                    dummyVn.draw(gc, false, false, -1, -1, null, false);
+                }
             }
 
             gc.setStroke(Color.web("#AAAAAA"));
@@ -118,18 +120,39 @@ public class CanvasRenderer {
                 NodeData fromNd = context.pendingProjectData.nodes.get(wd.fromIdx);
                 NodeData toNd = context.pendingProjectData.nodes.get(wd.toIdx);
                 
-                VisualNode fromVn = new VisualNode(NodeFactory.createNodeByType(fromNd.type), context.worldMouseX + fromNd.x, context.worldMouseY + fromNd.y, "");
-                VisualNode toVn = new VisualNode(NodeFactory.createNodeByType(toNd.type), context.worldMouseX + toNd.x, context.worldMouseY + toNd.y, "");
+                Node fNode = NodeFactory.createNodeByType(fromNd.type);
+                Node tNode = NodeFactory.createNodeByType(toNd.type);
+                if(fNode != null && tNode != null) {
+                    VisualNode fromVn = new VisualNode(fNode, context.worldMouseX + fromNd.x, context.worldMouseY + fromNd.y, "");
+                    VisualNode toVn = new VisualNode(tNode, context.worldMouseX + toNd.x, context.worldMouseY + toNd.y, "");
+                    
+                    double x1 = fromVn.getOutPinX(wd.outPin);
+                    double y1 = fromVn.getOutPinY(wd.outPin);
+                    double x2 = toVn.getInPinX(wd.inPin);
+                    double y2 = toVn.getInPinY(wd.inPin);
+                    
+                    gc.beginPath();
+                    gc.moveTo(x1, y1);
+                    gc.bezierCurveTo(x1 + 50, y1, x2 - 50, y2, x2, y2);
+                    gc.stroke();
+                }
+            }
+            gc.setGlobalAlpha(1.0);
+        } else if (context.placingNodeTypeId != null) {
+            gc.setGlobalAlpha(0.5);
+            Node dummyNode = NodeFactory.createNodeByType(context.placingNodeTypeId);
+            if (dummyNode != null) {
+                double nodeWidth = 80;
+                double nodeHeight = 50;
+                if (dummyNode instanceof com.logicgate.gates.InputPin || dummyNode instanceof com.logicgate.gates.OutputPin) {
+                    nodeWidth = 50;
+                } else if (dummyNode instanceof com.logicgate.gates.Joint) {
+                    nodeWidth = 30;
+                    nodeHeight = 30;
+                }
                 
-                double x1 = fromVn.getOutPinX(wd.outPin);
-                double y1 = fromVn.getOutPinY(wd.outPin);
-                double x2 = toVn.getInPinX(wd.inPin);
-                double y2 = toVn.getInPinY(wd.inPin);
-                
-                gc.beginPath();
-                gc.moveTo(x1, y1);
-                gc.bezierCurveTo(x1 + 50, y1, x2 - 50, y2, x2, y2);
-                gc.stroke();
+                VisualNode dummyVn = new VisualNode(dummyNode, context.worldMouseX - (nodeWidth / 2), context.worldMouseY - (nodeHeight / 2), "");
+                dummyVn.draw(gc, false, false, -1, -1, null, false);
             }
             gc.setGlobalAlpha(1.0);
         }

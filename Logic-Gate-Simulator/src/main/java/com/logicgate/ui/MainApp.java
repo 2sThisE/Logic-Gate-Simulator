@@ -58,9 +58,9 @@ public class MainApp extends Application {
             controller.setMainApp(this);
             controller.setStage(launcherStage);
 
-            Scene scene = new Scene(root, 450, 350);
+            Scene scene = new Scene(root, 800, 500);
             launcherStage.setScene(scene);
-            launcherStage.setResizable(false); // 크기 조절은 못 하게 막아둘게 🤭
+            launcherStage.setResizable(true);
             launcherStage.show();
         } catch (Exception e) {
             e.printStackTrace();
