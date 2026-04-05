@@ -62,3 +62,51 @@
 .check-box {
     -fx-text-fill: white;
 }
+
+/* 추가된 하단 상태바 및 콘솔 영역 스타일 */
+.status-bar {
+    -fx-background-color: #007acc;
+    -fx-border-color: #005a9e transparent transparent transparent;
+    -fx-border-width: 1px;
+}
+
+.status-label {
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+}
+
+.status-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-cursor: hand;
+}
+
+.status-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.status-btn-error {
+    -fx-background-color: #d73a49;
+    -fx-font-weight: bold;
+}
+
+.status-btn-error:hover {
+    -fx-background-color: #cb2431;
+}
+
+.console-list {
+    -fx-background-color: #1e1e1e;
+    -fx-control-inner-background: #1e1e1e;
+}
+
+.console-list .list-cell {
+    -fx-text-fill: #cccccc;
+    -fx-font-family: monospace;
+    -fx-font-size: 12px;
+}
+
+.console-list .list-cell:filled:selected {
+    -fx-background-color: #094771;
+    -fx-text-fill: white;
+}

@@ -18,12 +18,23 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.application.Platform;
+import java.io.PrintStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class MainController {
+
+    @FXML private ListView<String> consoleListView;
+    @FXML private Button errorButton;
+
+    private ObservableList<String> consoleMessages = FXCollections.observableArrayList();
+    private int errorCount = 0;
 
     @FXML
     private Pane canvasPane;
@@ -116,6 +127,80 @@ public class MainController {
         timer.start();
 
         circuit.startSimulation();
+
+        // 💖 로그 패널 설정
+        if (consoleListView != null) {
+            consoleListView.setItems(consoleMessages);
+            redirectSystemOutAndErr(); 
+        }
+    }
+
+    private void redirectSystemOutAndErr() {
+        PrintStream originalOut = System.out;
+        PrintStream originalErr = System.err;
+
+        System.setOut(new PrintStream(new OutputStream() {
+            private StringBuilder buffer = new StringBuilder();
+            @Override
+            public void write(int b) {
+                originalOut.write(b);
+                if (b == '\n') {
+                    String msg = buffer.toString();
+                    buffer.setLength(0);
+                    Platform.runLater(() -> addLog("[INFO] " + msg, false));
+                } else if (b != '\r') {
+                    buffer.append((char) b);
+                }
+            }
+        }, true));
+
+        System.setErr(new PrintStream(new OutputStream() {
+            private StringBuilder buffer = new StringBuilder();
+            @Override
+            public void write(int b) {
+                originalErr.write(b);
+                if (b == '\n') {
+                    String msg = buffer.toString();
+                    buffer.setLength(0);
+                    Platform.runLater(() -> addLog("[ERROR] " + msg, true));
+                } else if (b != '\r') {
+                    buffer.append((char) b);
+                }
+            }
+        }, true));
+
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            Platform.runLater(() -> addLog("[FATAL] Uncaught Exception in thread " + t.getName() + ": " + e.toString(), true));
+            e.printStackTrace();
+        });
+    }
+
+    private void addLog(String message, boolean isError) {
+        consoleMessages.add(message);
+        if (isError) {
+            errorCount++;
+            if (errorButton != null) {
+                errorButton.setText(errorCount + " 오류/경고");
+                if (!errorButton.getStyleClass().contains("status-btn-error")) {
+                    errorButton.getStyleClass().add("status-btn-error");
+                }
+            }
+        } else {
+            if (errorCount == 0 && errorButton != null) {
+                errorButton.setText(consoleMessages.size() + " 로그");
+            }
+        }
+        if (consoleListView != null) {
+            consoleListView.scrollTo(consoleMessages.size() - 1);
+        }
+    }
+
+    @FXML
+    public void toggleConsole() {
+        if (consoleListView == null) return;
+        boolean isVisible = consoleListView.isVisible();
+        consoleListView.setVisible(!isVisible);
+        consoleListView.setManaged(!isVisible);
     }
 
     private void setupContextMenu() {

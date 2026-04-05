@@ -14,12 +14,7 @@ public class FullAdderNode extends Node {
 
     @Override
     public void compute(){
-        try {
-            
-            File fp=new File(new URI(null));
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
+        int c=1/0;
         int a = (in & 1);
         int b = (in >> 1) & 1;
         int cin = (in >> 2) & 1;

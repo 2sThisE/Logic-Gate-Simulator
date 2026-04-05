@@ -72,4 +72,17 @@
             </items>
         </SplitPane>
     </center>
+    <bottom>
+        <VBox>
+            <ListView fx:id="consoleListView" prefHeight="150" visible="false" managed="false" styleClass="console-list"/>
+            <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="10">
+                <padding>
+                    <Insets top="3" right="10" bottom="3" left="10"/>
+                </padding>
+                <Button fx:id="errorButton" text="0 로그" onAction="#toggleConsole" styleClass="status-btn"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Logic Gate Simulator v1.0" styleClass="status-label"/>
+            </HBox>
+        </VBox>
+    </bottom>
 </BorderPane>
