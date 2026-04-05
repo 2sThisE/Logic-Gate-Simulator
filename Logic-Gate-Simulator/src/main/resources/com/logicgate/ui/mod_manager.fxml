@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+
+<VBox spacing="15" prefWidth="500" prefHeight="400" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.logicgate.ui.ModManagerController" styleClass="mod-manager-root">
+    <stylesheets>
+        <URL value="@mod_manager.css" />
+    </stylesheets>
+    
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="모드 관리자" styleClass="title-label"/>
+    <Label text="현재 프로젝트에 포함된 모드 목록입니다." styleClass="subtitle-label"/>
+
+    <ListView fx:id="modListView" VBox.vgrow="ALWAYS" styleClass="mod-list"/>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="모드 추가" onAction="#addMod" styleClass="action-btn, add-btn"/>
+        <Button text="선택 모드 제거" onAction="#removeMod" styleClass="action-btn, remove-btn"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="닫기" onAction="#close" styleClass="action-btn, close-btn"/>
+    </HBox>
+    
+    <Label text="* 모드 추가/제거 후에는 프로젝트를 다시 불러와야 적용됩니다." styleClass="info-label"/>
+</VBox>

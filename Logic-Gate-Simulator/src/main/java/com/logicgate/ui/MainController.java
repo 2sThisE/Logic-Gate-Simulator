@@ -15,15 +15,13 @@ import com.logicgate.editor.mod.ModComponentInfo;
 import javafx.animation.AnimationTimer;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class MainController {
 
@@ -376,6 +374,10 @@ public class MainController {
         
         TreeItem<String> root = componentTreeView.getRoot();
         
+        // 커스텀 부품들만 트리에서 제거하고 다시 로드 🔪💕
+        root.getChildren().removeIf(item -> !List.of("Gate", "In/Output", "Etc").contains(item.getValue()));
+        customComponentMap.clear();
+
         for (ModComponentInfo mod : mods) {
             customComponentMap.put(mod.name, mod.fqn);
             
@@ -432,6 +434,67 @@ public class MainController {
     @FXML
     public void importJson() {
         projectManager.importJson(simulationCanvas.getScene().getWindow());
+    }
+
+    @FXML
+    public void openModManager() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("mod_manager.fxml"));
+            javafx.scene.Parent root = loader.load();
+            
+            ModManagerController controller = loader.getController();
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("모드 관리자");
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(simulationCanvas.getScene().getWindow());
+            stage.setScene(new javafx.scene.Scene(root));
+            
+            controller.setContext(context, projectManager);
+            controller.setStage(stage);
+            
+            stage.showAndWait();
+            
+            if (controller.isChanged()) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("프로젝트 재로드");
+                alert.setHeaderText("모드 설정이 변경되었습니다.");
+                alert.setContentText("변경 사항을 적용하려면 프로젝트를 다시 불러와야 합니다. 지금 다시 불러오시겠습니까?");
+                
+                Optional<ButtonType> result = alert.showAndWait();
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    if (context.isDirty()) {
+                        Alert saveAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                        saveAlert.setTitle("저장되지 않은 변경 사항");
+                        saveAlert.setHeaderText("현재 프로젝트에 저장되지 않은 내용이 있습니다.");
+                        saveAlert.setContentText("재로드하기 전에 저장하시겠습니까?");
+                        
+                        ButtonType btnSave = new ButtonType("저장 후 재로드");
+                        ButtonType btnJustLoad = new ButtonType("저장 없이 재로드");
+                        ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
+                        
+                        saveAlert.getButtonTypes().setAll(btnSave, btnJustLoad, btnCancel);
+                        Optional<ButtonType> saveResult = saveAlert.showAndWait();
+                        
+                        if (saveResult.isPresent()) {
+                            if (saveResult.get() == btnSave) {
+                                saveProject();
+                            } else if (saveResult.get() == btnCancel) {
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // 프로젝트 재로드 🔪💕
+                    initializeProject(context.projectRoot, false);
+                } else {
+                    // 리로드를 안 하더라도 일단 트리는 새로고침 (새로 추가된 모드가 트리에는 보일 수 있게)
+                    loadModsAndUpdateTree();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

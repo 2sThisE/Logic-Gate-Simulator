@@ -63,62 +63,42 @@ public class ModLoader {
     @SuppressWarnings("unchecked")
     private List<ModComponentInfo> loadJar(File jarFile) {
         List<ModComponentInfo> infos = new ArrayList<>();
-        try {
-            URL[] urls = { jarFile.toURI().toURL() };
-            URLClassLoader classLoader = new URLClassLoader(urls, this.getClass().getClassLoader());
-
+        // try-with-resources를 사용하여 로딩 후 클래스 로더를 닫음 🔪💕
+        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{ jarFile.toURI().toURL() }, this.getClass().getClassLoader())) {
             try (JarFile jar = new JarFile(jarFile)) {
                 Enumeration<JarEntry> entries = jar.entries();
-
                 while (entries.hasMoreElements()) {
                     JarEntry entry = entries.nextElement();
-                    if (entry.isDirectory() || !entry.getName().endsWith(".class")) {
-                        continue;
-                    }
+                    if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
 
                     String className = entry.getName().substring(0, entry.getName().length() - 6).replace('/', '.');
-                    
                     try {
                         Class<?> clazz = classLoader.loadClass(className);
-                        
+                        // ... 클래스 등록 로직 ...
                         if (Node.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
                             ComponentMeta meta = clazz.getAnnotation(ComponentMeta.class);
                             if (meta != null) {
-                                String typeName = clazz.getSimpleName();
-                                NodeFactory.register(typeName, (Class<? extends Node>) clazz);
+                                NodeFactory.register(clazz.getSimpleName(), (Class<? extends Node>) clazz);
                                 if (!meta.typeId().isEmpty()) {
                                     NodeFactory.register(meta.typeId(), (Class<? extends Node>) clazz);
                                 }
                                 infos.add(new ModComponentInfo(meta.section(), meta.name(), clazz.getName()));
-                                System.out.println("[ModLoader] 외부 게이트 로드 성공 💖: " + meta.name() + " [" + clazz.getName() + "]");
                             }
                         }
-
                         if (GateSymbol.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
                             GateSymbol symbol = (GateSymbol) clazz.getDeclaredConstructor().newInstance();
                             ComponentMeta meta = clazz.getAnnotation(ComponentMeta.class);
-                            
                             if (meta != null && !meta.typeId().isEmpty()) {
-                                // ID 기반 등록 (강력 추천! ✨)
                                 SymbolRegistry.registerExternalSymbol(meta.typeId(), symbol);
-                                System.out.println("[ModLoader] 외부 심볼 로드 성공 ✨: " + clazz.getName() + " -> 매핑 ID: " + meta.typeId());
                             } else {
-                                // Fallback: 기존 방식
-                                String targetType = clazz.getSimpleName().replace("Symbol", "");
-                                SymbolRegistry.registerExternalSymbol(targetType, symbol);
-                                SymbolRegistry.registerExternalSymbol(className.replace("Symbol", ""), symbol); 
-                                System.out.println("[ModLoader] 외부 심볼 로드 성공(이름기반) ✨: " + clazz.getName() + " -> 매핑: " + targetType);
+                                SymbolRegistry.registerExternalSymbol(clazz.getSimpleName().replace("Symbol", ""), symbol);
                             }
                         }
-
-                    } catch (Exception e) {
-                        // ignore
-                    }
+                    } catch (Exception e) { /* ignore */ }
                 }
             }
         } catch (Exception e) {
             System.err.println("[ModLoader] JAR 파일을 읽는 데 실패했습니다: " + jarFile.getName());
-            e.printStackTrace();
         }
         return infos;
     }

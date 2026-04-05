@@ -79,6 +79,17 @@ public class ProjectManager {
         context.setDirty(false); // 초기화 ✨
     }
 
+    public void saveProjectConfig() {
+        if (context.projectRoot == null || context.projectConfig == null) return;
+        File prjFile = new File(context.projectRoot, "project.prj");
+        try {
+            Files.writeString(prjFile.toPath(), gson.toJson(context.projectConfig));
+            System.out.println("프로젝트 설정 저장 완료: " + prjFile.getAbsolutePath());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void saveBinaryCircuit(File file) {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             // 1. Header

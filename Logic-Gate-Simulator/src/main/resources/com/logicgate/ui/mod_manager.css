@@ -1,0 +1,68 @@
+.mod-manager-root {
+    -fx-background-color: #1e1e1e;
+}
+
+.title-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #007acc;
+}
+
+.subtitle-label {
+    -fx-font-size: 13px;
+    -fx-text-fill: #cccccc;
+}
+
+.mod-list {
+    -fx-background-color: #252526;
+    -fx-border-color: #333333;
+    -fx-control-inner-background: #252526;
+}
+
+.mod-list .list-cell {
+    -fx-text-fill: #ffffff;
+    -fx-padding: 8px;
+}
+
+.mod-list .list-cell:filled:hover {
+    -fx-background-color: #2a2d2e;
+}
+
+.mod-list .list-cell:filled:selected {
+    -fx-background-color: #094771;
+}
+
+.action-btn {
+    -fx-cursor: hand;
+    -fx-padding: 8px 15px;
+    -fx-background-radius: 2px;
+}
+
+.add-btn {
+    -fx-background-color: #0e639c;
+    -fx-text-fill: white;
+}
+
+.add-btn:hover {
+    -fx-background-color: #1177bb;
+}
+
+.remove-btn {
+    -fx-background-color: #d73a49;
+    -fx-text-fill: white;
+}
+
+.remove-btn:hover {
+    -fx-background-color: #cb2431;
+}
+
+.close-btn {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+}
+
+.info-label {
+    -fx-font-size: 11px;
+    -fx-text-fill: #888888;
+    -fx-font-style: italic;
+}
