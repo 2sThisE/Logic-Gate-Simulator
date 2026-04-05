@@ -86,6 +86,9 @@ public class ModLoader {
                             if (meta != null) {
                                 String typeName = clazz.getSimpleName();
                                 NodeFactory.register(typeName, (Class<? extends Node>) clazz);
+                                if (!meta.typeId().isEmpty()) {
+                                    NodeFactory.register(meta.typeId(), (Class<? extends Node>) clazz);
+                                }
                                 infos.add(new ModComponentInfo(meta.section(), meta.name(), clazz.getName()));
                                 System.out.println("[ModLoader] 외부 게이트 로드 성공 💖: " + meta.name() + " [" + clazz.getName() + "]");
                             }

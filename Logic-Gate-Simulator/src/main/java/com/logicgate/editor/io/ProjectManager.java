@@ -85,7 +85,7 @@ public class ProjectManager {
             // 2. Nodes
             dos.writeInt(context.visualNodes.size());
             for (VisualNode vn : context.visualNodes) {
-                dos.writeUTF(vn.node.getClass().getName()); // getSimpleName() 대신 getName() 사용 💖
+                dos.writeUTF(vn.node.getTypeId());
                 dos.writeDouble(vn.x);
                 dos.writeDouble(vn.y);
                 dos.writeUTF(vn.label != null ? vn.label : "");
@@ -180,7 +180,7 @@ public class ProjectManager {
                 ProjectData data = new ProjectData();
                 for (VisualNode vn : context.visualNodes) {
                     data.nodes.add(new NodeData(
-                        vn.node.getClass().getSimpleName(),
+                        vn.node.getTypeId(),
                         vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
                     ));
                 }
@@ -232,7 +232,7 @@ public class ProjectManager {
         
         for (VisualNode vn : copiedNodes) {
             data.nodes.add(new NodeData(
-                vn.node.getClass().getName(), // 복원 안정성을 위해 FQN 사용
+                vn.node.getTypeId(),
                 vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
             ));
         }

@@ -396,39 +396,27 @@ public class MainController {
     }
 
     private void handleComponentCreation(String value) {
-        switch (value) {
-            case "AND Gate" -> addAndGate();
-            case "OR Gate" -> addOrGate();
-            case "NOT Gate" -> addNotGate();
-            case "XOR Gate" -> addXorGate();
-            case "NOR Gate" -> addNorGate();
-            case "NAND Gate" -> addNandGate();
-            case "XNOR Gate" -> addXnorGate();
-            case "Switch" -> addSwitch();
-            case "LED" -> addLed();
-            case "Joint (1:4)" -> addJoint();
-            default -> {
-                if (customComponentMap.containsKey(value)) {
-                    String fqn = customComponentMap.get(value);
-                    Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(fqn);
-                    if (logicNode != null) {
-                        spawnNode(logicNode, "");
-                    }
-                }
+        String typeId = switch (value) {
+            case "AND Gate" -> "And";
+            case "OR Gate" -> "Or";
+            case "NOT Gate" -> "Not";
+            case "XOR Gate" -> "Xor";
+            case "NOR Gate" -> "Nor";
+            case "NAND Gate" -> "Nand";
+            case "XNOR Gate" -> "Xnor";
+            case "Switch" -> "InputPin";
+            case "LED" -> "OutputPin";
+            case "Joint (1:4)" -> "Joint";
+            default -> customComponentMap.get(value);
+        };
+
+        if (typeId != null) {
+            Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(typeId);
+            if (logicNode != null) {
+                spawnNode(logicNode, "");
             }
         }
     }
-
-    @FXML public void addSwitch() { spawnNode(new InputPin(), ""); }
-    @FXML public void addLed() { spawnNode(new OutputPin(), ""); }
-    @FXML public void addJoint() { spawnNode(new Joint(), ""); }
-    @FXML public void addAndGate() { spawnNode(new And(), ""); }
-    @FXML public void addOrGate() { spawnNode(new Or(), ""); }
-    @FXML public void addNotGate() { spawnNode(new Not(), ""); }
-    @FXML public void addXorGate() { spawnNode(new Xor(), ""); }
-    @FXML public void addNorGate() { spawnNode(new Nor(), ""); }
-    @FXML public void addNandGate() { spawnNode(new Nand(), ""); }
-    @FXML public void addXnorGate() { spawnNode(new Xnor(), ""); }
 
     @FXML
     public void saveProject() {

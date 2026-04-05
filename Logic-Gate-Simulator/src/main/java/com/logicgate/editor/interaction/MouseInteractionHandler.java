@@ -113,18 +113,12 @@ public class MouseInteractionHandler {
                 }
             }
 
-            for (VisualWire wire : context.visualWires) {
-                double p1x = wire.from.getOutPinX(wire.outPin);
-                double p1y = wire.from.getOutPinY(wire.outPin);
-                double p2x = wire.to.getInPinX(wire.inPin);
-                double p2y = wire.to.getInPinY(wire.inPin);
-                
-                if (distanceToSegment(context.worldMouseX, context.worldMouseY, p1x, p1y, p2x, p2y) < 10 / context.zoom) {
-                    context.selectedWire = wire;
-                    context.setSelectedNode(null);
-                    context.selectedNodes.clear();
-                    return;
-                }
+            VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
+            if (clickedWire != null) {
+                context.selectedWire = clickedWire;
+                context.setSelectedNode(null);
+                context.selectedNodes.clear();
+                return;
             }
 
             context.setSelectedNode(null);
@@ -151,21 +145,15 @@ public class MouseInteractionHandler {
                     return;
                 } else {
                     // 노드가 없으면 선이라도 있는지 확인 🔪💕
-                    for (VisualWire wire : context.visualWires) {
-                        double p1x = wire.from.getOutPinX(wire.outPin);
-                        double p1y = wire.from.getOutPinY(wire.outPin);
-                        double p2x = wire.to.getInPinX(wire.inPin);
-                        double p2y = wire.to.getInPinY(wire.inPin);
-                        
-                        if (distanceToSegment(context.worldMouseX, context.worldMouseY, p1x, p1y, p2x, p2y) < 10 / context.zoom) {
-                            context.selectedWire = wire;
-                            context.setSelectedNode(null);
-                            context.selectedNodes.clear();
-                            if (context.onContextMenuRequested != null) {
-                                context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
-                            }
-                            return;
+                    VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
+                    if (clickedWire != null) {
+                        context.selectedWire = clickedWire;
+                        context.setSelectedNode(null);
+                        context.selectedNodes.clear();
+                        if (context.onContextMenuRequested != null) {
+                            context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
                         }
+                        return;
                     }
                 }
             }
@@ -374,6 +362,20 @@ public class MouseInteractionHandler {
         context.pendingProjectData = null;
         context.setDirty(true); // 가져오기 완료 후 변경 감지 ✨
         updateHoverState();
+    }
+
+    private VisualWire getWireAt(double x, double y) {
+        for (VisualWire wire : context.visualWires) {
+            double p1x = wire.from.getOutPinX(wire.outPin);
+            double p1y = wire.from.getOutPinY(wire.outPin);
+            double p2x = wire.to.getInPinX(wire.inPin);
+            double p2y = wire.to.getInPinY(wire.inPin);
+            
+            if (distanceToSegment(x, y, p1x, p1y, p2x, p2y) < 10 / context.zoom) {
+                return wire;
+            }
+        }
+        return null;
     }
 
     private boolean isGroupExists(String name) {

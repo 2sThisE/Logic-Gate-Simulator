@@ -4,10 +4,7 @@ import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.mod.ComponentMeta;
 
-/**
- * 전가산기 전용 심볼 디자인입니다.
- * 정사각형 칩 모양에 입력 3개, 출력 2개를 예쁘게 배치해줄게! 🔪💕
- */
+
 @ComponentMeta(section = "Arithmetic", name = "Full Adder Symbol", typeId = "FULL_ADDER")
 public class FullAdderSymbol extends AbstractGateSymbol {
 
