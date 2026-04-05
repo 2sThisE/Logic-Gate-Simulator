@@ -2,9 +2,15 @@ package com.logicgate.ui;
 
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.editor.io.ProjectManager;
+import com.logicgate.editor.mod.JarSecurityScanner;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -14,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ModManagerController {
 
@@ -52,6 +59,41 @@ public void addMod() {
     File selectedFile = fileChooser.showOpenDialog(stage);
 
     if (selectedFile != null) {
+        
+        // 보안 스캔 시작 🔪💕
+        List<String> suspicious = JarSecurityScanner.scanJarForSuspiciousClasses(selectedFile);
+        if (!suspicious.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("보안 경고: 미확인 클래스 참조 감지");
+            alert.setHeaderText("이 모드는 화이트리스트에 등록되지 않은 외부 클래스를 참조하고 있습니다.");
+            alert.setContentText("악성 코드가 포함되어 있을 위험이 있습니다. 정말로 이 모드를 추가하시겠습니까?");
+
+            TextArea textArea = new TextArea(String.join("\n", suspicious));
+            textArea.setEditable(false);
+            textArea.setWrapText(false);
+            textArea.setMaxWidth(Double.MAX_VALUE);
+            textArea.setMaxHeight(Double.MAX_VALUE);
+            GridPane.setVgrow(textArea, Priority.ALWAYS);
+            GridPane.setHgrow(textArea, Priority.ALWAYS);
+
+            GridPane expContent = new GridPane();
+            expContent.setMaxWidth(Double.MAX_VALUE);
+            expContent.add(new javafx.scene.control.Label("의심스러운 참조 목록:"), 0, 0);
+            expContent.add(textArea, 0, 1);
+
+            alert.getDialogPane().setExpandableContent(expContent);
+            alert.getDialogPane().setExpanded(true);
+
+            ButtonType btnYes = new ButtonType("무시하고 추가");
+            ButtonType btnNo = new ButtonType("취소", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+            alert.getButtonTypes().setAll(btnYes, btnNo);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isEmpty() || result.get() == btnNo) {
+                return; // 추가 취소 ✨
+            }
+        }
+
         File modsDir = new File(context.projectRoot, "mods");
         if (!modsDir.exists()) modsDir.mkdirs();
 
