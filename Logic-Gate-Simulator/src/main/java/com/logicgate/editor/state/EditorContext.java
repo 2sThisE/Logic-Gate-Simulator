@@ -88,6 +88,10 @@ public class EditorContext {
     public boolean isPlacingImport = false;
     public ProjectData pendingProjectData = null;
     public String placingNodeTypeId = null; // 단일 부품 연속 배치 모드용 💖
+    
+    // Snapping state
+    public Double snapLineX = null;
+    public Double snapLineY = null;
 
     public final Set<KeyCode> activeKeys = new HashSet<>();
     public final HistoryManager historyManager;

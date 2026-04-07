@@ -142,16 +142,9 @@ public class CanvasRenderer {
             gc.setGlobalAlpha(0.5);
             Node dummyNode = NodeFactory.createNodeByType(context.placingNodeTypeId);
             if (dummyNode != null) {
-                double nodeWidth = 80;
-                double nodeHeight = 50;
-                if (dummyNode instanceof com.logicgate.gates.InputPin || dummyNode instanceof com.logicgate.gates.OutputPin) {
-                    nodeWidth = 50;
-                } else if (dummyNode instanceof com.logicgate.gates.Joint) {
-                    nodeWidth = 30;
-                    nodeHeight = 30;
-                }
-                
-                VisualNode dummyVn = new VisualNode(dummyNode, context.worldMouseX - (nodeWidth / 2), context.worldMouseY - (nodeHeight / 2), "");
+                VisualNode dummyVn = new VisualNode(dummyNode, 0, 0, "");
+                dummyVn.x = context.worldMouseX - (dummyVn.width / 2);
+                dummyVn.y = context.worldMouseY - (dummyVn.height / 2);
                 dummyVn.draw(gc, false, false, -1, -1, null, false);
             }
             gc.setGlobalAlpha(1.0);
@@ -168,6 +161,26 @@ public class CanvasRenderer {
             gc.setStroke(Color.web("#4A90E2", 0.8));
             gc.setLineWidth(1 / context.zoom);
             gc.strokeRect(x1, y1, width, height);
+        }
+
+        if (context.snapLineX != null) {
+            gc.setStroke(Color.web("#00FFFF", 0.8));
+            gc.setLineWidth(1 / context.zoom);
+            gc.setLineDashes(5 / context.zoom);
+            double worldMinY = -context.cameraY / context.zoom;
+            double worldMaxY = (canvas.getHeight() - context.cameraY) / context.zoom;
+            gc.strokeLine(context.snapLineX, worldMinY, context.snapLineX, worldMaxY);
+            gc.setLineDashes(null);
+        }
+
+        if (context.snapLineY != null) {
+            gc.setStroke(Color.web("#00FFFF", 0.8));
+            gc.setLineWidth(1 / context.zoom);
+            gc.setLineDashes(5 / context.zoom);
+            double worldMinX = -context.cameraX / context.zoom;
+            double worldMaxX = (canvas.getWidth() - context.cameraX) / context.zoom;
+            gc.strokeLine(worldMinX, context.snapLineY, worldMaxX, context.snapLineY);
+            gc.setLineDashes(null);
         }
 
         gc.restore();

@@ -2,6 +2,7 @@
   "name": "testproject",
   "version": "1.0",
   "loadedMods": [
-    "logicgate-arithmetic-mod-1.0-SNAPSHOT.jar"
+    "logicgate-arithmetic-mod-1.0-SNAPSHOT.jar",
+    "seven-segment-mod-1.0-SNAPSHOT.jar"
   ]
 }

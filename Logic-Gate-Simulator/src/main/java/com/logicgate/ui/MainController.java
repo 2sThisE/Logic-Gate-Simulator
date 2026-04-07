@@ -131,28 +131,33 @@ public class MainController {
         // 💖 로그 패널 설정
         if (consoleListView != null) {
             consoleListView.setItems(consoleMessages);
-            redirectSystemOutAndErr(); 
+            redirectSystemOutAndErr();
+            setupLogContextMenu();
+        }
+    }
+
+    private void setupLogContextMenu() {
+        if (errorButton == null) return;
+
+        javafx.scene.control.ContextMenu logMenu = new javafx.scene.control.ContextMenu();
+        javafx.scene.control.MenuItem clearItem = new javafx.scene.control.MenuItem("로그 지우기");
+        clearItem.setOnAction(e -> clearLogs());
+        logMenu.getItems().add(clearItem);
+
+        errorButton.setContextMenu(logMenu);
+    }
+
+    private void clearLogs() {
+        consoleMessages.clear();
+        errorCount = 0;
+        if (errorButton != null) {
+            errorButton.setText("0 로그");
+            errorButton.getStyleClass().remove("status-btn-error");
         }
     }
 
     private void redirectSystemOutAndErr() {
-        PrintStream originalOut = System.out;
         PrintStream originalErr = System.err;
-
-        System.setOut(new PrintStream(new OutputStream() {
-            private StringBuilder buffer = new StringBuilder();
-            @Override
-            public void write(int b) {
-                originalOut.write(b);
-                if (b == '\n') {
-                    String msg = buffer.toString();
-                    buffer.setLength(0);
-                    Platform.runLater(() -> addLog("[INFO] " + msg, false));
-                } else if (b != '\r') {
-                    buffer.append((char) b);
-                }
-            }
-        }, true));
 
         System.setErr(new PrintStream(new OutputStream() {
             private StringBuilder buffer = new StringBuilder();
@@ -411,9 +416,13 @@ public class MainController {
             new TreeItem<>("XNOR Gate")
         );
         
-        TreeItem<String> inOut = new TreeItem<>("In/Output");
-        inOut.getChildren().addAll(
-            new TreeItem<>("Switch"),
+        TreeItem<String> inputItem = new TreeItem<>("Input");
+        inputItem.getChildren().addAll(
+            new TreeItem<>("Switch")
+        );
+        
+        TreeItem<String> outputItem = new TreeItem<>("Output");
+        outputItem.getChildren().addAll(
             new TreeItem<>("LED")
         );
         
@@ -422,11 +431,12 @@ public class MainController {
             new TreeItem<>("Joint (1:4)")
         );
         
-        root.getChildren().addAll(gates, inOut, etc);
+        root.getChildren().addAll(gates, inputItem, outputItem, etc);
         componentTreeView.setRoot(root);
         componentTreeView.setShowRoot(false);
         gates.setExpanded(true);
-        inOut.setExpanded(true);
+        inputItem.setExpanded(true);
+        outputItem.setExpanded(true);
         etc.setExpanded(true);
 
         componentTreeView.setOnMouseClicked(event -> {
@@ -460,7 +470,7 @@ public class MainController {
         TreeItem<String> root = componentTreeView.getRoot();
         
         // 커스텀 부품들만 트리에서 제거하고 다시 로드 🔪💕
-        root.getChildren().removeIf(item -> !List.of("Gate", "In/Output", "Etc").contains(item.getValue()));
+        root.getChildren().removeIf(item -> !List.of("Gate", "Input", "Output", "Etc").contains(item.getValue()));
         customComponentMap.clear();
 
         for (ModComponentInfo mod : mods) {

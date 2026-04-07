@@ -1,9 +1,7 @@
 package com.logicgate.mods.arithmetic;
 
-import com.logicgate.gates.Node;
 import com.logicgate.editor.mod.ComponentMeta;
-import java.io.*;
-import java.net.URI;
+import com.logicgate.gates.Node;
 
 @ComponentMeta(section = "Arithmetic", name = "Full Adder", typeId = "FULL_ADDER")
 public class FullAdderNode extends Node {
@@ -14,7 +12,6 @@ public class FullAdderNode extends Node {
 
     @Override
     public void compute(){
-        int c=1/0;
         int a = (in & 1);
         int b = (in >> 1) & 1;
         int cin = (in >> 2) & 1;

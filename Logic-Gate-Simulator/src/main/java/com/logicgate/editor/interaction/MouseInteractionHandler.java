@@ -1,20 +1,18 @@
 package com.logicgate.editor.interaction;
 
+import com.logicgate.editor.io.NodeData;
+import com.logicgate.editor.io.WireData;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.state.EditorContext;
-import com.logicgate.editor.io.NodeData;
-import com.logicgate.editor.io.WireData;
 import com.logicgate.editor.utils.NodeFactory;
 import com.logicgate.gates.InputPin;
 import com.logicgate.gates.Joint;
 import com.logicgate.gates.Node;
+
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class MouseInteractionHandler {
     private final EditorContext context;
@@ -25,10 +23,93 @@ public class MouseInteractionHandler {
         this.wiringManager = wiringManager;
     }
 
+    private void applyPlacementSnapping(MouseEvent event) {
+        context.snapLineX = null;
+        context.snapLineY = null;
+        
+        if (event.isShiftDown()) return;
+        
+        double nodeWidth = 0;
+        double nodeHeight = 0;
+        double targetX = context.worldMouseX;
+        double targetY = context.worldMouseY;
+        
+        if (context.placingNodeTypeId != null) {
+            Node logicNode = NodeFactory.createNodeByType(context.placingNodeTypeId);
+            if (logicNode != null) {
+                VisualNode dummyVn = new VisualNode(logicNode, 0, 0, "");
+                nodeWidth = dummyVn.width;
+                nodeHeight = dummyVn.height;
+                targetX = context.worldMouseX - (nodeWidth / 2);
+                targetY = context.worldMouseY - (nodeHeight / 2);
+            } else {
+                return;
+            }
+        } else if (context.isPlacingImport && context.pendingProjectData != null && !context.pendingProjectData.nodes.isEmpty()) {
+            targetX = context.worldMouseX;
+            targetY = context.worldMouseY;
+            nodeWidth = 0;
+            nodeHeight = 0;
+        } else {
+            return;
+        }
+        
+        double snapThreshold = 10.0 / context.zoom;
+        
+        double[] primaryXs = { targetX, targetX + nodeWidth / 2, targetX + nodeWidth };
+        double[] primaryYs = { targetY, targetY + nodeHeight / 2, targetY + nodeHeight };
+        
+        double minDiffX = snapThreshold;
+        double minDiffY = snapThreshold;
+        boolean snappedX = false;
+        boolean snappedY = false;
+        Double bestSnapLineX = null;
+        Double bestSnapLineY = null;
+
+        for (VisualNode other : context.visualNodes) {
+            if (context.selectedNodes.contains(other)) continue;
+
+            double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
+            double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };
+
+            for (double px : primaryXs) {
+                for (double ox : otherXs) {
+                    double diff = ox - px;
+                    if (Math.abs(diff) < Math.abs(minDiffX)) {
+                        minDiffX = diff;
+                        snappedX = true;
+                        bestSnapLineX = ox;
+                    }
+                }
+            }
+
+            for (double py : primaryYs) {
+                for (double oy : otherYs) {
+                    double diff = oy - py;
+                    if (Math.abs(diff) < Math.abs(minDiffY)) {
+                        minDiffY = diff;
+                        snappedY = true;
+                        bestSnapLineY = oy;
+                    }
+                }
+            }
+        }
+        
+        if (snappedX) {
+            context.worldMouseX += minDiffX;
+            context.snapLineX = bestSnapLineX;
+        }
+        if (snappedY) {
+            context.worldMouseY += minDiffY;
+            context.snapLineY = bestSnapLineY;
+        }
+    }
+
     public void handleMouseMoved(MouseEvent event) {
         context.screenMouseX = event.getX();
         context.screenMouseY = event.getY();
         context.updateWorldCoordinates();
+        applyPlacementSnapping(event);
         updateHoverState();
     }
 
@@ -56,6 +137,7 @@ public class MouseInteractionHandler {
         context.screenMouseX = event.getX();
         context.screenMouseY = event.getY();
         context.updateWorldCoordinates();
+        applyPlacementSnapping(event);
         updateHoverState();
 
         if (event.getButton() == MouseButton.PRIMARY) {
@@ -71,16 +153,9 @@ public class MouseInteractionHandler {
                     context.historyManager.saveState();
                     context.getCircuit().addNode(logicNode);
                     
-                    double nodeWidth = 80;
-                    double nodeHeight = 50;
-                    if (logicNode instanceof InputPin || logicNode instanceof com.logicgate.gates.OutputPin) {
-                        nodeWidth = 50;
-                    } else if (logicNode instanceof Joint) {
-                        nodeWidth = 30;
-                        nodeHeight = 30;
-                    }
-                    
-                    VisualNode vn = new VisualNode(logicNode, context.worldMouseX - (nodeWidth / 2), context.worldMouseY - (nodeHeight / 2), "");
+                    VisualNode vn = new VisualNode(logicNode, 0, 0, "");
+                    vn.x = context.worldMouseX - (vn.width / 2);
+                    vn.y = context.worldMouseY - (vn.height / 2);
                     context.visualNodes.add(vn);
                     context.setDirty(true);
                 }
@@ -103,7 +178,7 @@ public class MouseInteractionHandler {
                                 context.selectedNodes.add(vn);
                             }
                         }
-                    } else if (event.isShiftDown()) {
+                    } else if (event.isShortcutDown()) {
                         if (context.selectedNodes.contains(context.hoveredNode)) {
                             context.selectedNodes.remove(context.hoveredNode);
                         } else {
@@ -122,6 +197,7 @@ public class MouseInteractionHandler {
                     if (context.hoveredNode.node instanceof InputPin) {
                         InputPin pin = (InputPin) context.hoveredNode.node;
                         pin.setState(pin.getOut() == 0);
+                        context.setDirty(true);
                     }
                     context.historyManager.saveState();
                     context.draggingNode = context.hoveredNode;
@@ -204,6 +280,64 @@ public class MouseInteractionHandler {
             double dx = context.worldMouseX - context.dragOffsetX;
             double dy = context.worldMouseY - context.dragOffsetY;
             
+            context.snapLineX = null;
+            context.snapLineY = null;
+            
+            if (!event.isShiftDown()) {
+                double snapThreshold = 10.0 / context.zoom;
+                VisualNode primaryNode = context.draggingNode;
+                double targetX = primaryNode.getDragStartX() + dx;
+                double targetY = primaryNode.getDragStartY() + dy;
+                
+                double[] primaryXs = { targetX, targetX + primaryNode.width / 2, targetX + primaryNode.width };
+                double[] primaryYs = { targetY, targetY + primaryNode.height / 2, targetY + primaryNode.height };
+                
+                double minDiffX = snapThreshold;
+                double minDiffY = snapThreshold;
+                boolean snappedX = false;
+                boolean snappedY = false;
+                Double bestSnapLineX = null;
+                Double bestSnapLineY = null;
+
+                for (VisualNode other : context.visualNodes) {
+                    if (context.selectedNodes.contains(other)) continue;
+
+                    double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
+                    double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };
+
+                    for (double px : primaryXs) {
+                        for (double ox : otherXs) {
+                            double diff = ox - px;
+                            if (Math.abs(diff) < Math.abs(minDiffX)) {
+                                minDiffX = diff;
+                                snappedX = true;
+                                bestSnapLineX = ox;
+                            }
+                        }
+                    }
+
+                    for (double py : primaryYs) {
+                        for (double oy : otherYs) {
+                            double diff = oy - py;
+                            if (Math.abs(diff) < Math.abs(minDiffY)) {
+                                minDiffY = diff;
+                                snappedY = true;
+                                bestSnapLineY = oy;
+                            }
+                        }
+                    }
+                }
+                
+                if (snappedX) {
+                    dx += minDiffX;
+                    context.snapLineX = bestSnapLineX;
+                }
+                if (snappedY) {
+                    dy += minDiffY;
+                    context.snapLineY = bestSnapLineY;
+                }
+            }
+
             for (VisualNode vn : context.selectedNodes) {
                 vn.x = vn.getDragStartX() + dx;
                 vn.y = vn.getDragStartY() + dy;
@@ -223,6 +357,9 @@ public class MouseInteractionHandler {
         context.screenMouseY = event.getY();
         context.updateWorldCoordinates();
         updateHoverState();
+        
+        context.snapLineX = null;
+        context.snapLineY = null;
 
         if (context.isSelecting) {
             double x1 = Math.min(context.selectionStartX, context.selectionEndX);
@@ -256,6 +393,12 @@ public class MouseInteractionHandler {
                         wiringManager.connectWires(context.hoveredNode, context.hoveredOutPin, context.wiringNode, context.wiringPin);
                     }
                 }
+            }
+        }
+
+        if (context.draggingNode != null) {
+            if (context.worldMouseX != context.dragOffsetX || context.worldMouseY != context.dragOffsetY) {
+                context.setDirty(true);
             }
         }
 

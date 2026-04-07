@@ -50,7 +50,7 @@ public class KeyboardInteractionHandler {
                 }
                 break;
             case Z:
-                if (event.isControlDown()) {
+                if (event.isShortcutDown()) {
                     if (event.isShiftDown()) {
                         context.historyManager.redo();
                     } else {
@@ -59,7 +59,7 @@ public class KeyboardInteractionHandler {
                 }
                 break;
             case A:
-                if (event.isControlDown()) {
+                if (event.isShortcutDown()) {
                     context.selectedNodes.clear();
                     context.selectedNodes.addAll(context.visualNodes);
                     if (!context.selectedNodes.isEmpty()) {
@@ -69,12 +69,12 @@ public class KeyboardInteractionHandler {
                 }
                 break;
             case C:
-                if (event.isControlDown() && context.onCopyRequested != null) {
+                if (event.isShortcutDown() && context.onCopyRequested != null) {
                     context.onCopyRequested.run();
                 }
                 break;
             case V:
-                if (event.isControlDown() && context.onPasteRequested != null) {
+                if (event.isShortcutDown() && context.onPasteRequested != null) {
                     context.onPasteRequested.run();
                 }
                 break;
@@ -83,7 +83,7 @@ public class KeyboardInteractionHandler {
     }
 
     public void handleKeyReleased(KeyEvent event) {
-        if (event.getCode() == KeyCode.S && event.isControlDown() && context.onSaveRequested != null) {
+        if (event.getCode() == KeyCode.S && event.isShortcutDown() && context.onSaveRequested != null) {
             context.onSaveRequested.run(); // 키를 뗄 때 딱 한 번 저장! 🔪💕
         }
         context.activeKeys.remove(event.getCode());

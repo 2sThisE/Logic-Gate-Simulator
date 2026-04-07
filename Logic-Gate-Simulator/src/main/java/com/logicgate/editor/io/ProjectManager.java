@@ -75,7 +75,8 @@ public class ProjectManager {
         
         File lgsFile = new File(context.projectRoot, "circuit.lgs");
         saveBinaryCircuit(lgsFile);
-        System.out.println("프로젝트 바이너리 저장 완료: " + lgsFile.getAbsolutePath());
+        saveProjectConfig();
+        System.out.println("프로젝트 전체 저장 완료: " + context.projectRoot.getAbsolutePath());
         context.setDirty(false); // 초기화 ✨
     }
 
