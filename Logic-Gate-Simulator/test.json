@@ -3,91 +3,305 @@
     {
       "type": "Nand",
       "x": 156.0,
-      "y": 0.0,
+      "y": 93.30291874033605,
       "label": "Nand",
       "showLabel": false
     },
     {
       "type": "Nand",
       "x": 156.0,
-      "y": 50.0,
+      "y": 143.30291874033605,
       "label": "Nand",
       "showLabel": false
     },
     {
       "type": "Nand",
       "x": 156.0,
-      "y": 100.0,
+      "y": 193.30291874033605,
       "label": "Nand",
       "showLabel": false
     },
     {
       "type": "Nand",
       "x": 156.0,
-      "y": 150.0,
+      "y": 243.30291874033605,
       "label": "Nand",
       "showLabel": false
     },
     {
       "type": "Nand",
       "x": 300.0,
-      "y": 50.0,
+      "y": 143.30291874033605,
       "label": "Nand",
       "showLabel": false
     },
     {
       "type": "Nand",
       "x": 300.0,
-      "y": 141.37185180368328,
+      "y": 234.67477054401934,
       "label": "Nand",
       "showLabel": false
     },
     {
       "type": "And",
       "x": 0.0,
-      "y": 75.0,
+      "y": 168.30291874033605,
       "label": "And",
       "showLabel": false
     },
     {
-      "type": "InputPin",
-      "x": 80.0,
-      "y": 150.0,
-      "label": "Switch",
-      "showLabel": false
-    },
-    {
-      "type": "Not",
-      "x": 76.0,
-      "y": 257.0000000000001,
-      "label": "Not",
-      "showLabel": false
-    },
-    {
-      "type": "Not",
-      "x": 76.0,
-      "y": 282.0000000000001,
-      "label": "Not",
-      "showLabel": false
-    },
-    {
-      "type": "Not",
-      "x": 76.0,
-      "y": 307.0000000000001,
-      "label": "Not",
-      "showLabel": false
-    },
-    {
       "type": "OutputPin",
       "x": 490.02252578375817,
-      "y": 50.0,
+      "y": 243.30291874033605,
       "label": "LED",
       "showLabel": false
     },
     {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 558.7383415923218,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 608.7383415923218,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 658.7383415923218,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 708.7383415923218,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 758.7383415923218,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 808.7383415923218,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 858.738341592322,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 908.738341592322,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 40.71012814325081,
+      "y": 958.738341592322,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 561.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 611.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 661.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 711.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 761.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 811.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 861.6713808752194,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 148.17068213735115,
+      "y": 911.6713808752194,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 561.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 611.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 661.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 711.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 761.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 811.6713808752193,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 861.6713808752194,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "Not",
+      "x": 300.0,
+      "y": 911.6713808752194,
+      "label": "Not",
+      "showLabel": false,
+      "group": "clock"
+    },
+    {
+      "type": "And",
+      "x": 985.7335842904108,
+      "y": 0.0,
+      "label": "And",
+      "showLabel": false
+    },
+    {
+      "type": "And",
+      "x": 985.7335842904108,
+      "y": 50.0,
+      "label": "And",
+      "showLabel": false
+    },
+    {
+      "type": "Or",
+      "x": 1065.7335842904108,
+      "y": 25.0,
+      "label": "Or",
+      "showLabel": false
+    },
+    {
+      "type": "Not",
+      "x": 873.1324665143927,
+      "y": 50.0,
+      "label": "Not",
+      "showLabel": false
+    },
+    {
+      "type": "InputPin",
+      "x": 787.4497480092002,
+      "y": 168.30291874033605,
+      "label": "Switch",
+      "showLabel": false
+    },
+    {
+      "type": "InputPin",
+      "x": 708.6518866027392,
+      "y": 75.0,
+      "label": "Switch",
+      "showLabel": false
+    },
+    {
       "type": "OutputPin",
-      "x": 490.02252578375817,
-      "y": 150.0,
+      "x": 440.02252578375817,
+      "y": 0.0,
       "label": "LED",
       "showLabel": false
     }
@@ -118,22 +332,10 @@
       "inPin": 0
     },
     {
-      "fromIdx": 7,
-      "outPin": 0,
-      "toIdx": 3,
-      "inPin": 1
-    },
-    {
       "fromIdx": 6,
       "outPin": 0,
       "toIdx": 2,
       "inPin": 1
-    },
-    {
-      "fromIdx": 1,
-      "outPin": 0,
-      "toIdx": 2,
-      "inPin": 0
     },
     {
       "fromIdx": 1,
@@ -166,7 +368,13 @@
       "inPin": 1
     },
     {
-      "fromIdx": 10,
+      "fromIdx": 5,
+      "outPin": 0,
+      "toIdx": 7,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 8,
       "outPin": 0,
       "toIdx": 9,
       "inPin": 0
@@ -174,19 +382,193 @@
     {
       "fromIdx": 9,
       "outPin": 0,
-      "toIdx": 8,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 8,
-      "outPin": 0,
       "toIdx": 10,
       "inPin": 0
     },
     {
-      "fromIdx": 8,
+      "fromIdx": 10,
       "outPin": 0,
-      "toIdx": 6,
+      "toIdx": 11,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 11,
+      "outPin": 0,
+      "toIdx": 12,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 12,
+      "outPin": 0,
+      "toIdx": 13,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 13,
+      "outPin": 0,
+      "toIdx": 14,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 14,
+      "outPin": 0,
+      "toIdx": 15,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 15,
+      "outPin": 0,
+      "toIdx": 16,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 17,
+      "outPin": 0,
+      "toIdx": 18,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 18,
+      "outPin": 0,
+      "toIdx": 19,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 19,
+      "outPin": 0,
+      "toIdx": 20,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 20,
+      "outPin": 0,
+      "toIdx": 21,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 21,
+      "outPin": 0,
+      "toIdx": 22,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 22,
+      "outPin": 0,
+      "toIdx": 23,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 23,
+      "outPin": 0,
+      "toIdx": 24,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 16,
+      "outPin": 0,
+      "toIdx": 17,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 25,
+      "outPin": 0,
+      "toIdx": 26,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 26,
+      "outPin": 0,
+      "toIdx": 27,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 27,
+      "outPin": 0,
+      "toIdx": 28,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 28,
+      "outPin": 0,
+      "toIdx": 29,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 29,
+      "outPin": 0,
+      "toIdx": 30,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 30,
+      "outPin": 0,
+      "toIdx": 31,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 31,
+      "outPin": 0,
+      "toIdx": 32,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 24,
+      "outPin": 0,
+      "toIdx": 25,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 32,
+      "outPin": 0,
+      "toIdx": 8,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 33,
+      "outPin": 0,
+      "toIdx": 35,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 34,
+      "outPin": 0,
+      "toIdx": 35,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 36,
+      "outPin": 0,
+      "toIdx": 34,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 37,
+      "outPin": 0,
+      "toIdx": 36,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 37,
+      "outPin": 0,
+      "toIdx": 33,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 38,
+      "outPin": 0,
+      "toIdx": 34,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 35,
+      "outPin": 0,
+      "toIdx": 3,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 4,
+      "outPin": 0,
+      "toIdx": 33,
       "inPin": 0
     },
     {
@@ -196,15 +578,15 @@
       "inPin": 1
     },
     {
-      "fromIdx": 4,
+      "fromIdx": 8,
       "outPin": 0,
-      "toIdx": 11,
+      "toIdx": 2,
       "inPin": 0
     },
     {
-      "fromIdx": 5,
+      "fromIdx": 4,
       "outPin": 0,
-      "toIdx": 12,
+      "toIdx": 39,
       "inPin": 0
     }
   ]
