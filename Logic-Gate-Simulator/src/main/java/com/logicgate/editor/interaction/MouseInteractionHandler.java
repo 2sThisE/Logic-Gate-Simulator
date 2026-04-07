@@ -54,7 +54,8 @@ public class MouseInteractionHandler {
             return;
         }
         
-        double snapThreshold = 10.0 / context.zoom;
+        double snapThreshold = 8.0 / context.zoom; // 감도 약간 하향 ✨
+        double maxSnapDistance = 600.0; // 너무 멀면 스냅 안 함 🔪💕
         
         double[] primaryXs = { targetX, targetX + nodeWidth / 2, targetX + nodeWidth };
         double[] primaryYs = { targetY, targetY + nodeHeight / 2, targetY + nodeHeight };
@@ -68,6 +69,10 @@ public class MouseInteractionHandler {
 
         for (VisualNode other : context.visualNodes) {
             if (context.selectedNodes.contains(other)) continue;
+            
+            // 거리 체크: 너무 멀리 있는 부품은 무시 ✨
+            double dist = Math.hypot(targetX - other.x, targetY - other.y);
+            if (dist > maxSnapDistance) continue;
 
             double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
             double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };

@@ -20,7 +20,7 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
         prepareFill(gc, vn, isHovered, isSelected);
         
         // 디스플레이 배경
-        gc.setFill(Color.web("#ffffff"));
+        gc.setFill(Color.web("#3c3c3c"));
         gc.fillRoundRect(0, 0, vn.width, vn.height, 8, 8);
         gc.strokeRoundRect(0, 0, vn.width, vn.height, 8, 8);
         
@@ -36,7 +36,7 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
     protected void drawExtra(GraphicsContext gc, VisualNode vn) {
         int in = vn.node.getIn();
         Color onColor = Color.web("#FF2222");
-        Color offColor = Color.web("#8c8c8c");
+        Color offColor = Color.web("#696969");
 
         double w = vn.width;
         double h = vn.height;

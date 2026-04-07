@@ -2,327 +2,346 @@
   "nodes": [
     {
       "type": "InputPin",
-      "x": 0.0,
+      "x": 69.99999999999991,
       "y": 0.0,
-      "label": "A"
+      "label": "A",
+      "showLabel": false
     },
     {
       "type": "InputPin",
-      "x": 0.0,
+      "x": 69.99999999999991,
       "y": 120.0,
-      "label": "B"
+      "label": "B",
+      "showLabel": false
     },
     {
       "type": "InputPin",
-      "x": 0.0,
+      "x": 69.99999999999991,
       "y": 240.0,
-      "label": "C"
+      "label": "C",
+      "showLabel": false
     },
     {
       "type": "InputPin",
-      "x": 0.0,
+      "x": 69.99999999999991,
       "y": 360.0,
-      "label": "D"
+      "label": "D",
+      "showLabel": false
     },
     {
       "type": "Not",
-      "x": 180.0,
+      "x": 249.9999999999999,
       "y": 0.0,
-      "label": "NOT_A"
+      "label": "NOT_A",
+      "showLabel": false
     },
     {
       "type": "Not",
-      "x": 180.0,
+      "x": 249.9999999999999,
       "y": 120.0,
-      "label": "NOT_B"
+      "label": "NOT_B",
+      "showLabel": false
     },
     {
       "type": "Not",
-      "x": 180.0,
+      "x": 249.9999999999999,
       "y": 240.0,
-      "label": "NOT_C"
+      "label": "NOT_C",
+      "showLabel": false
     },
     {
       "type": "Not",
-      "x": 180.0,
+      "x": 249.9999999999999,
       "y": 360.0,
-      "label": "NOT_D"
+      "label": "NOT_D",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 80.0,
-      "label": "a_BD"
+      "label": "a_BD",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 200.0,
-      "label": "a_nBnD"
+      "label": "a_nBnD",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 760.0,
+      "x": 829.9999999999999,
       "y": 20.0,
-      "label": "a_or1"
+      "label": "a_or1",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1040.0,
+      "x": 1110.0,
       "y": 110.0,
-      "label": "a_or2"
+      "label": "a_or2",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1320.0,
+      "x": 1390.0,
       "y": 170.0,
-      "label": "a_or3"
-    },
-    {
-      "type": "OutputPin",
-      "x": 1650.0,
-      "y": 170.0,
-      "label": "a"
+      "label": "a_or3",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 500.0,
-      "label": "b_CD"
+      "label": "b_CD",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 620.0,
-      "label": "b_nCnD"
+      "label": "b_nCnD",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 900.0,
+      "x": 970.0,
       "y": 500.0,
-      "label": "b_or1"
+      "label": "b_or1",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1220.0,
+      "x": 1290.0,
       "y": 590.0,
-      "label": "b_or2"
-    },
-    {
-      "type": "OutputPin",
-      "x": 1650.0,
-      "y": 590.0,
-      "label": "b"
+      "label": "b_or2",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 760.0,
+      "x": 829.9999999999999,
       "y": 920.0,
-      "label": "c_or1"
+      "label": "c_or1",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1080.0,
+      "x": 1150.0,
       "y": 1010.0,
-      "label": "c_or2"
-    },
-    {
-      "type": "OutputPin",
-      "x": 1650.0,
-      "y": 1010.0,
-      "label": "c"
+      "label": "c_or2",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 1260.0,
-      "label": "d_t1a"
+      "label": "d_t1a",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 700.0,
+      "x": 769.9999999999999,
       "y": 1260.0,
-      "label": "d_t1"
+      "label": "d_t1",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 1380.0,
-      "label": "d_t2a"
+      "label": "d_t2a",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 700.0,
+      "x": 769.9999999999999,
       "y": 1380.0,
-      "label": "d_t2"
+      "label": "d_t2",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 1500.0,
-      "label": "d_t3a"
+      "label": "d_t3a",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 700.0,
+      "x": 769.9999999999999,
       "y": 1500.0,
-      "label": "d_t3"
+      "label": "d_t3",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 1620.0,
-      "label": "d_t4a"
+      "label": "d_t4a",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 700.0,
+      "x": 769.9999999999999,
       "y": 1620.0,
-      "label": "d_t4"
+      "label": "d_t4",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 980.0,
+      "x": 1050.0,
       "y": 1260.0,
-      "label": "d_or1"
+      "label": "d_or1",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1180.0,
+      "x": 1250.0,
       "y": 1360.0,
-      "label": "d_or2"
+      "label": "d_or2",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1380.0,
+      "x": 1450.0,
       "y": 1460.0,
-      "label": "d_or3"
+      "label": "d_or3",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1580.0,
+      "x": 1650.0,
       "y": 1560.0,
-      "label": "d_or4"
-    },
-    {
-      "type": "OutputPin",
-      "x": 1850.0,
-      "y": 1560.0,
-      "label": "d"
+      "label": "d_or4",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 760.0,
+      "x": 829.9999999999999,
       "y": 1880.0,
-      "label": "e_or1"
+      "label": "e_or1",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 1080.0,
+      "x": 1150.0,
       "y": 1970.0,
-      "label": "e_and1"
-    },
-    {
-      "type": "OutputPin",
-      "x": 1650.0,
-      "y": 1970.0,
-      "label": "e"
+      "label": "e_and1",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 2220.0,
-      "label": "f_nCnD"
+      "label": "f_nCnD",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 2340.0,
-      "label": "f_BnC"
+      "label": "f_BnC",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 2460.0,
-      "label": "f_BnD"
+      "label": "f_BnD",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 860.0,
+      "x": 930.0,
       "y": 2220.0,
-      "label": "f_or1"
+      "label": "f_or1",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1140.0,
+      "x": 1210.0,
       "y": 2320.0,
-      "label": "f_or2"
+      "label": "f_or2",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1420.0,
+      "x": 1490.0,
       "y": 2420.0,
-      "label": "f_or3"
+      "label": "f_or3",
+      "showLabel": false
     },
     {
       "type": "OutputPin",
-      "x": 1650.0,
+      "x": 1720.0,
       "y": 2420.0,
-      "label": "f"
+      "label": "f",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 2640.0,
-      "label": "g_nBC"
+      "label": "g_nBC",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 2760.0,
-      "label": "g_BnC"
+      "label": "g_BnC",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 2880.0,
-      "label": "g_CnD"
+      "label": "g_CnD",
+      "showLabel": false
     },
     {
       "type": "And",
-      "x": 420.0,
+      "x": 489.9999999999999,
       "y": 3000.0,
-      "label": "g_BnD"
+      "label": "g_BnD",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 860.0,
+      "x": 930.0,
       "y": 2640.0,
-      "label": "g_or1"
+      "label": "g_or1",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1120.0,
+      "x": 1190.0,
       "y": 2740.0,
-      "label": "g_or2"
+      "label": "g_or2",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1380.0,
+      "x": 1450.0,
       "y": 2840.0,
-      "label": "g_or3"
+      "label": "g_or3",
+      "showLabel": false
     },
     {
       "type": "Or",
-      "x": 1640.0,
+      "x": 1710.0,
       "y": 2940.0,
-      "label": "g_or4"
+      "label": "g_or4",
+      "showLabel": false
     },
     {
-      "type": "OutputPin",
-      "x": 1920.0,
-      "y": 2940.0,
-      "label": "g"
+      "type": "SevenSegment",
+      "x": 0.0,
+      "y": 505.00000000000006,
+      "label": "SevenSegment",
+      "showLabel": false
     }
   ],
   "wires": [
@@ -411,37 +430,43 @@
       "inPin": 1
     },
     {
-      "fromIdx": 12,
+      "fromIdx": 2,
       "outPin": 0,
       "toIdx": 13,
       "inPin": 0
     },
     {
-      "fromIdx": 2,
-      "outPin": 0,
-      "toIdx": 14,
-      "inPin": 0
-    },
-    {
       "fromIdx": 3,
       "outPin": 0,
-      "toIdx": 14,
+      "toIdx": 13,
       "inPin": 1
     },
     {
       "fromIdx": 6,
       "outPin": 0,
-      "toIdx": 15,
+      "toIdx": 14,
       "inPin": 0
     },
     {
       "fromIdx": 7,
       "outPin": 0,
-      "toIdx": 15,
+      "toIdx": 14,
       "inPin": 1
     },
     {
       "fromIdx": 5,
+      "outPin": 0,
+      "toIdx": 15,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 13,
+      "outPin": 0,
+      "toIdx": 15,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 15,
       "outPin": 0,
       "toIdx": 16,
       "inPin": 0
@@ -453,13 +478,13 @@
       "inPin": 1
     },
     {
-      "fromIdx": 16,
+      "fromIdx": 1,
       "outPin": 0,
       "toIdx": 17,
       "inPin": 0
     },
     {
-      "fromIdx": 15,
+      "fromIdx": 3,
       "outPin": 0,
       "toIdx": 17,
       "inPin": 1
@@ -471,13 +496,19 @@
       "inPin": 0
     },
     {
-      "fromIdx": 1,
+      "fromIdx": 6,
+      "outPin": 0,
+      "toIdx": 18,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 5,
       "outPin": 0,
       "toIdx": 19,
       "inPin": 0
     },
     {
-      "fromIdx": 3,
+      "fromIdx": 2,
       "outPin": 0,
       "toIdx": 19,
       "inPin": 1
@@ -489,97 +520,103 @@
       "inPin": 0
     },
     {
-      "fromIdx": 6,
+      "fromIdx": 7,
       "outPin": 0,
       "toIdx": 20,
       "inPin": 1
     },
     {
-      "fromIdx": 20,
+      "fromIdx": 5,
       "outPin": 0,
       "toIdx": 21,
       "inPin": 0
     },
     {
-      "fromIdx": 5,
+      "fromIdx": 6,
+      "outPin": 0,
+      "toIdx": 21,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 21,
       "outPin": 0,
       "toIdx": 22,
       "inPin": 0
     },
     {
-      "fromIdx": 2,
+      "fromIdx": 7,
       "outPin": 0,
       "toIdx": 22,
       "inPin": 1
     },
     {
-      "fromIdx": 22,
+      "fromIdx": 5,
       "outPin": 0,
       "toIdx": 23,
       "inPin": 0
     },
     {
-      "fromIdx": 7,
+      "fromIdx": 6,
       "outPin": 0,
       "toIdx": 23,
       "inPin": 1
     },
     {
-      "fromIdx": 5,
+      "fromIdx": 23,
       "outPin": 0,
       "toIdx": 24,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 6,
-      "outPin": 0,
-      "toIdx": 24,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 24,
-      "outPin": 0,
-      "toIdx": 25,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 7,
-      "outPin": 0,
-      "toIdx": 25,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 5,
-      "outPin": 0,
-      "toIdx": 26,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 6,
-      "outPin": 0,
-      "toIdx": 26,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 26,
-      "outPin": 0,
-      "toIdx": 27,
       "inPin": 0
     },
     {
       "fromIdx": 3,
       "outPin": 0,
-      "toIdx": 27,
+      "toIdx": 24,
       "inPin": 1
     },
     {
       "fromIdx": 1,
       "outPin": 0,
-      "toIdx": 28,
+      "toIdx": 25,
       "inPin": 0
     },
     {
       "fromIdx": 2,
+      "outPin": 0,
+      "toIdx": 25,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 25,
+      "outPin": 0,
+      "toIdx": 26,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 7,
+      "outPin": 0,
+      "toIdx": 26,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 0,
+      "outPin": 0,
+      "toIdx": 27,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 20,
+      "outPin": 0,
+      "toIdx": 27,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 27,
+      "outPin": 0,
+      "toIdx": 28,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 22,
       "outPin": 0,
       "toIdx": 28,
       "inPin": 1
@@ -591,85 +628,91 @@
       "inPin": 0
     },
     {
-      "fromIdx": 7,
+      "fromIdx": 24,
       "outPin": 0,
       "toIdx": 29,
       "inPin": 1
     },
     {
-      "fromIdx": 0,
-      "outPin": 0,
-      "toIdx": 30,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 23,
-      "outPin": 0,
-      "toIdx": 30,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 30,
-      "outPin": 0,
-      "toIdx": 31,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 25,
-      "outPin": 0,
-      "toIdx": 31,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 31,
-      "outPin": 0,
-      "toIdx": 32,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 27,
-      "outPin": 0,
-      "toIdx": 32,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 32,
-      "outPin": 0,
-      "toIdx": 33,
-      "inPin": 0
-    },
-    {
       "fromIdx": 29,
       "outPin": 0,
-      "toIdx": 33,
-      "inPin": 1
+      "toIdx": 30,
+      "inPin": 0
     },
     {
-      "fromIdx": 33,
+      "fromIdx": 26,
       "outPin": 0,
-      "toIdx": 34,
-      "inPin": 0
+      "toIdx": 30,
+      "inPin": 1
     },
     {
       "fromIdx": 5,
       "outPin": 0,
-      "toIdx": 35,
+      "toIdx": 31,
       "inPin": 0
     },
     {
       "fromIdx": 2,
       "outPin": 0,
-      "toIdx": 35,
+      "toIdx": 31,
       "inPin": 1
     },
     {
       "fromIdx": 7,
       "outPin": 0,
+      "toIdx": 32,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 31,
+      "outPin": 0,
+      "toIdx": 32,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 6,
+      "outPin": 0,
+      "toIdx": 33,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 7,
+      "outPin": 0,
+      "toIdx": 33,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 1,
+      "outPin": 0,
+      "toIdx": 34,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 6,
+      "outPin": 0,
+      "toIdx": 34,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 1,
+      "outPin": 0,
+      "toIdx": 35,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 7,
+      "outPin": 0,
+      "toIdx": 35,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 0,
+      "outPin": 0,
       "toIdx": 36,
       "inPin": 0
     },
     {
-      "fromIdx": 35,
+      "fromIdx": 33,
       "outPin": 0,
       "toIdx": 36,
       "inPin": 1
@@ -681,184 +724,160 @@
       "inPin": 0
     },
     {
-      "fromIdx": 6,
+      "fromIdx": 34,
+      "outPin": 0,
+      "toIdx": 37,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 37,
       "outPin": 0,
       "toIdx": 38,
       "inPin": 0
     },
     {
-      "fromIdx": 7,
+      "fromIdx": 35,
       "outPin": 0,
       "toIdx": 38,
       "inPin": 1
     },
     {
-      "fromIdx": 1,
+      "fromIdx": 5,
       "outPin": 0,
-      "toIdx": 39,
+      "toIdx": 40,
       "inPin": 0
     },
     {
-      "fromIdx": 6,
+      "fromIdx": 2,
       "outPin": 0,
-      "toIdx": 39,
+      "toIdx": 40,
       "inPin": 1
     },
     {
       "fromIdx": 1,
       "outPin": 0,
-      "toIdx": 40,
+      "toIdx": 41,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 6,
+      "outPin": 0,
+      "toIdx": 41,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 2,
+      "outPin": 0,
+      "toIdx": 42,
       "inPin": 0
     },
     {
       "fromIdx": 7,
       "outPin": 0,
-      "toIdx": 40,
+      "toIdx": 42,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 1,
+      "outPin": 0,
+      "toIdx": 43,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 7,
+      "outPin": 0,
+      "toIdx": 43,
       "inPin": 1
     },
     {
       "fromIdx": 0,
-      "outPin": 0,
-      "toIdx": 41,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 38,
-      "outPin": 0,
-      "toIdx": 41,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 41,
-      "outPin": 0,
-      "toIdx": 42,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 39,
-      "outPin": 0,
-      "toIdx": 42,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 42,
-      "outPin": 0,
-      "toIdx": 43,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 40,
-      "outPin": 0,
-      "toIdx": 43,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 43,
       "outPin": 0,
       "toIdx": 44,
       "inPin": 0
     },
     {
-      "fromIdx": 5,
+      "fromIdx": 40,
+      "outPin": 0,
+      "toIdx": 44,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 44,
       "outPin": 0,
       "toIdx": 45,
       "inPin": 0
     },
     {
-      "fromIdx": 2,
+      "fromIdx": 41,
       "outPin": 0,
       "toIdx": 45,
       "inPin": 1
-    },
-    {
-      "fromIdx": 1,
-      "outPin": 0,
-      "toIdx": 46,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 6,
-      "outPin": 0,
-      "toIdx": 46,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 2,
-      "outPin": 0,
-      "toIdx": 47,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 7,
-      "outPin": 0,
-      "toIdx": 47,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 1,
-      "outPin": 0,
-      "toIdx": 48,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 7,
-      "outPin": 0,
-      "toIdx": 48,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 0,
-      "outPin": 0,
-      "toIdx": 49,
-      "inPin": 0
     },
     {
       "fromIdx": 45,
       "outPin": 0,
-      "toIdx": 49,
-      "inPin": 1
+      "toIdx": 46,
+      "inPin": 0
     },
     {
-      "fromIdx": 49,
+      "fromIdx": 42,
       "outPin": 0,
-      "toIdx": 50,
-      "inPin": 0
+      "toIdx": 46,
+      "inPin": 1
     },
     {
       "fromIdx": 46,
       "outPin": 0,
-      "toIdx": 50,
+      "toIdx": 47,
+      "inPin": 0
+    },
+    {
+      "fromIdx": 43,
+      "outPin": 0,
+      "toIdx": 47,
       "inPin": 1
     },
     {
-      "fromIdx": 50,
+      "fromIdx": 12,
       "outPin": 0,
-      "toIdx": 51,
+      "toIdx": 48,
       "inPin": 0
+    },
+    {
+      "fromIdx": 16,
+      "outPin": 0,
+      "toIdx": 48,
+      "inPin": 1
+    },
+    {
+      "fromIdx": 18,
+      "outPin": 0,
+      "toIdx": 48,
+      "inPin": 2
+    },
+    {
+      "fromIdx": 30,
+      "outPin": 0,
+      "toIdx": 48,
+      "inPin": 3
+    },
+    {
+      "fromIdx": 32,
+      "outPin": 0,
+      "toIdx": 48,
+      "inPin": 4
+    },
+    {
+      "fromIdx": 38,
+      "outPin": 0,
+      "toIdx": 48,
+      "inPin": 5
     },
     {
       "fromIdx": 47,
       "outPin": 0,
-      "toIdx": 51,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 51,
-      "outPin": 0,
-      "toIdx": 52,
-      "inPin": 0
-    },
-    {
-      "fromIdx": 48,
-      "outPin": 0,
-      "toIdx": 52,
-      "inPin": 1
-    },
-    {
-      "fromIdx": 52,
-      "outPin": 0,
-      "toIdx": 53,
-      "inPin": 0
+      "toIdx": 48,
+      "inPin": 6
     }
   ]
 }

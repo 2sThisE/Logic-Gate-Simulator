@@ -23,10 +23,8 @@ import javafx.collections.ObservableList;
 import javafx.application.Platform;
 import java.io.PrintStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class MainController {
 
@@ -49,6 +47,9 @@ public class MainController {
     @FXML
     private CheckBox showLabelCheckBox;
 
+    @FXML private TextField searchTextField;
+    @FXML private ListView<SearchResult> searchResultsListView;
+
     private TextField groupNameField;
     private javafx.scene.control.ContextMenu contextMenu;
 
@@ -63,6 +64,18 @@ public class MainController {
     
     private Map<String, String> customComponentMap = new HashMap<>();
     private javafx.stage.Stage primaryStage;
+
+    private static class SearchResult {
+        final String name;
+        final String type; // "Node" or "Group"
+        final Object target; // VisualNode or String (group name)
+
+        SearchResult(String name, String type, Object target) {
+            this.name = name;
+            this.type = type;
+            this.target = target;
+        }
+    }
 
     @FXML
     public void initialize() {
@@ -79,6 +92,7 @@ public class MainController {
         setupComponentTreeView();
         setupPropertyPane();
         setupContextMenu();
+        setupSearch();
 
         simulationCanvas.widthProperty().bind(canvasPane.widthProperty());
         simulationCanvas.heightProperty().bind(canvasPane.heightProperty());
@@ -134,6 +148,123 @@ public class MainController {
             redirectSystemOutAndErr();
             setupLogContextMenu();
         }
+    }
+
+    private void setupSearch() {
+        searchResultsListView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(SearchResult result, boolean empty) {
+                super.updateItem(result, empty);
+                if (empty || result == null) {
+                    setText(null);
+                } else {
+                    String icon = result.type.equals("Group") ? "📁" : "🧩";
+                    setText(String.format("%s %s (%s)", icon, result.name, result.type));
+                }
+            }
+        });
+
+        searchTextField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null || newVal.trim().isEmpty()) {
+                searchResultsListView.setVisible(false);
+                searchResultsListView.setManaged(false);
+            } else {
+                String query = newVal.toLowerCase();
+                List<SearchResult> results = new ArrayList<>();
+
+                // 1. 라벨 검색 ✨
+                context.visualNodes.stream()
+                    .filter(vn -> vn.label != null && vn.label.toLowerCase().contains(query))
+                    .forEach(vn -> results.add(new SearchResult(vn.label, vn.node.getTypeId(), vn)));
+
+                // 2. 그룹 검색 ✨
+                Set<String> uniqueGroups = context.visualNodes.stream()
+                    .map(vn -> vn.group)
+                    .filter(g -> g != null && !g.isEmpty())
+                    .collect(Collectors.toSet());
+                
+                uniqueGroups.stream()
+                    .filter(g -> g.toLowerCase().contains(query))
+                    .forEach(g -> results.add(new SearchResult(g, "Group", g)));
+                
+                searchResultsListView.getItems().setAll(results);
+                searchResultsListView.setVisible(true);
+                searchResultsListView.setManaged(true);
+            }
+        });
+
+        searchTextField.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                searchTextField.setText("");
+                searchResultsListView.setVisible(false);
+                searchResultsListView.setManaged(false);
+                simulationCanvas.requestFocus();
+            }
+        });
+
+        // 💖 클릭 이벤트 대신 선택 변경 리스너를 사용하여 더 확실하게 감지 ✨
+        searchResultsListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, result) -> {
+            if (result == null) return;
+
+            if (result.target instanceof VisualNode) {
+                VisualNode vn = (VisualNode) result.target;
+                centerCameraOnNode(vn);
+                context.selectedNodes.clear();
+                context.selectedNodes.add(vn);
+                context.setSelectedNode(vn);
+            } else if (result.target instanceof String) {
+                String groupName = (String) result.target;
+                List<VisualNode> members = context.visualNodes.stream()
+                    .filter(vn -> groupName.equals(vn.group))
+                    .collect(Collectors.toList());
+                
+                if (!members.isEmpty()) {
+                    fitCameraToNodes(members);
+                    context.selectedNodes.clear();
+                    context.selectedNodes.addAll(members);
+                    context.setSelectedNode(members.get(members.size() - 1));
+                }
+            }
+            context.selectedWire = null;
+            
+            // 캔버스로 포커스를 뺏기지 않도록 잠시 대기 후 리스트뷰가 포커스를 유지하게 하거나 하지 않음 ✨
+            // 여기서는 사용자가 리스트를 계속 볼 수 있도록 선택만 하고 끝냄
+        });
+    }
+
+    private void centerCameraOnNode(VisualNode vn) {
+        context.cameraX = (simulationCanvas.getWidth() / 2) - (vn.x + vn.width / 2) * context.zoom;
+        context.cameraY = (simulationCanvas.getHeight() / 2) - (vn.y + vn.height / 2) * context.zoom;
+        context.updateWorldCoordinates();
+    }
+
+    private void fitCameraToNodes(List<VisualNode> nodes) {
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+
+        for (VisualNode vn : nodes) {
+            minX = Math.min(minX, vn.x);
+            minY = Math.min(minY, vn.y);
+            maxX = Math.max(maxX, vn.x + vn.width);
+            maxY = Math.max(maxY, vn.y + vn.height);
+        }
+
+        double groupWidth = maxX - minX;
+        double groupHeight = maxY - minY;
+        double padding = 100.0;
+
+        double availableWidth = simulationCanvas.getWidth();
+        double availableHeight = simulationCanvas.getHeight();
+
+        // 적절한 줌 계산 (최대 2.0, 최소 0.2)
+        double zoomX = availableWidth / (groupWidth + padding);
+        double zoomY = availableHeight / (groupHeight + padding);
+        context.zoom = Math.max(0.2, Math.min(2.0, Math.min(zoomX, zoomY)));
+
+        // 중앙 정렬
+        context.cameraX = (availableWidth / 2) - (minX + maxX) / 2 * context.zoom;
+        context.cameraY = (availableHeight / 2) - (minY + maxY) / 2 * context.zoom;
+        context.updateWorldCoordinates();
     }
 
     private void setupLogContextMenu() {

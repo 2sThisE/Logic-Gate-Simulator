@@ -60,6 +60,15 @@
                     <padding>
                         <Insets top="20" right="10" bottom="20" left="10"/>
                     </padding>
+                    
+                    <Label text="컴포넌트 검색" styleClass="section-header"/>
+                    <VBox spacing="5">
+                        <TextField fx:id="searchTextField" promptText="라벨로 검색..."/>
+                        <ListView fx:id="searchResultsListView" prefHeight="200" visible="false" managed="false"/>
+                    </VBox>
+                    
+                    <Separator/>
+                    
                     <Label text="컴포넌트 속성" styleClass="section-header"/>
                     <VBox fx:id="propertyPane" spacing="10" styleClass="property-section">
                         <VBox spacing="5">
