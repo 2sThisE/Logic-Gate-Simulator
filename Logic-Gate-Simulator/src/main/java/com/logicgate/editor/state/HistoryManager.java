@@ -102,6 +102,8 @@ public class HistoryManager {
                 
                 context.getCircuit().connect(fromVn.node, wd.outPin, toVn.node, wd.inPin);
                 context.visualWires.add(new VisualWire(fromVn, wd.outPin, toVn, wd.inPin));
+                // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
+                context.getCircuit().tick();
             }
         }
         

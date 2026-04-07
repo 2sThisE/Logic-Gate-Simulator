@@ -33,7 +33,7 @@ public class WiringManager {
             while (it.hasNext()) {
                 VisualWire w = it.next();
                 if (w.to == node && w.inPin == pinIndex) {
-                    context.getCircuit().disconnect(w.from.node, w.outPin);
+                    context.getCircuit().disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
                     if (w == context.selectedWire) context.selectedWire = null;
                     it.remove();
                     context.setDirty(true); // 변경 감지 ✨
@@ -48,7 +48,7 @@ public class WiringManager {
             boolean removed = false;
             // 입력 핀(toNode)은 "나만 바라봐" 모드! 기존 선이 있으면 잘라버려 🔪💕
             if (w.to == toNode && w.inPin == inPin) {
-                context.getCircuit().disconnect(w.from.node, w.outPin);
+                context.getCircuit().disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
                 removed = true;
             }
             // 출력 핀(fromNode)은 이제 자유야! 기존 로직을 지워서 다중 출력을 허용해 💖

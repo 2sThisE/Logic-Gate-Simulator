@@ -168,6 +168,8 @@ public class ProjectManager {
                     
                     context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
                     context.visualWires.add(new VisualWire(fromVn, outPin, toVn, inPin));
+                    // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
+                    context.getCircuit().tick();
                 }
             }
         } catch (IOException e) {

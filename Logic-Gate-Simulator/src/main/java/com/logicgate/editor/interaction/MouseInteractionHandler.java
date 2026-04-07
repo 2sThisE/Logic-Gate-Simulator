@@ -542,6 +542,8 @@ public class MouseInteractionHandler {
                 // 둘 다 존재하는 경우에만 연결! 💖
                 if (from != null && to != null) {
                     wiringManager.connectWires(from, wd.outPin, to, wd.inPin);
+                    // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
+                    context.getCircuit().tick();
                 }
             }
         }

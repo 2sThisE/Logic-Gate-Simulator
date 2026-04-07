@@ -60,6 +60,26 @@ public abstract class Node {
         }
     }
 
+    // 특정 출력 포트에서 특정 노드의 특정 핀으로 가는 연결만 끊음 🔪💕
+    public void disconnectSpecificNode(int location, Node targetNode, int targetPin) {
+        if (location < 0 || location >= outputSize) return;
+
+        Connection prev = null;
+        Connection curr = nextNodes[location];
+        while (curr != null) {
+            if (curr.target == targetNode && curr.targetPin == targetPin) {
+                // 상대방 핀 초기화
+                curr.target.in &= ~(1 << curr.targetPin);
+                
+                if (prev == null) nextNodes[location] = curr.next;
+                else prev.next = curr.next;
+                return; // 연결을 찾아서 끊었으므로 종료
+            }
+            prev = curr;
+            curr = curr.next;
+        }
+    }
+
     // 특정 출력 포트의 모든 연결을 끊음
     public void disconnectNextNode(int location) {
         if (location < 0 || location >= outputSize) return;

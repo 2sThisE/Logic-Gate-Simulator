@@ -469,7 +469,7 @@ public class MainController {
             contextMenu.getItems().add(deleteItem);
             deleteItem.setOnAction(e -> {
                 context.historyManager.saveState();
-                context.getCircuit().disconnect(context.selectedWire.from.node, context.selectedWire.outPin);
+                context.getCircuit().disconnectSpecific(context.selectedWire.from.node, context.selectedWire.outPin, context.selectedWire.to.node, context.selectedWire.inPin);
                 context.visualWires.remove(context.selectedWire);
                 context.selectedWire = null;
                 context.setDirty(true);

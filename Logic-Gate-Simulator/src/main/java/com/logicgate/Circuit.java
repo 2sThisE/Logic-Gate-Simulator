@@ -68,7 +68,7 @@ public class Circuit {
     }
 
     /**
-     * 4. 전선 해제 (A의 특정 출력 핀에 꽂힌 선을 뽑습니다)
+     * 4. 전선 해제 (A의 특정 출력 핀에 꽂힌 선을 뽑습니다 - 기존, 모든 연결 해제)
      */
     public synchronized void disconnect(Node fromNode, int outPin) {
         Node targetNode = fromNode.getTargetNode(outPin);
@@ -78,6 +78,16 @@ public class Circuit {
         }
         
         fromNode.disconnectNextNode(outPin);
+    }
+
+    /**
+     * 4.1 특정 전선 1개만 해제 (A의 특정 핀에서 B의 특정 핀으로 가는 선만 뽑습니다)
+     */
+    public synchronized void disconnectSpecific(Node fromNode, int outPin, Node toNode, int inPin) {
+        if (incomingGraph.containsKey(toNode)) {
+            incomingGraph.get(toNode).remove(fromNode);
+        }
+        fromNode.disconnectSpecificNode(outPin, toNode, inPin);
     }
 
     /**
