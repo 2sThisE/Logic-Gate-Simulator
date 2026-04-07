@@ -5,7 +5,7 @@ import com.logicgate.gates.Node;
 
 @ComponentMeta(
     name = "7-Segment Display",
-    section = "Output",
+    section = "7 Segment",
     typeId="SevenSegment"
 )
 public class SevenSegmentNode extends Node {

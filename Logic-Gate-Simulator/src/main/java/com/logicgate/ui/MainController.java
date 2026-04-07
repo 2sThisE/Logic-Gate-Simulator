@@ -77,6 +77,34 @@ public class MainController {
         }
     }
 
+    @FXML private VBox leftSidebar;
+    @FXML private VBox rightSidebar;
+    @FXML private MenuBar mainMenuBar;
+
+    @FXML
+    public void clearFocusFromCanvas(javafx.scene.input.MouseEvent event) {
+        // 클릭한 대상이 텍스트 필드나 리스트, 트리 등 상호작용 가능한 컨트롤 내부라면 무시 ✨
+        javafx.scene.Node target = (javafx.scene.Node) event.getTarget();
+        
+        // 대상(target)의 부모 계층을 따라가며 Control인지 확인 (소스 패널 전까지)
+        javafx.scene.Node current = target;
+        while (current != null && current != event.getSource()) {
+            if (current instanceof Control) {
+                // 상호작용 가능한 컨트롤을 클릭한 것이므로 포커스를 강탈하지 않음
+                return;
+            }
+            current = current.getParent();
+        }
+
+        // 패널의 빈 공간을 클릭한 경우 패널 자체에 포커스를 주어 캔버스와 텍스트필드 포커스 해제 ✨
+        Object source = event.getSource();
+        if (source instanceof javafx.scene.Node) {
+            javafx.scene.Node node = (javafx.scene.Node) source;
+            node.setFocusTraversable(true); // 포커스를 받을 수 있게 명시적 설정
+            node.requestFocus();
+        }
+    }
+
     @FXML
     public void initialize() {
         circuit = new Circuit();
@@ -98,7 +126,7 @@ public class MainController {
         simulationCanvas.heightProperty().bind(canvasPane.heightProperty());
 
         simulationCanvas.setFocusTraversable(true);
-        simulationCanvas.setOnMouseEntered(e -> simulationCanvas.requestFocus());
+        // 마우스 진입 시 자동 포커스 제거 (사용자 클릭 시에만 포커스 이동)
 
         simulationCanvas.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) context.activeKeys.clear();
@@ -116,6 +144,7 @@ public class MainController {
         });
 
         simulationCanvas.setOnMousePressed(e -> {
+            simulationCanvas.requestFocus(); // 캔버스 클릭 시에만 명확하게 포커스 가져옴 ✨
             if (contextMenu != null && contextMenu.isShowing()) contextMenu.hide();
             mouseHandler.handleMousePressed(e);
         });
@@ -124,8 +153,28 @@ public class MainController {
         simulationCanvas.setOnScroll(mouseHandler::handleMouseScrolled);
         simulationCanvas.setOnMouseMoved(mouseHandler::handleMouseMoved);
 
-        simulationCanvas.setOnKeyPressed(keyboardHandler::handleKeyPressed);
-        simulationCanvas.setOnKeyReleased(keyboardHandler::handleKeyReleased);
+        // 기본 포커스 트래버설 엔진(상하좌우 키 이동)이 화살표 키를 뺏어가지 않도록 EventFilter 사용 ✨
+        simulationCanvas.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+            keyboardHandler.handleKeyPressed(e);
+            if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                searchTextField.setText("");
+                searchResultsListView.setVisible(false);
+                searchResultsListView.setManaged(false);
+            }
+            if (e.getCode().isArrowKey()) e.consume(); // 화살표 키가 포커스를 넘기는 것을 방지
+        });
+        simulationCanvas.addEventFilter(javafx.scene.input.KeyEvent.KEY_RELEASED, e -> {
+            keyboardHandler.handleKeyReleased(e);
+            if (e.getCode().isArrowKey()) e.consume();
+        });
+
+        // 💖 빈 공간 클릭으로 패널에 포커스가 갔을 때 방향키가 JavaFX 기본 포커스 이동(Traversal)을 발생시키는 것을 차단 ✨
+        javafx.event.EventHandler<javafx.scene.input.KeyEvent> consumeArrows = e -> {
+            if (e.getCode().isArrowKey()) e.consume();
+        };
+        leftSidebar.setOnKeyPressed(consumeArrows);
+        rightSidebar.setOnKeyPressed(consumeArrows);
+        if (mainMenuBar != null) mainMenuBar.setOnKeyPressed(consumeArrows);
 
         context.onContextMenuRequested = this::updateAndShowContextMenu;
         context.onCopyRequested = projectManager::copyToClipboard;
@@ -164,6 +213,14 @@ public class MainController {
             }
         });
 
+        // 💖 결과 개수에 따라 가변 높이 조절 (최대 5개) ✨
+        searchResultsListView.getItems().addListener((javafx.collections.ListChangeListener<SearchResult>) c -> {
+            int count = searchResultsListView.getItems().size();
+            double cellHeight = 26.0; // 일반적인 셀 높이
+            double height = Math.min(count, 5) * cellHeight + 2; 
+            searchResultsListView.setPrefHeight(height);
+        });
+
         searchTextField.textProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal == null || newVal.trim().isEmpty()) {
                 searchResultsListView.setVisible(false);
@@ -188,8 +245,8 @@ public class MainController {
                     .forEach(g -> results.add(new SearchResult(g, "Group", g)));
                 
                 searchResultsListView.getItems().setAll(results);
-                searchResultsListView.setVisible(true);
-                searchResultsListView.setManaged(true);
+                searchResultsListView.setVisible(!results.isEmpty());
+                searchResultsListView.setManaged(!results.isEmpty());
             }
         });
 
@@ -226,9 +283,6 @@ public class MainController {
                 }
             }
             context.selectedWire = null;
-            
-            // 캔버스로 포커스를 뺏기지 않도록 잠시 대기 후 리스트뷰가 포커스를 유지하게 하거나 하지 않음 ✨
-            // 여기서는 사용자가 리스트를 계속 볼 수 있도록 선택만 하고 끝냄
         });
     }
 

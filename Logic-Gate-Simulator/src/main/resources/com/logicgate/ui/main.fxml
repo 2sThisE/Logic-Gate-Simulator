@@ -11,7 +11,7 @@
         <URL value="@main.css" />
     </stylesheets>
     <top>
-        <MenuBar>
+        <MenuBar fx:id="mainMenuBar" onMousePressed="#clearFocusFromCanvas">
             <Menu text="파일">
                 <MenuItem text="프로젝트 저장" onAction="#saveProject"/>
                 <SeparatorMenuItem/>
@@ -35,7 +35,7 @@
         <SplitPane dividerPositions="0.2, 0.8">
             <items>
                 <!-- 좌측 사이드바: 부품 상자 -->
-                <VBox spacing="10" styleClass="sidebar" minWidth="160" maxWidth="500">
+                <VBox fx:id="leftSidebar" spacing="10" styleClass="sidebar" minWidth="160" maxWidth="500" onMousePressed="#clearFocusFromCanvas">
                     <padding>
                         <Insets top="20" right="10" bottom="20" left="10"/>
                     </padding>
@@ -56,7 +56,7 @@
                 </Pane>
 
                 <!-- 우측 사이드바: 속성창 -->
-                <VBox spacing="10" styleClass="sidebar" minWidth="160" maxWidth="400">
+                <VBox fx:id="rightSidebar" spacing="10" styleClass="sidebar" minWidth="160" maxWidth="400" onMousePressed="#clearFocusFromCanvas">
                     <padding>
                         <Insets top="20" right="10" bottom="20" left="10"/>
                     </padding>

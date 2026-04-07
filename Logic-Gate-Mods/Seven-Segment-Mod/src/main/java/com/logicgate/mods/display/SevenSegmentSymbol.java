@@ -1,11 +1,17 @@
 package com.logicgate.mods.display;
 
+import com.logicgate.editor.mod.ComponentMeta;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
+@ComponentMeta(
+    name = "7-Segment Display",
+    section = "7 Segment",
+    typeId = "SevenSegment"
+)
 public class SevenSegmentSymbol extends AbstractGateSymbol {
 
     @Override
@@ -25,8 +31,6 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
         gc.strokeRoundRect(0, 0, vn.width, vn.height, 8, 8);
         
         drawExtra(gc, vn);
-        
-        // 핀 라벨 그리기 (G, F, A, B 상단 / E, D, C, DP 하단)
         
         gc.restore();
     }
@@ -92,9 +96,9 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
 
     @Override
     public double getInPinY(VisualNode vn, int index) {
-        // 상단 핀들 (0, 1, 5, 6) - 위쪽 경계에서 1px 안으로
+        // 상단 핀들 (0, 1, 5, 6)
         if (index == 0 || index == 1 || index == 5 || index == 6) return vn.y;
-        // 하단 핀들 (2, 3, 4, 7) - 아래쪽 경계에서 1px 안으로
+        // 하단 핀들 (2, 3, 4, 7)
         return vn.y + vn.height;
     }
 
