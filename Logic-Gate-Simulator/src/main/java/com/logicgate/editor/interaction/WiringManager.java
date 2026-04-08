@@ -72,15 +72,13 @@ public class WiringManager {
         if (fromNode == toNode) return false;
 
         if (fromNode.node instanceof Joint) {
-            int currentOuts = 0;
-            boolean isReplacingSelf = false;
+            java.util.Set<Integer> usedOutPins = new java.util.HashSet<>();
             for (VisualWire w : context.visualWires) {
                 if (w.from == fromNode) {
-                    if (w.outPin == outPin) isReplacingSelf = true;
-                    currentOuts++;
+                    usedOutPins.add(w.outPin);
                 }
             }
-            if (!isReplacingSelf && currentOuts >= 3) return false;
+            if (!usedOutPins.contains(outPin) && usedOutPins.size() >= 3) return false;
         }
 
         return true;
