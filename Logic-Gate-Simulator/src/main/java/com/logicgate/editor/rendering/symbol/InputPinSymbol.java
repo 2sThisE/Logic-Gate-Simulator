@@ -33,7 +33,6 @@ public class InputPinSymbol extends AbstractGateSymbol {
         gc.setFill(Color.WHITE);
         gc.fillText(isOn ? "ON" : "OFF", 13, 30);
         
-        drawLabel(gc, vn);
         gc.restore();
     }
 

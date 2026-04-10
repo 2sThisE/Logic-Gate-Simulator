@@ -36,7 +36,6 @@ public class OutputPinSymbol extends AbstractGateSymbol {
         gc.fillOval(0, 0, vn.width, vn.height);
         gc.strokeOval(0, 0, vn.width, vn.height);
         
-        drawLabel(gc, vn);
         gc.restore();
     }
 
