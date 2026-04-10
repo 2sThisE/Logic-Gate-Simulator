@@ -110,3 +110,31 @@
     -fx-background-color: #094771;
     -fx-text-fill: white;
 }
+
+/* 시뮬레이션 제어 버튼 스타일 ✨ */
+.sim-btn {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 8;
+    -fx-background-radius: 4;
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+    -fx-text-fill: white;
+}
+
+.sim-btn .ikonli-font-icon {
+    -fx-icon-color: white;
+}
+
+.sim-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sim-btn-start, .sim-btn-play {
+}
+
+.sim-btn-pause {
+}
+
+.sim-btn-reset {
+}

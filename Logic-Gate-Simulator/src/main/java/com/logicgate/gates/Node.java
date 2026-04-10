@@ -32,6 +32,12 @@ public abstract class Node {
         this.nextNodes = new Connection[outputSize];
     }
 
+    // 모든 입출력 상태 초기화 (LOW 상태) ✨
+    public void resetState() {
+        this.in = 0;
+        this.out = 0;
+    }
+
     public abstract void compute();
 
     // 속성 리스트 반환 (자식 클래스에서 오버라이드)

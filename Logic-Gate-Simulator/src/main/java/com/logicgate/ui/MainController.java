@@ -1,30 +1,54 @@
 package com.logicgate.ui;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.logicgate.Circuit;
 import com.logicgate.editor.interaction.KeyboardInteractionHandler;
 import com.logicgate.editor.interaction.MouseInteractionHandler;
 import com.logicgate.editor.interaction.WiringManager;
 import com.logicgate.editor.io.ProjectManager;
+import com.logicgate.editor.mod.ModComponentInfo;
+import com.logicgate.editor.mod.ModLoader;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.rendering.CanvasRenderer;
 import com.logicgate.editor.state.EditorContext;
-import com.logicgate.gates.*;
+import com.logicgate.gates.InputPin;
+import com.logicgate.gates.Joint;
+import com.logicgate.gates.Node;
+import com.logicgate.gates.OutputPin;
 
-import com.logicgate.editor.mod.ModLoader;
-import com.logicgate.editor.mod.ModComponentInfo;
 import javafx.animation.AnimationTimer;
-import javafx.fxml.FXML;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.application.Platform;
-import java.io.PrintStream;
-import java.io.OutputStream;
-import java.util.*;
-import java.util.stream.Collectors;
+import javafx.fxml.FXML;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Control;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 
 public class MainController {
 
@@ -76,6 +100,10 @@ public class MainController {
     @FXML private VBox leftSidebar;
     @FXML private VBox rightSidebar;
     @FXML private MenuBar mainMenuBar;
+
+    @FXML private Button btnPlayPause;
+    @FXML private Button btnReset;
+    private org.kordamp.ikonli.javafx.FontIcon playPauseIcon;
 
     @FXML
     public void clearFocusFromCanvas(javafx.scene.input.MouseEvent event) {
@@ -186,6 +214,14 @@ public class MainController {
         timer.start();
 
         circuit.startSimulation();
+        
+        // 초기 아이콘 설정 ✨
+        playPauseIcon = new org.kordamp.ikonli.javafx.FontIcon("mdi2p-pause");
+        playPauseIcon.setIconSize(16);
+        playPauseIcon.setIconColor(javafx.scene.paint.Color.WHITE);
+        btnPlayPause.setGraphic(playPauseIcon);
+        
+        updateSimButtonStates(true);
 
         // 💖 로그 패널 설정
         if (consoleListView != null) {
@@ -831,6 +867,55 @@ public class MainController {
         context.setSelectedNode(null);
         context.selectedWire = null;
         context.setDirty(true);
+    }
+
+    @FXML
+    public void toggleSimulation() {
+        if (circuit.isRunning()) {
+            circuit.stopSimulation();
+            updateSimButtonStates(false);
+        } else {
+            circuit.startSimulation();
+            updateSimButtonStates(true);
+        }
+    }
+
+    @FXML
+    public void resetSimulation() {
+        circuit.stopSimulation();
+        
+        // 1. 모든 전선 연결을 잠시 해제하여 완벽한 초기 상태 만들기
+        for (com.logicgate.editor.model.VisualWire w : context.visualWires) {
+            circuit.disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
+        }
+        
+        // 2. 모든 노드 상태를 완전히 LOW로 초기화
+        circuit.resetState();
+        
+        // 3. 프로젝트 로드 시 사용했던 발진 방지 로직 동일하게 적용 💖
+        // 전선을 한 번에 하나씩 다시 연결하면서 tick()을 발생시킴으로써
+        // 완벽한 동기화(Ring Oscillator)를 깨고 자연스러운 비대칭 상태 유도 ✨
+        for (com.logicgate.editor.model.VisualWire w : context.visualWires) {
+            circuit.connect(w.from.node, w.outPin, w.to.node, w.inPin);
+            circuit.tick();
+        }
+        
+        updateSimButtonStates(false);
+        if (renderer != null) renderer.draw();
+    }
+
+    private void updateSimButtonStates(boolean isRunning) {
+        if (isRunning) {
+            btnPlayPause.setText("");
+            btnPlayPause.getStyleClass().removeAll("sim-btn-start");
+            btnPlayPause.getStyleClass().add("sim-btn-pause");
+            if (playPauseIcon != null) playPauseIcon.setIconLiteral("mdi2p-pause");
+        } else {
+            btnPlayPause.setText("");
+            btnPlayPause.getStyleClass().removeAll("sim-btn-pause");
+            btnPlayPause.getStyleClass().add("sim-btn-start");
+            if (playPauseIcon != null) playPauseIcon.setIconLiteral("mdi2p-play");
+        }
     }
 
     private void spawnNode(Node logicNode, String label) {

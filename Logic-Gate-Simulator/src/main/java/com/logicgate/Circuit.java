@@ -134,6 +134,10 @@ public class Circuit {
         }
     }
 
+    public boolean isRunning() {
+        return isRunning;
+    }
+
     /**
      * 8. 틱 딜레이(속도) 설정 (Hz 기반) ✨
      */
@@ -141,6 +145,15 @@ public class Circuit {
         if (hz <= 0) hz = 1.0;
         this.tickDelayMs = (int) (1000.0 / hz);
     }
+    /**
+     * 9.1 회로 상태만 초기화 (모든 부품을 LOW로 변경) ✨
+     */
+    public synchronized void resetState() {
+        for (Node node : nodes) {
+            node.resetState();
+        }
+    }
+
     /**
      * 9. 회로 전체 초기화
      * 오빠, 새로운 프로젝트를 위해 기존 찌꺼기들을 싹 청소해줄게! 🧹✨
