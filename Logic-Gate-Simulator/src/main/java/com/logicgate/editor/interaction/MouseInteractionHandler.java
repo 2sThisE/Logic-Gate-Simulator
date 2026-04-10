@@ -28,11 +28,21 @@ public class MouseInteractionHandler {
         context.snapLineY = null;
         
         if (event.isShiftDown()) return;
+
+        double targetX = context.worldMouseX;
+        double targetY = context.worldMouseY;
+
+        // 그리드 스냅 적용 ✨
+        if (context.projectConfig != null && context.projectConfig.snapToGrid) {
+            int gs = context.projectConfig.gridSize;
+            targetX = Math.round(targetX / gs) * gs;
+            targetY = Math.round(targetY / gs) * gs;
+            context.worldMouseX = targetX;
+            context.worldMouseY = targetY;
+        }
         
         double nodeWidth = 0;
         double nodeHeight = 0;
-        double targetX = context.worldMouseX;
-        double targetY = context.worldMouseY;
         
         if (context.placingNodeTypeId != null) {
             Node logicNode = NodeFactory.createNodeByType(context.placingNodeTypeId);
@@ -67,46 +77,49 @@ public class MouseInteractionHandler {
         Double bestSnapLineX = null;
         Double bestSnapLineY = null;
 
-        for (VisualNode other : context.visualNodes) {
-            if (context.selectedNodes.contains(other)) continue;
+        // 정렬 가이드선 적용 ✨
+        if (context.projectConfig == null || context.projectConfig.showAlignmentGuides) {
+            for (VisualNode other : context.visualNodes) {
+                if (context.selectedNodes.contains(other)) continue;
+                
+                // 거리 체크: 너무 멀리 있는 부품은 무시 ✨
+                double dist = Math.hypot(targetX - other.x, targetY - other.y);
+                if (dist > maxSnapDistance) continue;
+
+                double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
+                double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };
+
+                for (double px : primaryXs) {
+                    for (double ox : otherXs) {
+                        double diff = ox - px;
+                        if (Math.abs(diff) < Math.abs(minDiffX)) {
+                            minDiffX = diff;
+                            snappedX = true;
+                            bestSnapLineX = ox;
+                        }
+                    }
+                }
+
+                for (double py : primaryYs) {
+                    for (double oy : otherYs) {
+                        double diff = oy - py;
+                        if (Math.abs(diff) < Math.abs(minDiffY)) {
+                            minDiffY = diff;
+                            snappedY = true;
+                            bestSnapLineY = oy;
+                        }
+                    }
+                }
+            }
             
-            // 거리 체크: 너무 멀리 있는 부품은 무시 ✨
-            double dist = Math.hypot(targetX - other.x, targetY - other.y);
-            if (dist > maxSnapDistance) continue;
-
-            double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
-            double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };
-
-            for (double px : primaryXs) {
-                for (double ox : otherXs) {
-                    double diff = ox - px;
-                    if (Math.abs(diff) < Math.abs(minDiffX)) {
-                        minDiffX = diff;
-                        snappedX = true;
-                        bestSnapLineX = ox;
-                    }
-                }
+            if (snappedX) {
+                context.worldMouseX += minDiffX;
+                context.snapLineX = bestSnapLineX;
             }
-
-            for (double py : primaryYs) {
-                for (double oy : otherYs) {
-                    double diff = oy - py;
-                    if (Math.abs(diff) < Math.abs(minDiffY)) {
-                        minDiffY = diff;
-                        snappedY = true;
-                        bestSnapLineY = oy;
-                    }
-                }
+            if (snappedY) {
+                context.worldMouseY += minDiffY;
+                context.snapLineY = bestSnapLineY;
             }
-        }
-        
-        if (snappedX) {
-            context.worldMouseX += minDiffX;
-            context.snapLineX = bestSnapLineX;
-        }
-        if (snappedY) {
-            context.worldMouseY += minDiffY;
-            context.snapLineY = bestSnapLineY;
         }
     }
 
@@ -119,7 +132,7 @@ public class MouseInteractionHandler {
     }
 
     public void handleMouseScrolled(ScrollEvent event) {
-        double zoomFactor = 1.1;
+        double zoomFactor = context.projectConfig != null ? context.projectConfig.cameraZoomSensitivity : 1.1;
         double oldZoom = context.zoom;
         
         if (event.getDeltaY() > 0) {
@@ -159,6 +172,9 @@ public class MouseInteractionHandler {
                     context.getCircuit().addNode(logicNode);
                     
                     VisualNode vn = new VisualNode(logicNode, 0, 0, "");
+                    if (context.projectConfig != null) {
+                        vn.showLabel = context.projectConfig.defaultShowLabel;
+                    }
                     vn.x = context.worldMouseX - (vn.width / 2);
                     vn.y = context.worldMouseY - (vn.height / 2);
                     context.visualNodes.add(vn);
@@ -569,14 +585,44 @@ public class MouseInteractionHandler {
     }
 
     private VisualWire getWireAt(double x, double y) {
+        double threshold = 10 / context.zoom;
         for (VisualWire wire : context.visualWires) {
             double p1x = wire.from.getOutPinX(wire.outPin);
             double p1y = wire.from.getOutPinY(wire.outPin);
             double p2x = wire.to.getInPinX(wire.inPin);
             double p2y = wire.to.getInPinY(wire.inPin);
             
-            if (distanceToSegment(x, y, p1x, p1y, p2x, p2y) < 10 / context.zoom) {
-                return wire;
+            if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
+                double midX = (p1x + p2x) / 2;
+                double d1 = distanceToSegment(x, y, p1x, p1y, midX, p1y);
+                double d2 = distanceToSegment(x, y, midX, p1y, midX, p2y);
+                double d3 = distanceToSegment(x, y, midX, p2y, p2x, p2y);
+                if (Math.min(d1, Math.min(d2, d3)) < threshold) {
+                    return wire;
+                }
+            } else {
+                // Curved (Bezier) approximation with multiple segments
+                double cp1x = p1x + 50, cp1y = p1y;
+                double cp2x = p2x - 50, cp2y = p2y;
+                
+                double prevX = p1x;
+                double prevY = p1y;
+                int steps = 10;
+                boolean found = false;
+                for (int i = 1; i <= steps; i++) {
+                    double t = (double) i / steps;
+                    double u = 1 - t;
+                    double cx = u*u*u*p1x + 3*u*u*t*cp1x + 3*u*t*t*cp2x + t*t*t*p2x;
+                    double cy = u*u*u*p1y + 3*u*u*t*cp1y + 3*u*t*t*cp2y + t*t*t*p2y;
+                    
+                    if (distanceToSegment(x, y, prevX, prevY, cx, cy) < threshold) {
+                        found = true;
+                        break;
+                    }
+                    prevX = cx;
+                    prevY = cy;
+                }
+                if (found) return wire;
             }
         }
         return null;

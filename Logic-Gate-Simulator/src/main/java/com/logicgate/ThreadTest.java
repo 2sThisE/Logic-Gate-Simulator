@@ -14,7 +14,7 @@ public class ThreadTest {
         
         Circuit circuit = new Circuit();
         // 틱 딜레이를 1ms로 극단적으로 줄여서 충돌 확률을 높임
-        circuit.setTickDelayMs(1); 
+        circuit.setTickFrequencyHz(60);
         circuit.startSimulation();
 
         Thread[] threads = new Thread[20]; // 20개의 스레드가 동시에 회로를 수정

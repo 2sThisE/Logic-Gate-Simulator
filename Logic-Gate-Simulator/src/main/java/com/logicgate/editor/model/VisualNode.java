@@ -58,7 +58,40 @@ public class VisualNode {
             if (newGroup.isEmpty()) {
                 this.group = null;
             } else {
-                this.group = newGroup;
+                if (this.group != null && !newGroup.equals(this.group)) {
+                    String oldGroup = this.group;
+                    String targetName = newGroup;
+                    int suffix = 1;
+                    
+                    while (true) {
+                        boolean exists = false;
+                        for (VisualNode vn : context.visualNodes) {
+                            if (targetName.equals(vn.group) && (oldGroup == null || !oldGroup.equals(vn.group))) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) break;
+                        targetName = newGroup + "-" + suffix;
+                        suffix++;
+                    }
+                    
+                    for (VisualNode vn : context.visualNodes) {
+                        if (oldGroup.equals(vn.group)) {
+                            vn.group = targetName;
+                        }
+                    }
+                    
+                    if (!targetName.equals(newGroup)) {
+                        javafx.application.Platform.runLater(() -> {
+                            if (context.onSelectionChanged != null) {
+                                context.onSelectionChanged.run();
+                            }
+                        });
+                    }
+                } else {
+                    this.group = newGroup;
+                }
             }
             context.setDirty(true);
         }));

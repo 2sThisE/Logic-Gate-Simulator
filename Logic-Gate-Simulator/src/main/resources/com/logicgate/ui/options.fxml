@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<BorderPane prefWidth="700" prefHeight="500" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.logicgate.ui.OptionsController" styleClass="options-root">
+    <stylesheets>
+        <URL value="@main.css" />
+        <URL value="@options.css" />
+    </stylesheets>
+    
+    <left>
+        <VBox fx:id="sidebar" styleClass="options-sidebar">
+            <Label text="설정 메뉴" styleClass="options-header"/>
+            <Region prefHeight="10"/>
+            <ListView fx:id="categoryList" styleClass="options-category-list" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+    
+    <center>
+        <StackPane fx:id="contentArea" styleClass="options-content-area">
+            <!-- 시뮬레이션 설정 -->
+            <VBox fx:id="simPane" spacing="20" styleClass="options-pane">
+                <Label text="시뮬레이션" styleClass="options-title"/>
+                <Separator styleClass="options-separator"/>
+                <Label text="회로 시뮬레이션 관련 설정입니다." styleClass="options-desc"/>
+                
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="시뮬레이션 속도 (Hz):" styleClass="options-label"/>
+                    <TextField fx:id="tickFreqField" prefWidth="100" promptText="예: 60" styleClass="options-textfield"/>
+                </HBox>
+                <Label text="* 1초에 회로가 연산되는 횟수입니다. (권장: 60~120)" styleClass="options-hint"/>
+            </VBox>
+            
+            <!-- 에디터 & 그리드 설정 -->
+            <VBox fx:id="gridPane" spacing="20" styleClass="options-pane" visible="false">
+                <Label text="에디터 &amp; 그리드" styleClass="options-title"/>
+                <Separator styleClass="options-separator"/>
+                <Label text="작업 영역(캔버스)의 격자 및 스냅 설정입니다." styleClass="options-desc"/>
+                
+                <CheckBox fx:id="showGridCheck" text="그리드(모눈종이) 표시" styleClass="options-checkbox"/>
+                <CheckBox fx:id="snapToGridCheck" text="그리드 스냅 (부품 이동 시 칸에 맞춤)" styleClass="options-checkbox"/>
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="그리드 간격 (픽셀):" styleClass="options-label"/>
+                    <Spinner fx:id="gridSizeSpinner" prefWidth="90" styleClass="options-spinner"/>
+                </HBox>
+                <CheckBox fx:id="showAlignGuidesCheck" text="정렬 가이드선 표시 (부품 간 위치 안내)" styleClass="options-checkbox"/>
+            </VBox>
+            
+            <!-- 시각적 설정 -->
+            <VBox fx:id="visualPane" spacing="20" styleClass="options-pane" visible="false">
+                <Label text="시각적 설정" styleClass="options-title"/>
+                <Separator styleClass="options-separator"/>
+                <Label text="선 모양과 부품의 라벨, 상태 색상 등을 설정합니다." styleClass="options-desc"/>
+                
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="와이어 스타일:" styleClass="options-label"/>
+                    <ComboBox fx:id="wireStyleCombo" prefWidth="150" styleClass="options-combo"/>
+                </HBox>
+                <CheckBox fx:id="defaultShowLabelCheck" text="부품 생성 시 항상 라벨 표시" styleClass="options-checkbox"/>
+                
+                <Label text="와이어 상태 색상" styleClass="options-subtitle"/>
+                <CheckBox fx:id="showWireStateCheck" text="신호(ON/OFF)에 따라 선 색상 변경" styleClass="options-checkbox"/>
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="High(1) ON 색상:" styleClass="options-label-sub"/>
+                    <ColorPicker fx:id="wireHighColorPicker" styleClass="options-colorpicker"/>
+                </HBox>
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="Low(0) OFF 색상:" styleClass="options-label-sub"/>
+                    <ColorPicker fx:id="wireLowColorPicker" styleClass="options-colorpicker"/>
+                </HBox>
+            </VBox>
+            
+            <!-- 편의성 설정 -->
+            <VBox fx:id="uxPane" spacing="20" styleClass="options-pane" visible="false">
+                <Label text="편의성" styleClass="options-title"/>
+                <Separator styleClass="options-separator"/>
+                <Label text="자동 저장 및 조작 편의성 관련 설정입니다." styleClass="options-desc"/>
+                
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="자동 저장 주기 (분):" styleClass="options-label"/>
+                    <Spinner fx:id="autosaveSpinner" prefWidth="90" styleClass="options-spinner"/>
+                    <Label text="(0이면 자동저장 꺼짐)" styleClass="options-hint"/>
+                </HBox>
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <Label text="마우스 휠 줌 감도:" styleClass="options-label"/>
+                    <Slider fx:id="zoomSensSlider" min="1.01" max="2.0" prefWidth="200" showTickLabels="true" showTickMarks="true"/>
+                    <Label fx:id="zoomSensLabel" text="1.10" styleClass="options-value"/>
+                </HBox>
+            </VBox>
+        </StackPane>
+    </center>
+    
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" spacing="15" styleClass="options-bottom-bar">
+            <Button text="취소" onAction="#cancel" styleClass="options-btn-cancel"/>
+            <Button text="적용 및 저장" onAction="#apply" defaultButton="true" styleClass="options-btn-apply"/>
+        </HBox>
+    </bottom>
+</BorderPane>

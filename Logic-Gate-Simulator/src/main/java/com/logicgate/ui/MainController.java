@@ -59,6 +59,7 @@ public class MainController {
     
     private Map<String, String> customComponentMap = new HashMap<>();
     private javafx.stage.Stage primaryStage;
+    private javafx.animation.Timeline autosaveTimer;
 
     private static class SearchResult {
         final String name;
@@ -103,7 +104,7 @@ public class MainController {
     @FXML
     public void initialize() {
         circuit = new Circuit();
-        circuit.setTickDelayMs(16);
+        circuit.setTickFrequencyHz(60.0);
 
         context = new EditorContext(circuit);
         wiringManager = new WiringManager(context);
@@ -338,23 +339,6 @@ public class MainController {
 
     private void redirectSystemOutAndErr() {
         PrintStream originalErr = System.err;
-        PrintStream originalOut = System.out;
-
-        // 시스템 표준 출력/에러를 캡처하기 위한 커스텀 스트림 ✨
-        OutputStream capturingStream = new OutputStream() {
-            private java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
-
-            @Override
-            public void write(int b) {
-                if (b == '\n') {
-                    String msg = buffer.toString(java.nio.charset.StandardCharsets.UTF_8);
-                    buffer.reset();
-                    Platform.runLater(() -> addLog(msg, false));
-                } else if (b != '\r') {
-                    buffer.write(b);
-                }
-            }
-        };
 
         OutputStream capturingErrStream = new OutputStream() {
             private java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
@@ -372,7 +356,6 @@ public class MainController {
             }
         };
 
-        System.setOut(new PrintStream(capturingStream, true, java.nio.charset.StandardCharsets.UTF_8));
         System.setErr(new PrintStream(capturingErrStream, true, java.nio.charset.StandardCharsets.UTF_8));
 
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
@@ -662,6 +645,50 @@ public class MainController {
             projectManager.loadProjectConfigOnly();
             loadModsAndUpdateTree();
             projectManager.loadCircuitOnly();
+        }
+        applyProjectOptions();
+    }
+
+    private void applyProjectOptions() {
+        if (context.projectConfig != null) {
+            circuit.setTickFrequencyHz(context.projectConfig.tickFrequencyHz);
+            
+            if (autosaveTimer != null) autosaveTimer.stop();
+            if (context.projectConfig.autosaveIntervalMin > 0) {
+                autosaveTimer = new javafx.animation.Timeline(new javafx.animation.KeyFrame(
+                    javafx.util.Duration.minutes(context.projectConfig.autosaveIntervalMin), 
+                    e -> { if (context.isDirty()) saveProject(); }
+                ));
+                autosaveTimer.setCycleCount(javafx.animation.Animation.INDEFINITE);
+                autosaveTimer.play();
+            }
+            
+            if (renderer != null) renderer.draw();
+        }
+    }
+
+    @FXML
+    public void openOptions() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("options.fxml"));
+            javafx.scene.Parent root = loader.load();
+            
+            OptionsController controller = loader.getController();
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("프로젝트 설정");
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(simulationCanvas.getScene().getWindow());
+            stage.setScene(new javafx.scene.Scene(root));
+            
+            controller.setContext(context, stage, () -> {
+                applyProjectOptions();
+                projectManager.saveProjectConfig();
+            });
+            
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

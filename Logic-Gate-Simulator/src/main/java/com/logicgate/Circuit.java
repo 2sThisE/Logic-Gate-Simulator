@@ -135,10 +135,11 @@ public class Circuit {
     }
 
     /**
-     * 8. 틱 딜레이(속도) 설정
+     * 8. 틱 딜레이(속도) 설정 (Hz 기반) ✨
      */
-    public void setTickDelayMs(int ms) {
-        this.tickDelayMs = ms;
+    public void setTickFrequencyHz(double hz) {
+        if (hz <= 0) hz = 1.0;
+        this.tickDelayMs = (int) (1000.0 / hz);
     }
     /**
      * 9. 회로 전체 초기화

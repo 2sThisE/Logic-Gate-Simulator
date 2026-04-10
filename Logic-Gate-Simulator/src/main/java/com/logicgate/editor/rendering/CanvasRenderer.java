@@ -33,15 +33,38 @@ public class CanvasRenderer {
         gc.translate(context.cameraX, context.cameraY);
         gc.scale(context.zoom, context.zoom);
 
+        // 그리드 렌더링 ✨
+        if (context.projectConfig != null && context.projectConfig.showGrid) {
+            gc.setStroke(Color.web("#3A3A3A"));
+            gc.setLineWidth(1 / context.zoom);
+            int gridSize = context.projectConfig.gridSize;
+            double startX = (Math.floor(-context.cameraX / context.zoom / gridSize) * gridSize);
+            double endX = startX + canvas.getWidth() / context.zoom + gridSize;
+            double startY = (Math.floor(-context.cameraY / context.zoom / gridSize) * gridSize);
+            double endY = startY + canvas.getHeight() / context.zoom + gridSize;
+            
+            for (double x = startX; x <= endX; x += gridSize) {
+                gc.strokeLine(x, startY, x, endY);
+            }
+            for (double y = startY; y <= endY; y += gridSize) {
+                gc.strokeLine(startX, y, endX, y);
+            }
+        }
+
         for (VisualWire wire : context.visualWires) {
             boolean isHigh = (wire.from.node.getOut() & (1 << wire.outPin)) != 0;
             boolean isSelected = (wire == context.selectedWire);
+            
+            // 시각적 설정 적용 ✨
+            boolean showState = context.projectConfig == null || context.projectConfig.showWireState;
+            String highColor = context.projectConfig != null ? context.projectConfig.wireHighColor : "#FF3366";
+            String lowColor = context.projectConfig != null ? context.projectConfig.wireLowColor : "#555555";
             
             if (isSelected) {
                 gc.setStroke(Color.web("#00FFFF"));
                 gc.setLineWidth(5);
             } else {
-                gc.setStroke(isHigh ? Color.web("#FF3366") : Color.web("#555555"));
+                gc.setStroke((isHigh && showState) ? Color.web(highColor) : Color.web(lowColor));
                 gc.setLineWidth(3);
             }
             
@@ -52,7 +75,14 @@ public class CanvasRenderer {
             
             gc.beginPath();
             gc.moveTo(x1, y1);
-            gc.bezierCurveTo(x1 + 50, y1, x2 - 50, y2, x2, y2);
+            if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
+                double midX = (x1 + x2) / 2;
+                gc.lineTo(midX, y1);
+                gc.lineTo(midX, y2);
+                gc.lineTo(x2, y2);
+            } else {
+                gc.bezierCurveTo(x1 + 50, y1, x2 - 50, y2, x2, y2);
+            }
             gc.stroke();
         }
 
@@ -69,17 +99,28 @@ public class CanvasRenderer {
                 startY = context.wiringNode.getInPinY(context.wiringPin);
             }
 
-            gc.setStroke(isHigh ? Color.web("#FF3366") : Color.web("#888888"));
+            boolean showState = context.projectConfig == null || context.projectConfig.showWireState;
+            String highColor = context.projectConfig != null ? context.projectConfig.wireHighColor : "#FF3366";
+            String lowColor = context.projectConfig != null ? context.projectConfig.wireLowColor : "#888888";
+
+            gc.setStroke((isHigh && showState) ? Color.web(highColor) : Color.web(lowColor));
             gc.setLineWidth(3);
             gc.setLineDashes(5); 
             
             gc.beginPath();
             gc.moveTo(startX, startY);
             
-            if (context.isWiringFromOut) {
-                gc.bezierCurveTo(startX + 50, startY, context.worldMouseX - 50, context.worldMouseY, context.worldMouseX, context.worldMouseY);
+            if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
+                double midX = (startX + context.worldMouseX) / 2;
+                gc.lineTo(midX, startY);
+                gc.lineTo(midX, context.worldMouseY);
+                gc.lineTo(context.worldMouseX, context.worldMouseY);
             } else {
-                gc.bezierCurveTo(startX - 50, startY, context.worldMouseX + 50, context.worldMouseY, context.worldMouseX, context.worldMouseY);
+                if (context.isWiringFromOut) {
+                    gc.bezierCurveTo(startX + 50, startY, context.worldMouseX - 50, context.worldMouseY, context.worldMouseX, context.worldMouseY);
+                } else {
+                    gc.bezierCurveTo(startX - 50, startY, context.worldMouseX + 50, context.worldMouseY, context.worldMouseX, context.worldMouseY);
+                }
             }
             gc.stroke();
             gc.setLineDashes(null);

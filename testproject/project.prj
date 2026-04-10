@@ -6,5 +6,17 @@
     "seven-segment-mod-1.0-SNAPSHOT.jar",
     "bus-mod-1.0-SNAPSHOT.jar",
     "ram-mod-1.0-SNAPSHOT.jar"
-  ]
+  ],
+  "tickFrequencyHz": 60.0,
+  "showGrid": false,
+  "snapToGrid": false,
+  "gridSize": 20,
+  "showAlignmentGuides": true,
+  "wireStyle": "Orthogonal",
+  "showWireState": true,
+  "wireHighColor": "#FF3366",
+  "wireLowColor": "#555555",
+  "defaultShowLabel": false,
+  "autosaveIntervalMin": 0,
+  "cameraZoomSensitivity": 1.1
 }
