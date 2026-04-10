@@ -37,6 +37,62 @@ public class VisualNode {
         }
     }
 
+    public java.util.List<Property<?>> getProperties(com.logicgate.editor.state.EditorContext context) {
+        java.util.List<Property<?>> props = new java.util.ArrayList<>();
+        
+        // 공통 속성: 라벨 💖
+        props.add(new Property<>("라벨", label, Property.Type.STRING, newVal -> {
+            this.label = (String) newVal;
+            context.setDirty(true);
+        }));
+
+        // 공통 속성: 라벨 표시 여부 🔪💕
+        props.add(new Property<>("라벨 표시", showLabel, Property.Type.BOOLEAN, newVal -> {
+            this.showLabel = (Boolean) newVal;
+            context.setDirty(true);
+        }));
+
+        // 공통 속성: 그룹 🔪
+        props.add(new Property<>("그룹 이름", group == null ? "" : group, Property.Type.STRING, newVal -> {
+            String newGroup = (String) newVal;
+            if (newGroup.isEmpty()) {
+                this.group = null;
+            } else {
+                this.group = newGroup;
+            }
+            context.setDirty(true);
+        }));
+
+        // 컴포넌트 전용 속성들 추가 ✨
+        // 노드 속성들의 콜백을 래핑하여 변경 시 dirty 플래그가 설정되도록 함 🔪💕
+        for (Property<?> nodeProp : node.getComponentProperties()) {
+            props.add(new Property(nodeProp.getName(), nodeProp.getValue(), nodeProp.getType(), nodeProp.getOptions(), newVal -> {
+                
+                // 조인트 핀 수 감소 시 안전 검사 🔪💕
+                if (this.node instanceof com.logicgate.gates.Joint && "단자 수 (2~8)".equals(nodeProp.getName())) {
+                    int newCount = (Integer) newVal;
+                    int currentCount = (Integer) nodeProp.getValue();
+                    
+                    if (newCount < currentCount) {
+                        // 삭제될 범위(newCount ~ currentCount-1)에 연결된 와이어가 있는지 확인
+                        for (com.logicgate.editor.model.VisualWire vw : context.visualWires) {
+                            if ((vw.from == this && vw.outPin >= newCount) || 
+                                (vw.to == this && vw.inPin >= newCount)) {
+                                System.err.println("연결된 선이 있는 단자는 제거할 수 없습니다! 먼저 선을 지워주세요.");
+                                return; // 변경을 적용하지 않고 리턴 ✨
+                            }
+                        }
+                    }
+                }
+
+                ((Property<Object>) nodeProp).setValue(newVal);
+                context.setDirty(true);
+            }));
+        }
+        
+        return props;
+    }
+
     public void setDragStart(double x, double y) {
         this.dragStartX = x;
         this.dragStartY = y;

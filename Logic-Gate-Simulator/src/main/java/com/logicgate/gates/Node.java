@@ -3,11 +3,14 @@ package com.logicgate.gates;
 public abstract class Node {
     protected int in;           // 32비트 입력 상태
     protected int out;          // 32비트 출력 상태
-    protected final int inputSize;    // 사용할 입력 핀 개수
-    protected final int outputSize;   // 사용할 출력 핀 개수
+    protected int inputSize;    // 사용할 입력 핀 개수
+    protected int outputSize;   // 사용할 출력 핀 개수
     
     // 이 노드의 타입 식별자 (심볼 매핑용!)
     protected String typeId;
+
+    // 속성 저장용 맵 (저장/불러오기 및 Undo용)
+    protected java.util.Map<String, String> properties = new java.util.HashMap<>();
 
     // 각 출력 핀의 연결 리스트 시작점(Head)을 저장
     protected Connection[] nextNodes;
@@ -30,6 +33,27 @@ public abstract class Node {
     }
 
     public abstract void compute();
+
+    // 속성 리스트 반환 (자식 클래스에서 오버라이드)
+    public java.util.List<com.logicgate.editor.model.Property<?>> getComponentProperties() {
+        return new java.util.ArrayList<>();
+    }
+
+    public java.util.Map<String, String> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(java.util.Map<String, String> props) {
+        if (props != null) {
+            this.properties.putAll(props);
+            // 속성이 적용된 후 필요한 초기화 로직이 있다면 여기서 호출하거나 자식에서 오버라이드
+            applyProperties();
+        }
+    }
+
+    protected void applyProperties() {
+        // 자식 클래스에서 속성 값을 실제 변수에 적용할 때 사용
+    }
 
     // 내 출력 핀(targetIdx)에 새로운 대상을 추가 (다중 출력 지원! ✨)
     public void addNode(Node nextNode, int targetIdx, int targetPin) {

@@ -70,13 +70,9 @@
                     <Separator/>
                     
                     <Label text="컴포넌트 속성" styleClass="section-header"/>
-                    <VBox fx:id="propertyPane" spacing="10" styleClass="property-section">
-                        <VBox spacing="5">
-                            <Label text="라벨 이름" styleClass="property-label"/>
-                            <TextField fx:id="labelTextField" focusTraversable="false"/>
-                        </VBox>
-                        <CheckBox fx:id="showLabelCheckBox" text="화면에 라벨 표시" focusTraversable="false"/>
-                    </VBox>
+                    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+                        <VBox fx:id="propertyPane" spacing="12" styleClass="property-section"/>
+                    </ScrollPane>
                 </VBox>
             </items>
         </SplitPane>

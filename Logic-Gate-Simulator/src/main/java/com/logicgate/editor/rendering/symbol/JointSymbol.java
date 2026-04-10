@@ -36,20 +36,23 @@ public class JointSymbol extends AbstractGateSymbol {
 
     @Override
     public double getInPinX(VisualNode vn, int index) {
-        if (index == 0) return vn.x;
-        if (index == 1) return vn.x + vn.width;
-        if (index == 2) return vn.x + vn.width / 2;
-        if (index == 3) return vn.x + vn.width / 2;
-        return vn.x;
+        int count = vn.node.getInputSize();
+        if (count <= 0) return vn.x;
+        
+        // 원형 배치: 각도를 계산하여 핀 위치 결정 💖
+        double angle = (2 * Math.PI / count) * index;
+        double radius = vn.width / 2;
+        return (vn.x + radius) + Math.cos(angle) * radius;
     }
 
     @Override
     public double getInPinY(VisualNode vn, int index) {
-        if (index == 0) return vn.y + vn.height / 2;
-        if (index == 1) return vn.y + vn.height / 2;
-        if (index == 2) return vn.y;
-        if (index == 3) return vn.y + vn.height;
-        return vn.y;
+        int count = vn.node.getInputSize();
+        if (count <= 0) return vn.y;
+        
+        double angle = (2 * Math.PI / count) * index;
+        double radius = vn.height / 2;
+        return (vn.y + radius) + Math.sin(angle) * radius;
     }
 
     @Override

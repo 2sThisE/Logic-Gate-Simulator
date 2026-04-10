@@ -42,15 +42,10 @@ public class MainController {
     private TreeView<String> componentTreeView;
     @FXML
     private VBox propertyPane;
-    @FXML
-    private TextField labelTextField;
-    @FXML
-    private CheckBox showLabelCheckBox;
 
     @FXML private TextField searchTextField;
     @FXML private ListView<SearchResult> searchResultsListView;
 
-    private TextField groupNameField;
     private javafx.scene.control.ContextMenu contextMenu;
 
     private Circuit circuit;
@@ -343,25 +338,46 @@ public class MainController {
 
     private void redirectSystemOutAndErr() {
         PrintStream originalErr = System.err;
+        PrintStream originalOut = System.out;
 
-        System.setErr(new PrintStream(new OutputStream() {
-            private StringBuilder buffer = new StringBuilder();
+        // 시스템 표준 출력/에러를 캡처하기 위한 커스텀 스트림 ✨
+        OutputStream capturingStream = new OutputStream() {
+            private java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+
             @Override
             public void write(int b) {
-                originalErr.write(b);
                 if (b == '\n') {
-                    String msg = buffer.toString();
-                    buffer.setLength(0);
-                    Platform.runLater(() -> addLog("[ERROR] " + msg, true));
+                    String msg = buffer.toString(java.nio.charset.StandardCharsets.UTF_8);
+                    buffer.reset();
+                    Platform.runLater(() -> addLog(msg, false));
                 } else if (b != '\r') {
-                    buffer.append((char) b);
+                    buffer.write(b);
                 }
             }
-        }, true));
+        };
+
+        OutputStream capturingErrStream = new OutputStream() {
+            private java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+
+            @Override
+            public void write(int b) {
+                originalErr.write(b); // IDE 콘솔에도 출력
+                if (b == '\n') {
+                    String msg = buffer.toString(java.nio.charset.StandardCharsets.UTF_8);
+                    buffer.reset();
+                    Platform.runLater(() -> addLog("[ERROR] " + msg, true));
+                } else if (b != '\r') {
+                    buffer.write(b);
+                }
+            }
+        };
+
+        System.setOut(new PrintStream(capturingStream, true, java.nio.charset.StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(capturingErrStream, true, java.nio.charset.StandardCharsets.UTF_8));
 
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            Platform.runLater(() -> addLog("[FATAL] Uncaught Exception in thread " + t.getName() + ": " + e.toString(), true));
-            e.printStackTrace();
+            Platform.runLater(() -> addLog("[FATAL] Uncaught Exception: " + e.toString(), true));
+            e.printStackTrace(originalErr);
         });
     }
 
@@ -454,9 +470,6 @@ public class MainController {
                     updatePropertyPane();
                 });
             }
-            
-            contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
-            contextMenu.getItems().add(deleteItem);
             deleteItem.setOnAction(e -> {
                 context.historyManager.saveState();
                 for (VisualNode vn : new java.util.ArrayList<>(context.selectedNodes)) {
@@ -504,85 +517,91 @@ public class MainController {
 
     private void setupPropertyPane() {
         context.onSelectionChanged = this::updatePropertyPane;
-        
-        labelTextField.textProperty().addListener((obs, oldVal, newVal) -> {
-            VisualNode selected = context.getSelectedNode();
-            if (selected != null && !newVal.equals(selected.label)) {
-                context.historyManager.saveState();
-                selected.label = newVal;
-                context.setDirty(true);
-            }
-        });
-        
-        showLabelCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            VisualNode selected = context.getSelectedNode();
-            if (selected != null && selected.showLabel != newVal) {
-                context.historyManager.saveState();
-                selected.showLabel = newVal;
-                context.setDirty(true);
-            }
-        });
-        
-        propertyPane.getChildren().add(new javafx.scene.control.Label("Group Name:"));
-        groupNameField = new TextField();
-        propertyPane.getChildren().add(groupNameField);
-        
-        groupNameField.textProperty().addListener((obs, oldVal, newVal) -> {
-            VisualNode selected = context.getSelectedNode();
-            if (selected != null && selected.group != null && !newVal.equals(selected.group)) {
-                context.historyManager.saveState();
-                String oldGroup = selected.group;
-                
-                String targetName = newVal;
-                int suffix = 1;
-                while (isGroupExists(targetName, oldGroup)) {
-                    targetName = newVal + "-" + suffix;
-                    suffix++;
-                }
-
-                for (VisualNode vn : context.visualNodes) {
-                    if (oldGroup.equals(vn.group)) {
-                        vn.group = targetName;
-                    }
-                }
-                
-                if (!targetName.equals(newVal)) {
-                    final String finalName = targetName;
-                    javafx.application.Platform.runLater(() -> {
-                        groupNameField.setText(finalName);
-                        groupNameField.positionCaret(finalName.length());
-                    });
-                }
-                
-                context.setDirty(true);
-            }
-        });
-        
         updatePropertyPane();
     }
 
     private void updatePropertyPane() {
+        propertyPane.getChildren().clear();
         VisualNode selected = context.getSelectedNode();
+        
         if (selected == null) {
             propertyPane.setDisable(true);
-            labelTextField.setText("");
-            showLabelCheckBox.setSelected(false);
-            if (groupNameField != null) {
-                groupNameField.setText("");
-                groupNameField.setDisable(true);
-            }
+            Label placeholder = new Label("선택된 컴포넌트 없음");
+            placeholder.setStyle("-fx-text-fill: #888888; -fx-font-style: italic;");
+            propertyPane.getChildren().add(placeholder);
         } else {
             propertyPane.setDisable(false);
-            labelTextField.setText(selected.label);
-            showLabelCheckBox.setSelected(selected.showLabel);
-            if (groupNameField != null) {
-                if (selected.group != null) {
-                    groupNameField.setText(selected.group);
-                    groupNameField.setDisable(false);
-                } else {
-                    groupNameField.setText("");
-                    groupNameField.setDisable(true);
+            
+            for (com.logicgate.editor.model.Property<?> prop : selected.getProperties(context)) {
+                VBox row = new VBox(5);
+                Label nameLabel = new Label(prop.getName());
+                nameLabel.getStyleClass().add("property-label");
+                row.getChildren().add(nameLabel);
+
+                switch (prop.getType()) {
+                    case STRING -> {
+                        TextField tf = new TextField((String) prop.getValue());
+                        tf.textProperty().addListener((obs, oldVal, newVal) -> {
+                            // 주의: 텍스트 변경 마다 스냅샷을 찍으면 너무 많아지므로, 포커스를 잃을 때 찍거나 
+                            // 여기서는 단순 변경만 적용하고 context.setDirty(true) 처리 ✨
+                            ((com.logicgate.editor.model.Property<String>) prop).setValue(newVal);
+                        });
+                        // 포커스를 잃을 때만 히스토리 저장 🔪💕
+                        tf.focusedProperty().addListener((obs, oldF, newF) -> {
+                            if (!newF) context.historyManager.saveState();
+                        });
+                        row.getChildren().add(tf);
+                    }
+                    case BOOLEAN -> {
+                        CheckBox cb = new CheckBox("");
+                        cb.setSelected((Boolean) prop.getValue());
+                        cb.selectedProperty().addListener((obs, oldVal, newVal) -> {
+                            context.historyManager.saveState();
+                            ((com.logicgate.editor.model.Property<Boolean>) prop).setValue(newVal);
+                        });
+                        row.getChildren().add(cb);
+                    }
+                    case COLOR -> {
+                        ColorPicker cp = new ColorPicker(javafx.scene.paint.Color.web((String) prop.getValue()));
+                        cp.setMaxWidth(Double.MAX_VALUE);
+                        cp.setOnAction(e -> {
+                            context.historyManager.saveState();
+                            javafx.scene.paint.Color c = cp.getValue();
+                            String hex = String.format("#%02X%02X%02X", 
+                                (int)(c.getRed() * 255), (int)(c.getGreen() * 255), (int)(c.getBlue() * 255));
+                            ((com.logicgate.editor.model.Property<String>) prop).setValue(hex);
+                        });
+                        row.getChildren().add(cp);
+                    }
+                    case INTEGER -> {
+                        Slider slider = new Slider(2, 8, (Integer) prop.getValue());
+                        slider.setShowTickLabels(true);
+                        slider.setShowTickMarks(true);
+                        slider.setMajorTickUnit(1);
+                        slider.setSnapToTicks(true);
+                        slider.setMinorTickCount(0);
+                        slider.valueProperty().addListener((obs, oldVal, newVal) -> {
+                            if (!slider.isValueChanging()) {
+                                context.historyManager.saveState();
+                                ((com.logicgate.editor.model.Property<Integer>) prop).setValue(newVal.intValue());
+                                // 💖 UI 전체 갱신 대신 데이터만 동기화 ✨
+                                context.setDirty(true);
+                            }
+                        });
+                        row.getChildren().add(slider);
+                    }
+                    case CHOICE -> {
+                        ComboBox<String> combo = new ComboBox<>(javafx.collections.FXCollections.observableArrayList(prop.getOptions()));
+                        combo.setValue((String) prop.getValue());
+                        combo.setMaxWidth(Double.MAX_VALUE);
+                        combo.setOnAction(e -> {
+                            context.historyManager.saveState();
+                            ((com.logicgate.editor.model.Property<String>) prop).setValue(combo.getValue());
+                        });
+                        row.getChildren().add(combo);
+                    }
                 }
+                propertyPane.getChildren().add(row);
             }
         }
     }

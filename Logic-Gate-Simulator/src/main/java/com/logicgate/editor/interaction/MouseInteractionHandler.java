@@ -201,7 +201,11 @@ public class MouseInteractionHandler {
                     
                     if (context.hoveredNode.node instanceof InputPin) {
                         InputPin pin = (InputPin) context.hoveredNode.node;
-                        pin.setState(pin.getOut() == 0);
+                        if ("Momentary".equals(pin.getMode())) {
+                            pin.setState(true); // 누르고 있는 동안 켬 ✨
+                        } else {
+                            pin.setState(pin.getOut() == 0); // 토글 ✨
+                        }
                         context.setDirty(true);
                     }
                     context.historyManager.saveState();
@@ -405,6 +409,15 @@ public class MouseInteractionHandler {
             if (context.worldMouseX != context.dragOffsetX || context.worldMouseY != context.dragOffsetY) {
                 context.setDirty(true);
             }
+            
+            // Momentary 스위치 해제 처리 💖
+            if (context.draggingNode.node instanceof InputPin) {
+                InputPin pin = (InputPin) context.draggingNode.node;
+                if ("Momentary".equals(pin.getMode())) {
+                    pin.setState(false);
+                    context.setDirty(true);
+                }
+            }
         }
 
         context.isWiring = false;
@@ -508,6 +521,7 @@ public class MouseInteractionHandler {
             NodeData nd = context.pendingProjectData.nodes.get(i);
             Node logicNode = NodeFactory.createNodeByType(nd.type);
             if (logicNode != null) {
+                logicNode.setProperties(nd.properties); // 속성 복구 추가 💖
                 context.getCircuit().addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, context.worldMouseX + nd.x, context.worldMouseY + nd.y, nd.label);
                 vn.showLabel = nd.showLabel;

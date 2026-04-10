@@ -56,10 +56,12 @@ public class HistoryManager {
     private ProjectData captureCurrentState() {
         ProjectData data = new ProjectData();
         for (VisualNode vn : context.visualNodes) {
-            data.nodes.add(new NodeData(
-                vn.node.getClass().getName(),
+            NodeData nd = new NodeData(
+                vn.node.getTypeId(),
                 vn.x, vn.y, vn.label, vn.showLabel, vn.group
-            ));
+            );
+            nd.properties.putAll(vn.node.getProperties()); // 속성 복사 ✨
+            data.nodes.add(nd);
         }
         for (VisualWire vw : context.visualWires) {
             data.wires.add(new WireData(
@@ -84,6 +86,7 @@ public class HistoryManager {
         for (NodeData nd : data.nodes) {
             Node logicNode = NodeFactory.createNodeByType(nd.type);
             if (logicNode != null) {
+                logicNode.setProperties(nd.properties); // 속성 복구 ✨
                 context.getCircuit().addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, nd.x, nd.y, nd.label);
                 vn.showLabel = nd.showLabel;

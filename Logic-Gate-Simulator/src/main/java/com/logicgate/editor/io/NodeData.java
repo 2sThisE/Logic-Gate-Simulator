@@ -6,6 +6,7 @@ public class NodeData {
     public String label;
     public boolean showLabel;
     public String group;
+    public java.util.Map<String, String> properties = new java.util.HashMap<>();
 
     public NodeData(String type, double x, double y, String label, boolean showLabel, String group) {
         this.type = type;

@@ -27,7 +27,12 @@ public class OutputPinSymbol extends AbstractGateSymbol {
             gc.setStroke(Color.WHITE);
         }
 
-        gc.setFill(isOn ? Color.web("#33FF66") : Color.web("#333333"));
+        String colorHex = "#33FF66";
+        if (vn.node instanceof com.logicgate.gates.OutputPin) {
+            colorHex = ((com.logicgate.gates.OutputPin) vn.node).getOnColor();
+        }
+        
+        gc.setFill(isOn ? Color.web(colorHex) : Color.web("#333333"));
         gc.fillOval(0, 0, vn.width, vn.height);
         gc.strokeOval(0, 0, vn.width, vn.height);
         

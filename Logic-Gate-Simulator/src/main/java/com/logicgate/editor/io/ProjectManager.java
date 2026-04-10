@@ -196,10 +196,12 @@ public class ProjectManager {
 
                 ProjectData data = new ProjectData();
                 for (VisualNode vn : context.visualNodes) {
-                    data.nodes.add(new NodeData(
+                    NodeData nd = new NodeData(
                         vn.node.getTypeId(),
                         vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
-                    ));
+                    );
+                    nd.properties.putAll(vn.node.getProperties()); // 속성 포함 ✨
+                    data.nodes.add(nd);
                 }
                 for (VisualWire vw : context.visualWires) {
                     data.wires.add(new WireData(
@@ -248,10 +250,12 @@ public class ProjectManager {
         java.util.List<VisualNode> copiedNodes = new java.util.ArrayList<>(context.selectedNodes);
         
         for (VisualNode vn : copiedNodes) {
-            data.nodes.add(new NodeData(
+            NodeData nd = new NodeData(
                 vn.node.getTypeId(),
                 vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
-            ));
+            );
+            nd.properties.putAll(vn.node.getProperties()); // 속성 복사 추가 💖
+            data.nodes.add(nd);
         }
 
         for (VisualWire vw : context.visualWires) {
