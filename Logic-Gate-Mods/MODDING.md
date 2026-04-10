@@ -128,7 +128,7 @@ public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean i
 
 ## 5. 모드 적용 방법
 1. 프로젝트를 **JAR 파일**로 빌드합니다.
-2. 생성된 JAR 파일을 시뮬레이터 실행 경로의 `mods/` 폴더에 넣습니다.
+2. 생성된 JAR 파일을 시뮬레이터에서 모드 관리자로 추가하면 자동으로 추가됩니다
 3. 시뮬레이터를 실행하면 좌측 컴포넌트 리스트에 지정한 `section` 아래에 새로운 컴포넌트가 나타납니다.
 
 ---
