@@ -14,14 +14,22 @@ public class HistoryManager {
     private final EditorContext context;
     private final Stack<ProjectData> undoStack = new Stack<>();
     private final Stack<ProjectData> redoStack = new Stack<>();
-    private boolean isRestoring = false;
+    private boolean isBatchOperation = false; // 대량 작업 중 저장 방지 ✨
 
     public HistoryManager(EditorContext context) {
         this.context = context;
     }
 
+    public void startBatchOperation() {
+        this.isBatchOperation = true;
+    }
+
+    public void stopBatchOperation() {
+        this.isBatchOperation = false;
+    }
+
     public void saveState() {
-        if (isRestoring) return;
+        if (isBatchOperation) return;
         
         ProjectData data = captureCurrentState();
         undoStack.push(data);
@@ -58,7 +66,7 @@ public class HistoryManager {
         for (VisualNode vn : context.visualNodes) {
             NodeData nd = new NodeData(
                 vn.node.getTypeId(),
-                vn.x, vn.y, vn.label, vn.showLabel, vn.group
+                vn.x, vn.y, vn.rotation, vn.label, vn.showLabel, vn.group
             );
             nd.properties.putAll(vn.node.getProperties()); // 속성 복사 ✨
             data.nodes.add(nd);
@@ -75,7 +83,7 @@ public class HistoryManager {
     }
 
     private void restoreState(ProjectData data) {
-        isRestoring = true;
+        startBatchOperation(); // 복원 중에는 추가 스냅샷 방지 ✨
         
         // 현재 상태 정리
         context.visualNodes.clear();
@@ -90,6 +98,7 @@ public class HistoryManager {
                 context.getCircuit().addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, nd.x, nd.y, nd.label);
                 vn.showLabel = nd.showLabel;
+                vn.rotation = nd.rotation; // 회전각 복원 ✨
                 vn.group = nd.group;
                 context.visualNodes.add(vn);
             }
@@ -114,7 +123,7 @@ public class HistoryManager {
         context.selectedWire = null;
         context.setDirty(true);
         
-        isRestoring = false;
+        stopBatchOperation();
     }
     
     public void clear() {

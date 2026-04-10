@@ -37,6 +37,12 @@
     -fx-text-fill: #EEEEEE;
 }
 
+.options-category-list .list-cell:empty,
+.options-category-list .list-cell:empty:hover {
+    -fx-background-color: transparent;
+    -fx-cursor: default;
+}
+
 .options-category-list .list-cell:selected {
     -fx-background-color: #094771;
     -fx-text-fill: white;

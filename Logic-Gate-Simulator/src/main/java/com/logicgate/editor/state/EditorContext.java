@@ -88,6 +88,7 @@ public class EditorContext {
     public boolean isPlacingImport = false;
     public ProjectData pendingProjectData = null;
     public String placingNodeTypeId = null; // 단일 부품 연속 배치 모드용 💖
+    public double placingRotation = 0; // 배치 시 적용할 회전각 ✨
     
     // Snapping state
     public Double snapLineX = null;

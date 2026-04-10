@@ -22,7 +22,7 @@ public abstract class AbstractGateSymbol implements GateSymbol {
         gc.stroke();
         
         drawExtra(gc, vn);
-        drawLabel(gc, vn);
+        // drawLabel(gc, vn); // VisualNode에서 통합 관리하도록 변경 ✨
         
         gc.restore();
     }
@@ -40,8 +40,14 @@ public abstract class AbstractGateSymbol implements GateSymbol {
 
     protected void drawLabel(GraphicsContext gc, VisualNode vn) {
         if (vn.showLabel) {
+            gc.save();
+            // 라벨 위치로 이동 후 부품 회전의 반대 방향으로 회전 적용 ✨
+            gc.translate(getLabelX(vn), getLabelY(vn));
+            gc.rotate(-vn.rotation);
+            
             gc.setFill(Color.WHITE);
-            gc.fillText(vn.label, getLabelX(vn), getLabelY(vn));
+            gc.fillText(vn.label, 0, 0); // 이미 이동했으므로 0,0에 그림
+            gc.restore();
         }
     }
     
@@ -57,7 +63,7 @@ public abstract class AbstractGateSymbol implements GateSymbol {
             gc.setLineWidth(2);
             gc.setStroke(Color.WHITE);
         }
-        gc.translate(vn.x, vn.y);
+        // gc.translate(vn.x, vn.y); // VisualNode에서 이미 처리함 ✨
     }
 
     @Override

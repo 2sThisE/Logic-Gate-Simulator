@@ -74,12 +74,72 @@ public class KeyboardInteractionHandler {
                 }
                 break;
             case V:
-                if (event.isShortcutDown() && context.onPasteRequested != null) {
-                    context.onPasteRequested.run();
+                if (event.isShortcutDown()) {
+                    // 붙여넣기 시 기존 선택 해제 ✨
+                    context.selectedNodes.clear();
+                    context.setSelectedNode(null);
+                    context.selectedWire = null;
+                    
+                    if (context.onPasteRequested != null) {
+                        context.onPasteRequested.run();
+                    }
+                }
+                break;
+            case Q:
+            case E:
+                double angle = (event.getCode() == KeyCode.Q) ? -10 : 10;
+                if (event.isShiftDown()) angle *= 9; // Shift 누르면 90도씩 회전 ✨
+
+                if (context.placingNodeTypeId != null || context.isPlacingImport) {
+                    // 배치 모드(단일/그룹)일 때는 배치 예정 각도 조절 ✨
+                    context.placingRotation = (context.placingRotation + angle) % 360;
+                } else if (!context.selectedNodes.isEmpty()) {
+                    // 선택된 노드들이 있을 때는 그룹 회전 수행 🔪💕
+                    rotateSelection(angle);
                 }
                 break;
             default: break;
         }
+    }
+
+    private void rotateSelection(double angle) {
+        context.historyManager.saveState();
+
+        // 1. 선택된 모든 노드의 전체 영역(Bounding Box)의 중앙을 찾음 ✨
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+
+        for (VisualNode vn : context.selectedNodes) {
+            minX = Math.min(minX, vn.x);
+            minY = Math.min(minY, vn.y);
+            maxX = Math.max(maxX, vn.x + vn.width);
+            maxY = Math.max(maxY, vn.y + vn.height);
+        }
+
+        double groupCx = (minX + maxX) / 2;
+        double groupCy = (minY + maxY) / 2;
+
+        double rad = Math.toRadians(angle);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+
+        // 2. 각 노드를 그룹 중앙을 기준으로 위치 이동 및 개별 회전 ✨
+        for (VisualNode vn : context.selectedNodes) {
+            double nodeCx = vn.x + vn.width / 2;
+            double nodeCy = vn.y + vn.height / 2;
+
+            double dx = nodeCx - groupCx;
+            double dy = nodeCy - groupCy;
+
+            // 좌표 회전 공식 적용 🔪💕
+            double newNodeCx = groupCx + (dx * cos - dy * sin);
+            double newNodeCy = groupCy + (dx * sin + dy * cos);
+
+            vn.x = newNodeCx - vn.width / 2;
+            vn.y = newNodeCy - vn.height / 2;
+            vn.rotation = (vn.rotation + angle) % 360;
+        }
+        context.setDirty(true);
     }
 
     public void handleKeyReleased(KeyEvent event) {

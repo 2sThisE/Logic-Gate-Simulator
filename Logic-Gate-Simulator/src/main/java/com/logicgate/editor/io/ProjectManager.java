@@ -95,7 +95,7 @@ public class ProjectManager {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             // 1. Header
             dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(2);          // Version
+            dos.writeInt(3);          // Version ✨
 
             // 2. Nodes
             dos.writeInt(context.visualNodes.size());
@@ -103,6 +103,7 @@ public class ProjectManager {
                 dos.writeUTF(vn.node.getTypeId());
                 dos.writeDouble(vn.x);
                 dos.writeDouble(vn.y);
+                dos.writeDouble(vn.rotation); // 회전각 추가 ✨
                 dos.writeUTF(vn.label != null ? vn.label : "");
                 dos.writeBoolean(vn.showLabel);
                 dos.writeUTF(vn.group != null ? vn.group : "");
@@ -135,6 +136,7 @@ public class ProjectManager {
                 String type = dis.readUTF();
                 double x = dis.readDouble();
                 double y = dis.readDouble();
+                double rotation = (version >= 3) ? dis.readDouble() : 0; // 버전 3부터 회전각 ✨
                 String label = dis.readUTF();
                 boolean showLabel = dis.readBoolean();
                 String group = null;
@@ -148,6 +150,7 @@ public class ProjectManager {
                     context.getCircuit().addNode(logicNode);
                     VisualNode vn = new VisualNode(logicNode, x, y, label);
                     vn.showLabel = showLabel;
+                    vn.rotation = rotation;
                     vn.group = group;
                     context.visualNodes.add(vn);
                 }
@@ -187,18 +190,21 @@ public class ProjectManager {
 
         if (file != null) {
             try {
-                double minX = Double.MAX_VALUE;
-                double minY = Double.MAX_VALUE;
+                // 중앙 좌표 기준 계산 🔪💕
+                double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+                double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
                 for (VisualNode vn : context.visualNodes) {
-                    minX = Math.min(minX, vn.x);
-                    minY = Math.min(minY, vn.y);
+                    minX = Math.min(minX, vn.x); minY = Math.min(minY, vn.y);
+                    maxX = Math.max(maxX, vn.x + vn.width); maxY = Math.max(maxY, vn.y + vn.height);
                 }
+                double cx = (minX + maxX) / 2;
+                double cy = (minY + maxY) / 2;
 
                 ProjectData data = new ProjectData();
                 for (VisualNode vn : context.visualNodes) {
                     NodeData nd = new NodeData(
                         vn.node.getTypeId(),
-                        vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
+                        vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.group
                     );
                     nd.properties.putAll(vn.node.getProperties()); // 속성 포함 ✨
                     data.nodes.add(nd);
@@ -230,6 +236,7 @@ public class ProjectManager {
                 String json = Files.readString(file.toPath());
                 context.pendingProjectData = gson.fromJson(json, ProjectData.class);
                 context.isPlacingImport = true;
+                context.placingRotation = 0; // 붙여넣기 모드 진입 시 회전각 초기화 ✨
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -239,12 +246,15 @@ public class ProjectManager {
     public void copyToClipboard() {
         if (context.selectedNodes.isEmpty()) return;
 
-        double minX = Double.MAX_VALUE;
-        double minY = Double.MAX_VALUE;
+        // 선택 영역의 중앙점 찾기 🔪💕
+        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         for (VisualNode vn : context.selectedNodes) {
-            minX = Math.min(minX, vn.x);
-            minY = Math.min(minY, vn.y);
+            minX = Math.min(minX, vn.x); minY = Math.min(minY, vn.y);
+            maxX = Math.max(maxX, vn.x + vn.width); maxY = Math.max(maxY, vn.y + vn.height);
         }
+        double cx = (minX + maxX) / 2;
+        double cy = (minY + maxY) / 2;
 
         ProjectData data = new ProjectData();
         java.util.List<VisualNode> copiedNodes = new java.util.ArrayList<>(context.selectedNodes);
@@ -252,7 +262,7 @@ public class ProjectManager {
         for (VisualNode vn : copiedNodes) {
             NodeData nd = new NodeData(
                 vn.node.getTypeId(),
-                vn.x - minX, vn.y - minY, vn.label, vn.showLabel, vn.group
+                vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.group
             );
             nd.properties.putAll(vn.node.getProperties()); // 속성 복사 추가 💖
             data.nodes.add(nd);
@@ -281,6 +291,7 @@ public class ProjectManager {
                 if (data != null && data.nodes != null) { // 유효성 검사
                     context.pendingProjectData = data;
                     context.isPlacingImport = true;
+                    context.placingRotation = 0; // 초기화 ✨
                 }
             } catch (Exception e) {
                 // JSON 파싱 실패 시 무시 (외부 텍스트 복사 등)

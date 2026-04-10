@@ -12,7 +12,7 @@
   "snapToGrid": false,
   "gridSize": 20,
   "showAlignmentGuides": true,
-  "wireStyle": "Orthogonal",
+  "wireStyle": "Curved",
   "showWireState": true,
   "wireHighColor": "#FF3366",
   "wireLowColor": "#555555",

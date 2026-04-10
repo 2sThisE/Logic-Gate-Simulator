@@ -177,6 +177,7 @@ public class MouseInteractionHandler {
                     }
                     vn.x = context.worldMouseX - (vn.width / 2);
                     vn.y = context.worldMouseY - (vn.height / 2);
+                    vn.rotation = context.placingRotation; // 배치 시 현재 회전각 적용 ✨
                     context.visualNodes.add(vn);
                     context.setDirty(true);
                 }
@@ -259,6 +260,7 @@ public class MouseInteractionHandler {
             // 우클릭 시 배치 모드 취소 기능 추가 ✨
             if (event.getButton() == MouseButton.SECONDARY && context.placingNodeTypeId != null) {
                 context.placingNodeTypeId = null;
+                context.placingRotation = 0; // 회전각 초기화 ✨
                 updateHoverState();
                 return;
             }
@@ -524,7 +526,8 @@ public class MouseInteractionHandler {
     private void finalizePlacement() {
         if (context.pendingProjectData == null) return;
 
-        context.historyManager.saveState();
+        context.historyManager.startBatchOperation();
+        context.historyManager.saveState(); // 대량 작업 시작 전 상태 저장 ✨
 
         // 그룹 이름 재매핑을 위한 맵 (원본 그룹명 -> 새 그룹명) 🔪💕
         java.util.Map<String, String> groupRemap = new java.util.HashMap<>();
@@ -533,21 +536,30 @@ public class MouseInteractionHandler {
         int nodeCount = context.pendingProjectData.nodes.size();
         VisualNode[] newNodes = new VisualNode[nodeCount];
         
+        double groupRotation = context.placingRotation;
+        double rad = Math.toRadians(groupRotation);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+
         for (int i = 0; i < nodeCount; i++) {
             NodeData nd = context.pendingProjectData.nodes.get(i);
             Node logicNode = NodeFactory.createNodeByType(nd.type);
             if (logicNode != null) {
-                logicNode.setProperties(nd.properties); // 속성 복구 추가 💖
+                logicNode.setProperties(nd.properties);
                 context.getCircuit().addNode(logicNode);
-                VisualNode vn = new VisualNode(logicNode, context.worldMouseX + nd.x, context.worldMouseY + nd.y, nd.label);
-                vn.showLabel = nd.showLabel;
                 
-                // 그룹 정보가 있다면 독립적인 새 그룹으로 재할당 💖
+                // 회전 변환 적용된 좌표 계산 ✨
+                double rx = nd.x * cos - nd.y * sin;
+                double ry = nd.x * sin + nd.y * cos;
+
+                VisualNode vn = new VisualNode(logicNode, context.worldMouseX + rx, context.worldMouseY + ry, nd.label);
+                vn.showLabel = nd.showLabel;
+                vn.rotation = nd.rotation + groupRotation; // 개별 회전 + 그룹 회전 ✨
+                
                 if (nd.group != null && !nd.group.isEmpty()) {
                     if (!groupRemap.containsKey(nd.group)) {
                         String newGroupName = nd.group;
                         int suffix = 1;
-                        // 현재 회로에 이미 존재하는 그룹명인지 확인 🔪
                         while (isGroupExists(newGroupName)) {
                             newGroupName = nd.group + "_" + suffix;
                             suffix++;
@@ -569,10 +581,8 @@ public class MouseInteractionHandler {
                 VisualNode from = newNodes[wd.fromIdx];
                 VisualNode to = newNodes[wd.toIdx];
                 
-                // 둘 다 존재하는 경우에만 연결! 💖
                 if (from != null && to != null) {
                     wiringManager.connectWires(from, wd.outPin, to, wd.inPin);
-                    // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
                     context.getCircuit().tick();
                 }
             }
@@ -580,7 +590,8 @@ public class MouseInteractionHandler {
 
         context.isPlacingImport = false;
         context.pendingProjectData = null;
-        context.setDirty(true); // 가져오기 완료 후 변경 감지 ✨
+        context.setDirty(true);
+        context.historyManager.stopBatchOperation(); // 작업 완료 ✨
         updateHoverState();
     }
 

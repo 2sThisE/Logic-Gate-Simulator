@@ -13,6 +13,7 @@ public class VisualNode {
     public Node node;
     public double x, y;
     public double width = 80, height = 50;
+    public double rotation = 0; // 회전각 (도 단위) ✨
     public String label;
     public boolean showLabel = false;
     public String group = null;
@@ -135,45 +136,111 @@ public class VisualNode {
     public double getDragStartY() { return dragStartY; }
 
     public boolean contains(double px, double py) {
-        return px >= x && px <= x + width && py >= y && py <= y + height;
+        // 회전된 사각형 내부에 점이 있는지 확인 🔪💕
+        // 점을 역회전시켜 축 정렬된 사각형과 비교하는 방식
+        double cx = x + width / 2;
+        double cy = y + height / 2;
+        
+        double rad = Math.toRadians(-rotation);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+        
+        double dx = px - cx;
+        double dy = py - cy;
+        
+        double rx = dx * cos - dy * sin;
+        double ry = dx * sin + dy * cos;
+        
+        return rx >= -width / 2 && rx <= width / 2 && ry >= -height / 2 && ry <= height / 2;
+    }
+
+    private double getRotatedX(double localX, double localY) {
+        double cx = width / 2;
+        double cy = height / 2;
+        double rad = Math.toRadians(rotation);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+        double dx = localX - cx;
+        double dy = localY - cy;
+        return (x + cx) + (dx * cos - dy * sin);
+    }
+
+    private double getRotatedY(double localX, double localY) {
+        double cx = width / 2;
+        double cy = height / 2;
+        double rad = Math.toRadians(rotation);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+        double dx = localX - cx;
+        double dy = localY - cy;
+        return (y + cy) + (dx * sin + dy * cos);
     }
 
     public double getInPinX(int index) {
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
-        return symbol != null ? symbol.getInPinX(this, index) : x;
+        if (symbol == null) return x;
+        return getRotatedX(symbol.getInPinX(this, index) - x, symbol.getInPinY(this, index) - y);
     }
 
     public double getInPinY(int index) {
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
-        return symbol != null ? symbol.getInPinY(this, index) : y;
+        if (symbol == null) return y;
+        return getRotatedY(symbol.getInPinX(this, index) - x, symbol.getInPinY(this, index) - y);
     }
 
     public double getOutPinX(int index) {
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
-        return symbol != null ? symbol.getOutPinX(this, index) : x;
+        if (symbol == null) return x + width;
+        return getRotatedX(symbol.getOutPinX(this, index) - x, symbol.getOutPinY(this, index) - y);
     }
 
     public double getOutPinY(int index) {
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
-        return symbol != null ? symbol.getOutPinY(this, index) : y;
+        if (symbol == null) return y + height / 2;
+        return getRotatedY(symbol.getOutPinX(this, index) - x, symbol.getOutPinY(this, index) - y);
     }
 
     public void draw(GraphicsContext gc, boolean isHovered, boolean isSelected, int hoveredInPin, int hoveredOutPin, VisualWire selectedWire, boolean isConnectionInvalid) {
         boolean isBodyHovered = isHovered && hoveredInPin == -1 && hoveredOutPin == -1;
         
+        gc.save();
+        // 부품 중앙을 기준으로 회전 행렬 적용 ✨
+        gc.translate(x + width / 2, y + height / 2);
+        gc.rotate(rotation);
+        gc.translate(-width / 2, -height / 2);
+
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
         if (symbol != null) {
             symbol.draw(gc, this, isBodyHovered, isSelected);
         } else {
-            gc.setFill(Color.web("#4A90E2"));
-            gc.fillRect(x, y, width, height);
-            gc.strokeRect(x, y, width, height);
-            if (showLabel) {
-                gc.setFill(Color.WHITE);
-                gc.fillText(label, x + 25, y + 30);
-            }
+            gc.setFill(Color.web("#4A90E2", 0.8));
+            gc.fillRect(0, 0, width, height); 
+            gc.setStroke(isSelected ? Color.web("#00FFFF") : (isBodyHovered ? Color.web("#FFD700") : Color.WHITE));
+            gc.setLineWidth(isSelected || isBodyHovered ? 4 : 2);
+            gc.strokeRect(0, 0, width, height);
         }
 
+        // 공통 라벨 드로잉 (심볼 내부 로직과 분리하여 모든 부품 적용) ✨
+        if (showLabel && label != null && !label.isEmpty()) {
+            gc.save();
+            double lx, ly;
+            if (symbol != null) {
+                lx = symbol.getLabelX(this);
+                ly = symbol.getLabelY(this);
+            } else {
+                lx = width * 0.3;
+                ly = height + 15;
+            }
+            gc.translate(lx, ly);
+            gc.rotate(-rotation); // 역회전 적용 ✨
+            gc.setFill(Color.WHITE);
+            gc.setFont(javafx.scene.text.Font.font("Arial", 12));
+            gc.fillText(label, 0, 0);
+            gc.restore();
+        }
+        gc.restore();
+
+        // 핀 그리기 (회전된 위치 계산)
         // 입력 핀 그리기
         for (int i = 0; i < node.getInputSize(); i++) {
             boolean isPinHovered = isHovered && hoveredInPin == i;

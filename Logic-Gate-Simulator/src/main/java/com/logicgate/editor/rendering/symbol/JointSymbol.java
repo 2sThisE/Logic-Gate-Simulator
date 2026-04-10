@@ -13,7 +13,7 @@ public class JointSymbol extends AbstractGateSymbol {
     @Override
     public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
         gc.save();
-        gc.translate(vn.x, vn.y);
+        // gc.translate(vn.x, vn.y); // VisualNode에서 이미 처리함 ✨
         
         if (isSelected) {
             gc.setLineWidth(4);

@@ -145,12 +145,24 @@ public class CanvasRenderer {
         if (context.isPlacingImport && context.pendingProjectData != null) {
             gc.setGlobalAlpha(0.5);
             
+            // 붙여넣기 미리보기 그룹 회전 적용 🔪💕
+            double groupRotation = context.placingRotation;
+            double rad = Math.toRadians(groupRotation);
+            double cos = Math.cos(rad);
+            double sin = Math.sin(rad);
+
             for (NodeData nd : context.pendingProjectData.nodes) {
-                double previewX = context.worldMouseX + nd.x;
-                double previewY = context.worldMouseY + nd.y;
+                // 개별 노드 위치를 중앙(마우스) 기준으로 회전 변환 ✨
+                double rx = nd.x * cos - nd.y * sin;
+                double ry = nd.x * sin + nd.y * cos;
+                
+                double previewX = context.worldMouseX + rx;
+                double previewY = context.worldMouseY + ry;
+                
                 Node dummyNode = NodeFactory.createNodeByType(nd.type);
                 if (dummyNode != null) {
                     VisualNode dummyVn = new VisualNode(dummyNode, previewX, previewY, nd.label);
+                    dummyVn.rotation = nd.rotation + groupRotation; // 기존 회전 + 그룹 회전 ✨
                     dummyVn.draw(gc, false, false, -1, -1, null, false);
                 }
             }
@@ -164,8 +176,16 @@ public class CanvasRenderer {
                 Node fNode = NodeFactory.createNodeByType(fromNd.type);
                 Node tNode = NodeFactory.createNodeByType(toNd.type);
                 if(fNode != null && tNode != null) {
-                    VisualNode fromVn = new VisualNode(fNode, context.worldMouseX + fromNd.x, context.worldMouseY + fromNd.y, "");
-                    VisualNode toVn = new VisualNode(tNode, context.worldMouseX + toNd.x, context.worldMouseY + toNd.y, "");
+                    // 전선용 좌표도 동일하게 회전 변환 ✨
+                    double fx = fromNd.x * cos - fromNd.y * sin;
+                    double fy = fromNd.x * sin + fromNd.y * cos;
+                    double tx = toNd.x * cos - toNd.y * sin;
+                    double ty = toNd.x * sin + toNd.y * cos;
+
+                    VisualNode fromVn = new VisualNode(fNode, context.worldMouseX + fx, context.worldMouseY + fy, "");
+                    fromVn.rotation = fromNd.rotation + groupRotation;
+                    VisualNode toVn = new VisualNode(tNode, context.worldMouseX + tx, context.worldMouseY + ty, "");
+                    toVn.rotation = toNd.rotation + groupRotation;
                     
                     double x1 = fromVn.getOutPinX(wd.outPin);
                     double y1 = fromVn.getOutPinY(wd.outPin);
@@ -186,6 +206,7 @@ public class CanvasRenderer {
                 VisualNode dummyVn = new VisualNode(dummyNode, 0, 0, "");
                 dummyVn.x = context.worldMouseX - (dummyVn.width / 2);
                 dummyVn.y = context.worldMouseY - (dummyVn.height / 2);
+                dummyVn.rotation = context.placingRotation; // 배치 예정 회전각 적용 ✨
                 dummyVn.draw(gc, false, false, -1, -1, null, false);
             }
             gc.setGlobalAlpha(1.0);
