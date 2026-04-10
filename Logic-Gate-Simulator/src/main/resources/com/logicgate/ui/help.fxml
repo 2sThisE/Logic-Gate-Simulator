@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane prefWidth="800" prefHeight="600" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.logicgate.ui.HelpController" styleClass="options-root">
+    <stylesheets>
+        <URL value="@main.css" />
+        <URL value="@options.css" />
+    </stylesheets>
+    
+    <left>
+        <VBox fx:id="sidebar" styleClass="options-sidebar">
+            <Label text="도움말 항목" styleClass="options-header"/>
+            <Region prefHeight="10"/>
+            <ListView fx:id="helpCategoryList" styleClass="options-category-list" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+    
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="options-content-area" hbarPolicy="NEVER">
+            <StackPane fx:id="helpContentArea">
+                <!-- 1. 소개 -->
+                <VBox fx:id="introPane" spacing="20" styleClass="options-pane">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="시뮬레이터 소개" styleClass="options-title"/>
+                        <FontIcon iconLiteral="mdi2s-sparkles" iconSize="24" iconColor="#FFD700"/>
+                    </HBox>
+                    <Separator styleClass="options-separator"/>
+                    <Label text="Logic Gate Simulator v1.0에 오신 것을 환영합니다!" styleClass="options-desc" wrapText="true"/>
+                    <Label text="이 시뮬레이터는 다양한 논리 게이트를 조합하여 복잡한 디지털 회로를 설계하고 실시간으로 시뮬레이션할 수 있는 도구입니다. 기본 게이트뿐만 아니라 외부 모드를 통한 기능 확장도 지원합니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <FontIcon iconLiteral="mdi2m-magnify" iconSize="16" iconColor="#888888"/>
+                        <Label text="왼쪽의 메뉴를 클릭하여 상세한 사용법을 확인해보세요." styleClass="options-hint"/>
+                    </HBox>
+                </VBox>
+                
+                <!-- 2. 부품 조작 -->
+                <VBox fx:id="componentPane" spacing="20" styleClass="options-pane" visible="false">
+                    <Label text="부품 조작 가이드" styleClass="options-title"/>
+                    <Separator styleClass="options-separator"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2p-puzzle" iconSize="18" iconColor="#4A90E2"/>
+                        <Label text="부품 추가하기" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="좌측 하단의 'Component' 트리에서 원하는 부품을 더블 클릭하세요. 마우스를 따라다니는 '고스트' 상태가 되면 원하는 위치에 클릭하여 배치할 수 있습니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2r-rotate-right" iconSize="18" iconColor="#4A90E2"/>
+                        <Label text="부품 회전하기" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="부품을 선택하거나 배치 중인 상태에서 Q(반시계) 또는 E(시계) 키를 눌러 10도씩 회전할 수 있습니다. Shift 키를 함께 누르면 90도 단위로 회전합니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2m-mouse" iconSize="18" iconColor="#4A90E2"/>
+                        <Label text="이동 및 선택" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="클릭하여 선택하고 드래그하여 이동할 수 있습니다. Ctrl 키를 누른 채 클릭하여 다중 선택이 가능하며, 빈 공간을 드래그하여 영역 선택도 가능합니다." styleClass="options-label" wrapText="true"/>
+                </VBox>
+                
+                <!-- 3. 배선 (Wiring) -->
+                <VBox fx:id="wiringPane" spacing="20" styleClass="options-pane" visible="false">
+                    <Label text="전선 연결 및 관리" styleClass="options-title"/>
+                    <Separator styleClass="options-separator"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2p-power-plug" iconSize="18" iconColor="#FF3366"/>
+                        <Label text="전선 연결하기" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="부품의 작은 원(핀)을 클릭한 뒤 드래그하여 다른 부품의 핀에 연결하세요. 출력 핀에서 입력 핀으로, 또는 입력에서 출력으로 연결할 수 있습니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2c-content-cut" iconSize="18" iconColor="#FF3366"/>
+                        <Label text="전선 끊기" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="전선을 클릭하여 선택한 뒤 Delete 또는 Backspace 키를 누르면 삭제됩니다. 또한 입력 핀에서 새로운 선을 뽑으면 기존 연결은 자동으로 끊어집니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2f-flash" iconSize="18" iconColor="#FFD700"/>
+                        <Label text="신호 상태 확인" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="시뮬레이션 중 활성화된(HIGH) 전선은 설정된 강조색으로 표시됩니다. 옵션 메뉴에서 이 색상을 자유롭게 변경할 수 있습니다." styleClass="options-label" wrapText="true"/>
+                </VBox>
+                
+                <!-- 4. 시뮬레이션 제어 -->
+                <VBox fx:id="simControlPane" spacing="20" styleClass="options-pane" visible="false">
+                    <Label text="시뮬레이션 엔진 제어" styleClass="options-title"/>
+                    <Separator styleClass="options-separator"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2p-play" iconSize="18" iconColor="#2E7D32"/>
+                        <Label text="시작 및 일시정지" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="상단의 재생/일시정지 아이콘을 클릭하여 시뮬레이션을 제어하세요. 일시정지 상태에서도 부품을 수정하거나 값을 변경할 수 있습니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2b-broom" iconSize="18" iconColor="#C62828"/>
+                        <Label text="초기화 (Reset)" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="초기화 버튼을 누르면 모든 회로의 신호 상태가 LOW(0)로 돌아갑니다. 이때 발진 현상을 방지하기 위해 신호가 점진적으로 재전파됩니다." styleClass="options-label" wrapText="true"/>
+                    
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <FontIcon iconLiteral="mdi2t-timer-outline" iconSize="18" iconColor="#F57C00"/>
+                        <Label text="연산 속도 (Hz)" styleClass="options-subtitle"/>
+                    </HBox>
+                    <Label text="옵션 창에서 초당 연산 횟수(Tick Frequency)를 조절할 수 있습니다. 복잡한 회로일수록 낮은 Hz를 권장합니다." styleClass="options-label" wrapText="true"/>
+                </VBox>
+                
+                <!-- 5. 단축키 모음 -->
+                <VBox fx:id="shortcutPane" spacing="20" styleClass="options-pane" visible="false">
+                    <Label text="단축키 일람" styleClass="options-title"/>
+                    <Separator styleClass="options-separator"/>
+                    
+                    <GridPane hgap="20" vgap="10">
+                        <columnConstraints>
+                            <ColumnConstraints minWidth="120" prefWidth="120" />
+                            <ColumnConstraints hgrow="ALWAYS" />
+                        </columnConstraints>
+                        
+                        <Label text="Ctrl + C / V" styleClass="options-value" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <Label text="선택된 부품 복사 / 붙여넣기" styleClass="options-label" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        
+                        <Label text="Ctrl + Z / Y" styleClass="options-value" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <Label text="실행 취소 / 다시 실행" styleClass="options-label" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        
+                        <Label text="Q / E" styleClass="options-value" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <Label text="선택/배치 중인 부품 회전 (10도)" styleClass="options-label" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        
+                        <Label text="Shift + Q / E" styleClass="options-value" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <Label text="부품 90도 회전" styleClass="options-label" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        
+                        <Label text="Del / Backspace" styleClass="options-value" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <Label text="선택된 부품 또는 전선 삭제" styleClass="options-label" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        
+                        <Label text="Ctrl + A" styleClass="options-value" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                        <Label text="모든 부품 선택" styleClass="options-label" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                        
+                        <Label text="ESC" styleClass="options-value" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                        <Label text="배치/배선 모드 취소 및 선택 해제" styleClass="options-label" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                        
+                        <Label text="방향키 / 마우스 휠" styleClass="options-value" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+                        <Label text="카메라 이동 및 확대/축소" styleClass="options-label" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+                    </GridPane>
+                </VBox>
+            </StackPane>
+        </ScrollPane>
+    </center>
+    
+    <bottom>
+        <HBox alignment="CENTER_RIGHT" spacing="15" styleClass="options-bottom-bar">
+            <Button text="닫기" onAction="#close" styleClass="options-btn-apply"/>
+        </HBox>
+    </bottom>
+</BorderPane>

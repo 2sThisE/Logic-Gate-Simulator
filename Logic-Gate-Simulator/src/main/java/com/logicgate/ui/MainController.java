@@ -728,6 +728,27 @@ public class MainController {
         }
     }
 
+    @FXML
+    public void openHelp() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("help.fxml"));
+            javafx.scene.Parent root = loader.load();
+            
+            HelpController controller = loader.getController();
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("도움말");
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(simulationCanvas.getScene().getWindow());
+            stage.setScene(new javafx.scene.Scene(root));
+            
+            controller.setStage(stage);
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void loadModsAndUpdateTree() {
         if (context.projectConfig == null) return;
         
