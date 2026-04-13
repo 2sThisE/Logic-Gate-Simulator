@@ -4,15 +4,16 @@ import com.logicgate.editor.io.NodeData;
 import com.logicgate.editor.io.WireData;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
+import com.logicgate.editor.rendering.symbol.GateSymbol;
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.editor.utils.NodeFactory;
 import com.logicgate.gates.InputPin;
-import com.logicgate.gates.Joint;
 import com.logicgate.gates.Node;
 
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import java.util.List;
 
 public class MouseInteractionHandler {
     private final EditorContext context;
@@ -32,9 +33,9 @@ public class MouseInteractionHandler {
         double targetX = context.worldMouseX;
         double targetY = context.worldMouseY;
 
-        // 그리드 스냅 적용 ✨
+        // 그리드 스냅 적용 (UNIT_SIZE 단위로) ✨
         if (context.projectConfig != null && context.projectConfig.snapToGrid) {
-            int gs = context.projectConfig.gridSize;
+            double gs = GateSymbol.UNIT_SIZE;
             targetX = Math.round(targetX / gs) * gs;
             targetY = Math.round(targetY / gs) * gs;
             context.worldMouseX = targetX;
@@ -238,11 +239,35 @@ public class MouseInteractionHandler {
                 }
             }
 
+            // 전선 상호작용 (꺾임점 추가 및 이동) ✨
             VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
             if (clickedWire != null) {
                 context.selectedWire = clickedWire;
                 context.setSelectedNode(null);
                 context.selectedNodes.clear();
+
+                // 기존 Waypoint를 잡았는지 확인 🔪💕
+                double threshold = 8.0 / context.zoom;
+                VisualWire.Point grabbedPoint = null;
+                for (VisualWire.Point p : clickedWire.waypoints) {
+                    if (Math.hypot(p.x - context.worldMouseX, p.y - context.worldMouseY) < threshold) {
+                        grabbedPoint = p;
+                        break;
+                    }
+                }
+
+                // 잡은 게 없으면 현재 위치에 새로 추가 ✨
+                if (grabbedPoint == null) {
+                    context.historyManager.saveState();
+                    grabbedPoint = new VisualWire.Point(context.worldMouseX, context.worldMouseY);
+                    
+                    // 시작점과 끝점 사이에 적절히 삽입 🔪💕 (가장 가까운 세그먼트 찾기)
+                    int insertIdx = findBestWaypointIndex(clickedWire, context.worldMouseX, context.worldMouseY);
+                    clickedWire.waypoints.add(insertIdx, grabbedPoint);
+                }
+
+                context.draggingWire = clickedWire;
+                context.draggingWaypoint = grabbedPoint;
                 return;
             }
 
@@ -297,13 +322,55 @@ public class MouseInteractionHandler {
         }
     }
 
+    private int findBestWaypointIndex(VisualWire wire, double x, double y) {
+        double minDistance = Double.MAX_VALUE;
+        int bestIdx = 0;
+
+        double px = wire.from.getOutPinX(wire.outPin);
+        double py = wire.from.getOutPinY(wire.outPin);
+
+        for (int i = 0; i <= wire.waypoints.size(); i++) {
+            double nextX, nextY;
+            if (i < wire.waypoints.size()) {
+                nextX = wire.waypoints.get(i).x;
+                nextY = wire.waypoints.get(i).y;
+            } else {
+                nextX = wire.to.getInPinX(wire.inPin);
+                nextY = wire.to.getInPinY(wire.inPin);
+            }
+
+            double dist = distanceToSegment(x, y, px, py, nextX, nextY);
+            if (dist < minDistance) {
+                minDistance = dist;
+                bestIdx = i;
+            }
+            px = nextX;
+            py = nextY;
+        }
+        return bestIdx;
+    }
+
     public void handleMouseDragged(MouseEvent event) {
         context.screenMouseX = event.getX();
         context.screenMouseY = event.getY();
         context.updateWorldCoordinates();
         updateHoverState();
 
-        if (context.draggingNode != null) {
+        if (context.draggingWaypoint != null) {
+            double targetX = context.worldMouseX;
+            double targetY = context.worldMouseY;
+
+            // 꺾임점 그리드 스냅 ✨
+            if (!event.isShiftDown() && context.projectConfig != null && context.projectConfig.snapToGrid) {
+                double gs = GateSymbol.UNIT_SIZE;
+                targetX = Math.round(targetX / gs) * gs;
+                targetY = Math.round(targetY / gs) * gs;
+            }
+
+            context.draggingWaypoint.x = targetX;
+            context.draggingWaypoint.y = targetY;
+            context.setDirty(true);
+        } else if (context.draggingNode != null) {
             double dx = context.worldMouseX - context.dragOffsetX;
             double dy = context.worldMouseY - context.dragOffsetY;
             
@@ -311,11 +378,22 @@ public class MouseInteractionHandler {
             context.snapLineY = null;
             
             if (!event.isShiftDown()) {
-                double snapThreshold = 10.0 / context.zoom;
                 VisualNode primaryNode = context.draggingNode;
                 double targetX = primaryNode.getDragStartX() + dx;
                 double targetY = primaryNode.getDragStartY() + dy;
-                
+
+                // 1. 그리드 스냅 적용 ✨
+                if (context.projectConfig != null && context.projectConfig.snapToGrid) {
+                    int gs = context.projectConfig.gridSize;
+                    targetX = Math.round(targetX / gs) * gs;
+                    targetY = Math.round(targetY / gs) * gs;
+                    // dx, dy를 그리드에 맞게 보정
+                    dx = targetX - primaryNode.getDragStartX();
+                    dy = targetY - primaryNode.getDragStartY();
+                }
+
+                // 2. 정렬 가이드 스냅 (가이드선에 걸리면 그리드보다 가이드선이 우선함) ✨
+                double snapThreshold = 10.0 / context.zoom;
                 double[] primaryXs = { targetX, targetX + primaryNode.width / 2, targetX + primaryNode.width };
                 double[] primaryYs = { targetY, targetY + primaryNode.height / 2, targetY + primaryNode.height };
                 
@@ -442,6 +520,8 @@ public class MouseInteractionHandler {
         context.wiringNode = null;
         context.wiringPin = -1;
         context.draggingNode = null;
+        context.draggingWire = null;
+        context.draggingWaypoint = null;
         context.isPanning = false;
         updateHoverState();
     }
@@ -600,40 +680,29 @@ public class MouseInteractionHandler {
         for (VisualWire wire : context.visualWires) {
             double p1x = wire.from.getOutPinX(wire.outPin);
             double p1y = wire.from.getOutPinY(wire.outPin);
-            double p2x = wire.to.getInPinX(wire.inPin);
-            double p2y = wire.to.getInPinY(wire.inPin);
-            
-            if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
-                double midX = (p1x + p2x) / 2;
-                double d1 = distanceToSegment(x, y, p1x, p1y, midX, p1y);
-                double d2 = distanceToSegment(x, y, midX, p1y, midX, p2y);
-                double d3 = distanceToSegment(x, y, midX, p2y, p2x, p2y);
-                if (Math.min(d1, Math.min(d2, d3)) < threshold) {
-                    return wire;
+
+            // Waypoints를 포함하여 모든 세그먼트 체크 ✨
+            for (int i = 0; i <= wire.waypoints.size(); i++) {
+                double p2x, p2y;
+                if (i < wire.waypoints.size()) {
+                    p2x = wire.waypoints.get(i).x;
+                    p2y = wire.waypoints.get(i).y;
+                } else {
+                    p2x = wire.to.getInPinX(wire.inPin);
+                    p2y = wire.to.getInPinY(wire.inPin);
                 }
-            } else {
-                // Curved (Bezier) approximation with multiple segments
-                double cp1x = p1x + 50, cp1y = p1y;
-                double cp2x = p2x - 50, cp2y = p2y;
-                
-                double prevX = p1x;
-                double prevY = p1y;
-                int steps = 10;
-                boolean found = false;
-                for (int i = 1; i <= steps; i++) {
-                    double t = (double) i / steps;
-                    double u = 1 - t;
-                    double cx = u*u*u*p1x + 3*u*u*t*cp1x + 3*u*t*t*cp2x + t*t*t*p2x;
-                    double cy = u*u*u*p1y + 3*u*u*t*cp1y + 3*u*t*t*cp2y + t*t*t*p2y;
-                    
-                    if (distanceToSegment(x, y, prevX, prevY, cx, cy) < threshold) {
-                        found = true;
-                        break;
-                    }
-                    prevX = cx;
-                    prevY = cy;
+
+                if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
+                    double midX = (p1x + p2x) / 2;
+                    double d1 = distanceToSegment(x, y, p1x, p1y, midX, p1y);
+                    double d2 = distanceToSegment(x, y, midX, p1y, midX, p2y);
+                    double d3 = distanceToSegment(x, y, midX, p2y, p2x, p2y);
+                    if (Math.min(d1, Math.min(d2, d3)) < threshold) return wire;
+                } else {
+                    if (distanceToSegment(x, y, p1x, p1y, p2x, p2y) < threshold) return wire;
                 }
-                if (found) return wire;
+                p1x = p2x;
+                p1y = p2y;
             }
         }
         return null;

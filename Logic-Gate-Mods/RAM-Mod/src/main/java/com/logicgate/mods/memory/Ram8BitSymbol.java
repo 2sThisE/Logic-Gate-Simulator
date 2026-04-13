@@ -3,6 +3,7 @@ package com.logicgate.mods.memory;
 import com.logicgate.editor.mod.ComponentMeta;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -78,7 +79,7 @@ public class Ram8BitSymbol extends AbstractGateSymbol {
     }
 
     @Override
-    public double getPreferredWidth() { return 120; }
+    public int getUnitWidth(){return 12;}
     @Override
-    public double getPreferredHeight() { return 300; }
+    public int getUnitHeight(){return 30;}
 }

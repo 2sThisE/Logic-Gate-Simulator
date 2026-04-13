@@ -23,12 +23,25 @@ public class LauncherController {
     @FXML private TextField projectNameField;
     @FXML private TextField projectLocationField;
 
-    private MainApp mainApp;
     private Stage stage;
     private Preferences prefs;
 
-    public void setMainApp(MainApp mainApp) {
-        this.mainApp = mainApp;
+    /**
+     * 프로젝트 선택 결과를 담는 클래스 ✨
+     */
+    public static class ProjectResult {
+        public final File root;
+        public final boolean isNew;
+        public ProjectResult(File root, boolean isNew) {
+            this.root = root;
+            this.isNew = isNew;
+        }
+    }
+
+    private ProjectResult result = null;
+
+    public ProjectResult getResult() {
+        return result;
     }
 
     public void setStage(Stage stage) {
@@ -128,7 +141,7 @@ public class LauncherController {
         }
 
         addRecentProject(projectName.trim(), projectRoot.getAbsolutePath());
-        mainApp.onProjectSelected(projectRoot, true);
+        this.result = new ProjectResult(projectRoot, true); // 결과 저장 ✨
         stage.close();
     }
 
@@ -150,7 +163,7 @@ public class LauncherController {
             return;
         }
         addRecentProject(dir.getName(), dir.getAbsolutePath());
-        mainApp.onProjectSelected(dir, false);
+        this.result = new ProjectResult(dir, false); // 결과 저장 ✨
         stage.close();
     }
 

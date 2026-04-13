@@ -112,7 +112,7 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
     }
 
     @Override
-    public double getPreferredWidth() { return 70; }
+    public int getUnitWidth(){return 7;}
     @Override
-    public double getPreferredHeight() { return 110; }
+    public int getUnitHeight(){return 11;}
 }

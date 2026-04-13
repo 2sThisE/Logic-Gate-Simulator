@@ -1,5 +1,6 @@
 package com.logicgate.ui;
 
+import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ public class MainController {
     private MouseInteractionHandler mouseHandler;
     private KeyboardInteractionHandler keyboardHandler;
     private AnimationTimer timer;
-    
+
     private Map<String, String> customComponentMap = new HashMap<>();
     private javafx.stage.Stage primaryStage;
     private javafx.animation.Timeline autosaveTimer;
@@ -109,7 +110,7 @@ public class MainController {
     public void clearFocusFromCanvas(javafx.scene.input.MouseEvent event) {
         // 클릭한 대상이 텍스트 필드나 리스트, 트리 등 상호작용 가능한 컨트롤 내부라면 무시 ✨
         javafx.scene.Node target = (javafx.scene.Node) event.getTarget();
-        
+
         // 대상(target)의 부모 계층을 따라가며 Control인지 확인 (소스 패널 전까지)
         javafx.scene.Node current = target;
         while (current != null && current != event.getSource()) {
@@ -203,7 +204,7 @@ public class MainController {
         context.onContextMenuRequested = this::updateAndShowContextMenu;
         context.onCopyRequested = projectManager::copyToClipboard;
         context.onPasteRequested = projectManager::pasteFromClipboard;
-        
+
         timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
@@ -214,13 +215,13 @@ public class MainController {
         timer.start();
 
         circuit.startSimulation();
-        
+
         // 초기 아이콘 설정 ✨
         playPauseIcon = new org.kordamp.ikonli.javafx.FontIcon("mdi2p-pause");
         playPauseIcon.setIconSize(16);
         playPauseIcon.setIconColor(javafx.scene.paint.Color.WHITE);
         btnPlayPause.setGraphic(playPauseIcon);
-        
+
         updateSimButtonStates(true);
 
         // 💖 로그 패널 설정
@@ -271,11 +272,11 @@ public class MainController {
                     .map(vn -> vn.group)
                     .filter(g -> g != null && !g.isEmpty())
                     .collect(Collectors.toSet());
-                
+
                 uniqueGroups.stream()
                     .filter(g -> g.toLowerCase().contains(query))
                     .forEach(g -> results.add(new SearchResult(g, "Group", g)));
-                
+
                 searchResultsListView.getItems().setAll(results);
                 searchResultsListView.setVisible(!results.isEmpty());
                 searchResultsListView.setManaged(!results.isEmpty());
@@ -306,7 +307,7 @@ public class MainController {
                 List<VisualNode> members = context.visualNodes.stream()
                     .filter(vn -> groupName.equals(vn.group))
                     .collect(Collectors.toList());
-                
+
                 if (!members.isEmpty()) {
                     fitCameraToNodes(members);
                     context.selectedNodes.clear();
@@ -542,7 +543,7 @@ public class MainController {
     private void updatePropertyPane() {
         propertyPane.getChildren().clear();
         VisualNode selected = context.getSelectedNode();
-        
+
         if (selected == null) {
             propertyPane.setDisable(true);
             Label placeholder = new Label("선택된 컴포넌트 없음");
@@ -550,7 +551,7 @@ public class MainController {
             propertyPane.getChildren().add(placeholder);
         } else {
             propertyPane.setDisable(false);
-            
+
             for (com.logicgate.editor.model.Property<?> prop : selected.getProperties(context)) {
                 VBox row = new VBox(5);
                 Label nameLabel = new Label(prop.getName());
@@ -627,7 +628,7 @@ public class MainController {
 
     private void setupComponentTreeView() {
         TreeItem<String> root = new TreeItem<>("Root");
-        
+
         TreeItem<String> gates = new TreeItem<>("Gate");
         gates.getChildren().addAll(
             new TreeItem<>("AND Gate"),
@@ -638,22 +639,22 @@ public class MainController {
             new TreeItem<>("NAND Gate"),
             new TreeItem<>("XNOR Gate")
         );
-        
+
         TreeItem<String> inputItem = new TreeItem<>("Input");
         inputItem.getChildren().addAll(
             new TreeItem<>("Switch")
         );
-        
+
         TreeItem<String> outputItem = new TreeItem<>("Output");
         outputItem.getChildren().addAll(
             new TreeItem<>("LED")
         );
-        
+
         TreeItem<String> etc = new TreeItem<>("Etc");
         etc.getChildren().addAll(
             new TreeItem<>("Joint (1:4)")
         );
-        
+
         root.getChildren().addAll(gates, inputItem, outputItem, etc);
         componentTreeView.setRoot(root);
         componentTreeView.setShowRoot(false);
@@ -674,6 +675,15 @@ public class MainController {
 
     public void initializeProject(java.io.File projectRoot, boolean isNewProject) {
         context.projectRoot = projectRoot;
+
+        // 회로 초기화 (새 프로젝트든 기존 프로젝트든 메모리 상의 회로는 비워야 함)
+        circuit.clear();
+        context.visualNodes.clear();
+        context.visualWires.clear();
+        context.setSelectedNode(null);
+        context.selectedWire = null;
+        context.historyManager.clear();
+
         if (isNewProject) {
             projectManager.initNewProject();
             loadModsAndUpdateTree();
@@ -683,12 +693,13 @@ public class MainController {
             projectManager.loadCircuitOnly();
         }
         applyProjectOptions();
+        updateTitle(); // 창 제목 갱신 추가 ✨
     }
 
     private void applyProjectOptions() {
         if (context.projectConfig != null) {
             circuit.setTickFrequencyHz(context.projectConfig.tickFrequencyHz);
-            
+
             if (autosaveTimer != null) autosaveTimer.stop();
             if (context.projectConfig.autosaveIntervalMin > 0) {
                 autosaveTimer = new javafx.animation.Timeline(new javafx.animation.KeyFrame(
@@ -698,7 +709,7 @@ public class MainController {
                 autosaveTimer.setCycleCount(javafx.animation.Animation.INDEFINITE);
                 autosaveTimer.play();
             }
-            
+
             if (renderer != null) renderer.draw();
         }
     }
@@ -708,20 +719,20 @@ public class MainController {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("options.fxml"));
             javafx.scene.Parent root = loader.load();
-            
+
             OptionsController controller = loader.getController();
-            
+
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle("프로젝트 설정");
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
-            
+
             controller.setContext(context, stage, () -> {
                 applyProjectOptions();
                 projectManager.saveProjectConfig();
             });
-            
+
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -733,15 +744,15 @@ public class MainController {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("help.fxml"));
             javafx.scene.Parent root = loader.load();
-            
+
             HelpController controller = loader.getController();
-            
+
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle("도움말");
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
-            
+
             controller.setStage(stage);
             stage.show();
         } catch (Exception e) {
@@ -751,19 +762,19 @@ public class MainController {
 
     private void loadModsAndUpdateTree() {
         if (context.projectConfig == null) return;
-        
+
         ModLoader modLoader = new ModLoader(context.projectRoot);
         List<ModComponentInfo> mods = modLoader.loadSpecificMods(context.projectConfig.loadedMods);
-        
+
         TreeItem<String> root = componentTreeView.getRoot();
-        
+
         // 커스텀 부품들만 트리에서 제거하고 다시 로드 🔪💕
         root.getChildren().removeIf(item -> !List.of("Gate", "Input", "Output", "Etc").contains(item.getValue()));
         customComponentMap.clear();
 
         for (ModComponentInfo mod : mods) {
             customComponentMap.put(mod.name, mod.fqn);
-            
+
             TreeItem<String> sectionItem = null;
             for (TreeItem<String> item : root.getChildren()) {
                 if (item.getValue().equals(mod.section)) {
@@ -771,13 +782,13 @@ public class MainController {
                     break;
                 }
             }
-            
+
             if (sectionItem == null) {
                 sectionItem = new TreeItem<>(mod.section);
                 sectionItem.setExpanded(true);
                 root.getChildren().add(sectionItem);
             }
-            
+
             sectionItem.getChildren().add(new TreeItem<>(mod.name));
         }
     }
@@ -804,9 +815,44 @@ public class MainController {
         }
     }
 
+    public ProjectManager getProjectManager() {
+        return projectManager;
+    }
+
     @FXML
     public void saveProject() {
         projectManager.saveCurrentProject();
+    }
+
+    @FXML
+    public void newProject() {
+        if (context.isDirty()) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("저장되지 않은 변경 사항");
+            alert.setHeaderText("현재 프로젝트에 저장되지 않은 변경 사항이 있습니다.");
+            alert.setContentText("다른 프로젝트로 전환하기 전에 저장하시겠습니까?");
+
+            ButtonType btnSave = new ButtonType("저장");
+            ButtonType btnDontSave = new ButtonType("저장 안 함");
+            ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+            alert.getButtonTypes().setAll(btnSave, btnDontSave, btnCancel);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isPresent()) {
+                if (result.get() == btnSave) {
+                    saveProject();
+                } else if (result.get() == btnCancel) {
+                    return;
+                }
+            }
+        }
+
+        // 런처를 대화상자로 띄우고 결과 받기 ✨
+        LauncherController.ProjectResult res = projectManager.showLauncher(primaryStage, true);
+        if (res != null) {
+            initializeProject(res.root, res.isNew);
+        }
     }
 
     @FXML
@@ -824,26 +870,26 @@ public class MainController {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("mod_manager.fxml"));
             javafx.scene.Parent root = loader.load();
-            
+
             ModManagerController controller = loader.getController();
-            
+
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle("모드 관리자");
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
-            
+
             controller.setContext(context, projectManager);
             controller.setStage(stage);
-            
+
             stage.showAndWait();
-            
+
             if (controller.isChanged()) {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("프로젝트 재로드");
                 alert.setHeaderText("모드 설정이 변경되었습니다.");
                 alert.setContentText("변경 사항을 적용하려면 프로젝트를 다시 불러와야 합니다. 지금 다시 불러오시겠습니까?");
-                
+
                 Optional<ButtonType> result = alert.showAndWait();
                 if (result.isPresent() && result.get() == ButtonType.OK) {
                     if (context.isDirty()) {
@@ -851,14 +897,14 @@ public class MainController {
                         saveAlert.setTitle("저장되지 않은 변경 사항");
                         saveAlert.setHeaderText("현재 프로젝트에 저장되지 않은 내용이 있습니다.");
                         saveAlert.setContentText("재로드하기 전에 저장하시겠습니까?");
-                        
+
                         ButtonType btnSave = new ButtonType("저장 후 재로드");
                         ButtonType btnJustLoad = new ButtonType("저장 없이 재로드");
                         ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
-                        
+
                         saveAlert.getButtonTypes().setAll(btnSave, btnJustLoad, btnCancel);
                         Optional<ButtonType> saveResult = saveAlert.showAndWait();
-                        
+
                         if (saveResult.isPresent()) {
                             if (saveResult.get() == btnSave) {
                                 saveProject();
@@ -867,7 +913,7 @@ public class MainController {
                             }
                         }
                     }
-                    
+
                     // 프로젝트 재로드 🔪💕
                     initializeProject(context.projectRoot, false);
                 } else {
@@ -904,15 +950,15 @@ public class MainController {
     @FXML
     public void resetSimulation() {
         circuit.stopSimulation();
-        
+
         // 1. 모든 전선 연결을 잠시 해제하여 완벽한 초기 상태 만들기
         for (com.logicgate.editor.model.VisualWire w : context.visualWires) {
             circuit.disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
         }
-        
+
         // 2. 모든 노드 상태를 완전히 LOW로 초기화
         circuit.resetState();
-        
+
         // 3. 프로젝트 로드 시 사용했던 발진 방지 로직 동일하게 적용 💖
         // 전선을 한 번에 하나씩 다시 연결하면서 tick()을 발생시킴으로써
         // 완벽한 동기화(Ring Oscillator)를 깨고 자연스러운 비대칭 상태 유도 ✨
@@ -920,7 +966,7 @@ public class MainController {
             circuit.connect(w.from.node, w.outPin, w.to.node, w.inPin);
             circuit.tick();
         }
-        
+
         updateSimButtonStates(false);
         if (renderer != null) renderer.draw();
     }
@@ -942,10 +988,10 @@ public class MainController {
     private void spawnNode(Node logicNode, String label) {
         context.historyManager.saveState();
         circuit.addNode(logicNode);
-        
+
         double spawnX = ((simulationCanvas.getWidth() / 2) - context.cameraX) / context.zoom;
         double spawnY = ((simulationCanvas.getHeight() / 2) - context.cameraY) / context.zoom;
-        
+
         double nodeWidth = 80;
         double nodeHeight = 50;
         if (logicNode instanceof InputPin || logicNode instanceof OutputPin) {
@@ -954,10 +1000,10 @@ public class MainController {
             nodeWidth = 30;
             nodeHeight = 30;
         }
-        
+
         VisualNode newNode = new VisualNode(logicNode, spawnX - (nodeWidth / 2), spawnY - (nodeHeight / 2), label);
         context.visualNodes.add(newNode);
-        
+
         context.setSelectedNode(newNode);
         context.selectedWire = null;
         context.setDirty(true);
@@ -968,20 +1014,20 @@ public class MainController {
         context.onDirtyChanged = this::updateTitle;
         context.onSaveRequested = this::saveProject;
         updateTitle();
-        
+
         stage.setOnCloseRequest(event -> {
             if (context.isDirty()) {
                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
                 alert.setTitle("저장되지 않은 변경 사항");
                 alert.setHeaderText("프로젝트에 저장되지 않은 변경 사항이 있습니다.");
                 alert.setContentText("변경 사항을 저장하시겠습니까?");
-                
+
                 javafx.scene.control.ButtonType btnSave = new javafx.scene.control.ButtonType("저장");
                 javafx.scene.control.ButtonType btnDontSave = new javafx.scene.control.ButtonType("저장 안 함");
                 javafx.scene.control.ButtonType btnCancel = new javafx.scene.control.ButtonType("취소", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
-                
+
                 alert.getButtonTypes().setAll(btnSave, btnDontSave, btnCancel);
-                
+
                 java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
                 if (result.isPresent()) {
                     if (result.get() == btnSave) {

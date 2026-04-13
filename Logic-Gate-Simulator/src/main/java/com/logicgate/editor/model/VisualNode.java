@@ -28,12 +28,13 @@ public class VisualNode {
         GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
         
         if (symbol != null) {
-            this.width = symbol.getPreferredWidth();
-            this.height = symbol.getPreferredHeight();
+            // 칸(Unit) 단위를 픽셀 단위로 변환 ✨
+            this.width = symbol.getUnitWidth() * GateSymbol.UNIT_SIZE;
+            this.height = symbol.getUnitHeight() * GateSymbol.UNIT_SIZE;
             this.label = (label == null || label.isEmpty()) ? symbol.getDefaultLabel() : label;
         } else {
             this.width = 80;
-            this.height = 50;
+            this.height = 60;
             this.label = (label == null || label.isEmpty()) ? node.getClass().getSimpleName() : label;
         }
     }

@@ -3,6 +3,7 @@ package com.logicgate.mods.bus;
 import com.logicgate.editor.mod.ComponentMeta;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -83,7 +84,7 @@ public class Bus8BitSymbol extends AbstractGateSymbol {
     }
 
     @Override
-    public double getPreferredWidth() { return 100; }
+    public int getUnitWidth(){return 10;}
     @Override
-    public double getPreferredHeight() { return 450; } // 24개의 핀을 수용하기 위해 매우 길게!
+    public int getUnitHeight(){return 45;}
 }

@@ -4,6 +4,11 @@ import com.logicgate.editor.model.VisualNode;
 import javafx.scene.canvas.GraphicsContext;
 
 public interface GateSymbol {
+    /**
+     * 그리드 한 칸의 픽셀 크기입니다. ✨
+     */
+    double UNIT_SIZE = 10.0;
+
     void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected);
     double getInPinX(VisualNode vn, int index);
     double getInPinY(VisualNode vn, int index);
@@ -29,8 +34,9 @@ public interface GateSymbol {
     }
 
     /**
-     * 심볼의 권장 너비와 높이입니다. ✨
+     * 심볼의 권장 너비와 높이를 '칸(Unit)' 단위로 반환합니다. ✨
+     * 1 Unit = 10px
      */
-    default double getPreferredWidth() { return 80; }
-    default double getPreferredHeight() { return 50; }
+    default int getUnitWidth() { return 8; }  // 80px
+    default int getUnitHeight() { return 6; } // 60px
 }

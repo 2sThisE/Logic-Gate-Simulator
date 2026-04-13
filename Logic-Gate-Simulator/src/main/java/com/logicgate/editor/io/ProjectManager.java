@@ -11,12 +11,60 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import com.logicgate.ui.MainApp;
+import com.logicgate.ui.LauncherController;
+import java.net.URL;
+
 public class ProjectManager {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final EditorContext context;
 
     public ProjectManager(EditorContext context) {
         this.context = context;
+    }
+
+    /**
+     * 프로젝트 매니저(런처) 창을 띄우고 사용자의 선택 결과를 반환합니다. ✨
+     */
+    public LauncherController.ProjectResult showLauncher(Stage owner, boolean projectInitialized) {
+        try {
+            URL launcherFxml = getClass().getResource("/com/logicgate/ui/launcher.fxml");
+            FXMLLoader loader = new FXMLLoader(launcherFxml);
+            Parent root = loader.load();
+            
+            Stage launcherStage = new Stage();
+            launcherStage.initModality(Modality.APPLICATION_MODAL);
+            launcherStage.initOwner(owner);
+            launcherStage.setTitle("Project Manager");
+            
+            launcherStage.setOnCloseRequest(event -> {
+                if (!projectInitialized) {
+                    javafx.application.Platform.exit();
+                    System.exit(0);
+                }
+            });
+            
+            LauncherController controller = loader.getController();
+            controller.setStage(launcherStage);
+
+            Scene scene = new Scene(root, 800, 500);
+            launcherStage.setScene(scene);
+            launcherStage.setResizable(true);
+            
+            // 창이 닫힐 때까지 대기 ✨
+            launcherStage.showAndWait();
+            
+            // 컨트롤러로부터 결과 받아오기 ✨
+            return controller.getResult();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public void initNewProject() {
@@ -95,7 +143,7 @@ public class ProjectManager {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             // 1. Header
             dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(3);          // Version ✨
+            dos.writeInt(4);          // Version 4 (Waypoints 추가 ✨)
 
             // 2. Nodes
             dos.writeInt(context.visualNodes.size());
@@ -116,6 +164,13 @@ public class ProjectManager {
                 dos.writeInt(vw.outPin);
                 dos.writeInt(context.visualNodes.indexOf(vw.to));
                 dos.writeInt(vw.inPin);
+                
+                // Waypoints 저장 ✨
+                dos.writeInt(vw.waypoints.size());
+                for (VisualWire.Point p : vw.waypoints) {
+                    dos.writeDouble(p.x);
+                    dos.writeDouble(p.y);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -170,7 +225,17 @@ public class ProjectManager {
                     VisualNode toVn = context.visualNodes.get(toIdx);
                     
                     context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
-                    context.visualWires.add(new VisualWire(fromVn, outPin, toVn, inPin));
+                    VisualWire vw = new VisualWire(fromVn, outPin, toVn, inPin);
+                    
+                    // Waypoints 로드 (버전 4 이상) ✨
+                    if (version >= 4) {
+                        int wpCount = dis.readInt();
+                        for (int j = 0; j < wpCount; j++) {
+                            vw.waypoints.add(new VisualWire.Point(dis.readDouble(), dis.readDouble()));
+                        }
+                    }
+                    
+                    context.visualWires.add(vw);
                     // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
                     context.getCircuit().tick();
                 }
@@ -210,12 +275,14 @@ public class ProjectManager {
                     data.nodes.add(nd);
                 }
                 for (VisualWire vw : context.visualWires) {
-                    data.wires.add(new WireData(
+                    WireData wd = new WireData(
                         context.visualNodes.indexOf(vw.from),
                         vw.outPin,
                         context.visualNodes.indexOf(vw.to),
                         vw.inPin
-                    ));
+                    );
+                    // JSON 내보내기 시 Waypoints 포함 (필요 시 WireData 클래스도 확장해야 함)
+                    data.wires.add(wd);
                 }
                 String json = gson.toJson(data);
                 Files.writeString(file.toPath(), json);

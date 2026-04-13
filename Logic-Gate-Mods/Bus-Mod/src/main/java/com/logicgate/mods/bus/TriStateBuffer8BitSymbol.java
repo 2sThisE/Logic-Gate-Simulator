@@ -3,6 +3,7 @@ package com.logicgate.mods.bus;
 import com.logicgate.editor.mod.ComponentMeta;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
@@ -76,7 +77,7 @@ public class TriStateBuffer8BitSymbol extends AbstractGateSymbol {
     }
 
     @Override
-    public double getPreferredWidth() { return 60; }
+    public int getUnitWidth(){return 6;}
     @Override
-    public double getPreferredHeight() { return 180; } // 8개의 핀을 위해 길쭉하게!
+    public int getUnitHeight(){return 18;}
 }

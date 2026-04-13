@@ -32,45 +32,23 @@ public class MainApp extends Application {
         primaryStage.setScene(mainScene);
         primaryStage.show();
 
-        // 2. 메인 창이 뜨자마자 그 위에 프로젝트 런처 띄우기
+        // 2. 메인 창이 뜨자마자 프로젝트 런처 띄우기
         showLauncher();
     }
 
     public void showLauncher() {
-        try {
-            URL launcherFxml = getClass().getResource("/com/logicgate/ui/launcher.fxml");
-            FXMLLoader loader = new FXMLLoader(launcherFxml);
-            Parent root = loader.load();
-            
-            Stage launcherStage = new Stage();
-            launcherStage.initModality(Modality.APPLICATION_MODAL);
-            launcherStage.initOwner(primaryStage);
-            launcherStage.setTitle("Project Manager"); // 표준 창 제목 추가
-            
-            launcherStage.setOnCloseRequest(event -> {
-                if (!projectInitialized) {
-                    javafx.application.Platform.exit();
-                    System.exit(0);
-                }
-            });
-            
-            LauncherController controller = loader.getController();
-            controller.setMainApp(this);
-            controller.setStage(launcherStage);
-
-            Scene scene = new Scene(root, 800, 500);
-            launcherStage.setScene(scene);
-            launcherStage.setResizable(true);
-            launcherStage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (mainController != null) {
+            LauncherController.ProjectResult res = mainController.getProjectManager().showLauncher(primaryStage, projectInitialized);
+            if (res != null) {
+                onProjectSelected(res.root, res.isNew);
+            }
         }
     }
 
     public void onProjectSelected(File projectRoot, boolean isNewProject) {
         projectInitialized = true;
         mainController.initializeProject(projectRoot, isNewProject);
-        mainController.setPrimaryStage(primaryStage); // 컨트롤러에 Stage 전달 ✨
+        mainController.setPrimaryStage(primaryStage);
     }
 
     public static void main(String[] args) {

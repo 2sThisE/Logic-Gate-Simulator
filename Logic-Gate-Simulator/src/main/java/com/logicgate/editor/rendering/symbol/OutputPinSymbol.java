@@ -1,6 +1,7 @@
 package com.logicgate.editor.rendering.symbol;
 
 import com.logicgate.editor.model.VisualNode;
+
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
@@ -44,7 +45,7 @@ public class OutputPinSymbol extends AbstractGateSymbol {
         return "LED";
     }
     @Override
-    public double getPreferredWidth(){return 50;}
+    public int getUnitWidth(){return 5;}
     @Override
-    public double getPreferredHeight(){return 50;}
+    public int getUnitHeight(){return 5;}
 }

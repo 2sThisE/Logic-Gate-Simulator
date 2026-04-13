@@ -161,7 +161,7 @@ public class FourDigitSevenSegmentSymbol extends AbstractGateSymbol {
     }
 
     @Override
-    public double getPreferredWidth() { return 180; }
+    public int getUnitWidth(){return 18;}
     @Override
-    public double getPreferredHeight() { return 80; }
+    public int getUnitHeight(){return 8;}
 }

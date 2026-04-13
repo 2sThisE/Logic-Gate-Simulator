@@ -74,7 +74,12 @@ public class OptionsController {
         // 에디터 & 그리드
         showGridCheck.setSelected(config.showGrid);
         snapToGridCheck.setSelected(config.snapToGrid);
-        gridSizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, config.gridSize, 5));
+        
+        // 픽셀 단위를 칸(Unit) 단위로 변환하여 표시 (1 Unit = 10px) ✨
+        int unitSize = (int) com.logicgate.editor.rendering.symbol.GateSymbol.UNIT_SIZE;
+        int currentUnits = config.gridSize / unitSize;
+        gridSizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, currentUnits, 1));
+        
         showAlignGuidesCheck.setSelected(config.showAlignmentGuides);
 
         // 시각적 설정
@@ -110,7 +115,11 @@ public class OptionsController {
             
             config.showGrid = showGridCheck.isSelected();
             config.snapToGrid = snapToGridCheck.isSelected();
-            config.gridSize = gridSizeSpinner.getValue();
+            
+            // 칸(Unit) 단위를 다시 픽셀 단위로 변환하여 저장 ✨
+            int unitSize = (int) com.logicgate.editor.rendering.symbol.GateSymbol.UNIT_SIZE;
+            config.gridSize = gridSizeSpinner.getValue() * unitSize;
+            
             config.showAlignmentGuides = showAlignGuidesCheck.isSelected();
             
             config.wireStyle = wireStyleCombo.getValue();
