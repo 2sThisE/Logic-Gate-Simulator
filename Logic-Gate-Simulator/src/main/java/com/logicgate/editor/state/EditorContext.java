@@ -78,10 +78,6 @@ public class EditorContext {
     public VisualNode draggingNode = null;
     public double dragOffsetX, dragOffsetY;
 
-    // Wire drag state ✨
-    public VisualWire draggingWire = null;
-    public VisualWire.Point draggingWaypoint = null;
-
     // Wiring state
     public boolean isWiring = false;
     public boolean isWiringFromOut = true;

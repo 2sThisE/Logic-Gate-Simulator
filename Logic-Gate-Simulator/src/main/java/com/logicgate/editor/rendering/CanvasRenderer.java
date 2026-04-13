@@ -149,21 +149,6 @@ public class CanvasRenderer {
 
         boolean isOrthogonal = context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle);
 
-        // 경유지(Waypoints)를 거쳐서 그리기 🔪💕
-        for (VisualWire.Point wp : wire.waypoints) {
-            if (isOrthogonal) {
-                double midX = (lastX + wp.x) / 2;
-                gc.lineTo(midX, lastY);
-                gc.lineTo(midX, wp.y);
-                gc.lineTo(wp.x, wp.y);
-            } else {
-                // 곡선 모드에서도 구간별로는 직선으로 잇거나 베지어로 연결
-                gc.lineTo(wp.x, wp.y);
-            }
-            lastX = wp.x;
-            lastY = wp.y;
-        }
-
         // 마지막 지점(목적지 핀) 연결 ✨
         double endX = wire.to.getInPinX(wire.inPin);
         double endY = wire.to.getInPinY(wire.inPin);
@@ -174,25 +159,9 @@ public class CanvasRenderer {
             gc.lineTo(midX, endY);
             gc.lineTo(endX, endY);
         } else {
-            if (wire.waypoints.isEmpty()) {
-                // 경유지가 없을 때만 전통적인 베지어 곡선 사용
-                gc.bezierCurveTo(lastX + 50, lastY, endX - 50, endY, endX, endY);
-            } else {
-                gc.lineTo(endX, endY);
-            }
+            gc.bezierCurveTo(lastX + 50, lastY, endX - 50, endY, endX, endY);
         }
         gc.stroke();
-
-        // 선택되었을 때 경유지 포인트 시각화 🔪💕
-        if (isSelected) {
-            gc.setFill(Color.web("#00FFFF"));
-            for (VisualWire.Point wp : wire.waypoints) {
-                gc.fillOval(wp.x - 4, wp.y - 4, 8, 8);
-                gc.setStroke(Color.WHITE);
-                gc.setLineWidth(1);
-                gc.strokeOval(wp.x - 4, wp.y - 4, 8, 8);
-            }
-        }
     }
 
     private void drawActiveWiring(GraphicsContext gc) {

@@ -165,12 +165,8 @@ public class ProjectManager {
                 dos.writeInt(context.visualNodes.indexOf(vw.to));
                 dos.writeInt(vw.inPin);
                 
-                // Waypoints 저장 ✨
-                dos.writeInt(vw.waypoints.size());
-                for (VisualWire.Point p : vw.waypoints) {
-                    dos.writeDouble(p.x);
-                    dos.writeDouble(p.y);
-                }
+                // Waypoints 저장 ✨ - 제거됨 (호환성을 위해 사이즈 0 기록)
+                dos.writeInt(0);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -227,11 +223,12 @@ public class ProjectManager {
                     context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
                     VisualWire vw = new VisualWire(fromVn, outPin, toVn, inPin);
                     
-                    // Waypoints 로드 (버전 4 이상) ✨
+                    // Waypoints 로드 (버전 4 이상) ✨ - 무시
                     if (version >= 4) {
                         int wpCount = dis.readInt();
                         for (int j = 0; j < wpCount; j++) {
-                            vw.waypoints.add(new VisualWire.Point(dis.readDouble(), dis.readDouble()));
+                            dis.readDouble();
+                            dis.readDouble();
                         }
                     }
                     
