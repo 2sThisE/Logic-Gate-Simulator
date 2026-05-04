@@ -14,17 +14,17 @@
         <Insets top="20" right="20" bottom="20" left="20"/>
     </padding>
 
-    <Label text="모드 관리자" styleClass="title-label"/>
-    <Label text="현재 프로젝트에 포함된 모드 목록입니다." styleClass="subtitle-label"/>
+    <Label text="%mod_manager.title" styleClass="title-label"/>
+    <Label text="%mod_manager.subtitle" styleClass="subtitle-label"/>
 
     <ListView fx:id="modListView" VBox.vgrow="ALWAYS" styleClass="mod-list"/>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="모드 추가" onAction="#addMod" styleClass="action-btn, add-btn"/>
-        <Button text="선택 모드 제거" onAction="#removeMod" styleClass="action-btn, remove-btn"/>
+        <Button text="%mod_manager.add" onAction="#addMod" styleClass="action-btn, add-btn"/>
+        <Button text="%mod_manager.remove" onAction="#removeMod" styleClass="action-btn, remove-btn"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="닫기" onAction="#close" styleClass="action-btn, close-btn"/>
+        <Button text="%common.close" onAction="#close" styleClass="action-btn, close-btn"/>
     </HBox>
     
-    <Label text="* 모드 추가/제거 후에는 프로젝트를 다시 불러와야 적용됩니다." styleClass="info-label"/>
+    <Label text="%mod_manager.info" styleClass="info-label"/>
 </VBox>

@@ -3,6 +3,8 @@ package com.logicgate.ui.main;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ResourceBundle;
+import java.util.Locale;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -15,10 +17,12 @@ public class ConsoleLogController {
     private final Button errorButton;
     private final ObservableList<String> consoleMessages = FXCollections.observableArrayList();
     private int errorCount = 0;
+    private ResourceBundle bundle;
 
     public ConsoleLogController(ListView<String> consoleListView, Button errorButton) {
         this.consoleListView = consoleListView;
         this.errorButton = errorButton;
+        this.bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
     }
 
     public void setup() {
@@ -39,7 +43,7 @@ public class ConsoleLogController {
         if (errorButton == null) return;
 
         javafx.scene.control.ContextMenu logMenu = new javafx.scene.control.ContextMenu();
-        javafx.scene.control.MenuItem clearItem = new javafx.scene.control.MenuItem("로그 지우기");
+        javafx.scene.control.MenuItem clearItem = new javafx.scene.control.MenuItem(bundle.getString("console.clear"));
         clearItem.setOnAction(e -> clearLogs());
         logMenu.getItems().add(clearItem);
 
@@ -50,7 +54,7 @@ public class ConsoleLogController {
         consoleMessages.clear();
         errorCount = 0;
         if (errorButton != null) {
-            errorButton.setText("0 로그");
+            errorButton.setText(String.format(bundle.getString("console.btn.logs"), 0));
             errorButton.getStyleClass().remove("status-btn-error");
         }
     }
@@ -87,13 +91,13 @@ public class ConsoleLogController {
         if (isError) {
             errorCount++;
             if (errorButton != null) {
-                errorButton.setText(errorCount + " 오류/경고");
+                errorButton.setText(String.format(bundle.getString("console.btn.errors"), errorCount));
                 if (!errorButton.getStyleClass().contains("status-btn-error")) {
                     errorButton.getStyleClass().add("status-btn-error");
                 }
             }
         } else if (errorCount == 0 && errorButton != null) {
-            errorButton.setText(consoleMessages.size() + " 로그");
+            errorButton.setText(String.format(bundle.getString("console.btn.logs"), consoleMessages.size()));
         }
 
         if (consoleListView != null) {

@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.ResourceBundle;
+import java.util.Locale;
 
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
@@ -50,18 +52,20 @@ public class HelpController {
     private Parser markdownParser;
     private HtmlRenderer markdownRenderer;
     private final ObservableList<GateHelpDoc> allGateHelpDocs = FXCollections.observableArrayList();
+    private ResourceBundle bundle;
 
     @FXML
     public void initialize() {
+        bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
         initializeMarkdownRenderer();
         initializeGateHelpDocs();
 
         helpCategoryList.getItems().addAll(
-            "시뮬레이터 소개",
-            "부품 조작 가이드",
-            "전선 연결 및 관리",
-            "게이트 도움말",
-            "단축키 일람"
+            bundle.getString("help.intro.title"),
+            bundle.getString("help.component.title"),
+            bundle.getString("help.wiring.title"),
+            bundle.getString("help.gate.title"),
+            bundle.getString("help.shortcut.title")
         );
 
         helpCategoryList.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
@@ -138,7 +142,7 @@ public class HelpController {
         if (!filtered.isEmpty()) {
             gateHelpListView.getSelectionModel().selectFirst();
         } else {
-            gateHelpWebView.getEngine().loadContent(buildHtml("<h2>검색 결과 없음</h2><p>다른 이름이나 핀 이름으로 검색해보세요.</p>"));
+            gateHelpWebView.getEngine().loadContent(buildHtml("<h2>" + bundle.getString("help.search.no_result") + "</h2><p>" + bundle.getString("help.search.try_again") + "</p>"));
         }
     }
 
@@ -196,11 +200,14 @@ public class HelpController {
         String fullPath = "/com/logicgate/help/gates/" + resourcePath;
         try (InputStream inputStream = getClass().getResourceAsStream(fullPath)) {
             if (inputStream == null) {
-                return "# 문서를 찾을 수 없음\n\n리소스 경로: `" + fullPath + "`";
+                String notFound = bundle != null ? bundle.getString("help.doc.not_found") : "Document Not Found";
+                String pathStr = bundle != null ? bundle.getString("help.doc.path") : "Resource Path: ";
+                return "# " + notFound + "\n\n" + pathStr + "`" + fullPath + "`";
             }
             return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            return "# 문서를 읽을 수 없음\n\n" + e.getMessage();
+            String readFail = bundle != null ? bundle.getString("help.doc.read_fail") : "Cannot Read Document";
+            return "# " + readFail + "\n\n" + e.getMessage();
         }
     }
 
@@ -338,3 +345,4 @@ public class HelpController {
         if (stage != null) stage.close();
     }
 }
+

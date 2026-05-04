@@ -97,7 +97,7 @@
                     <Insets top="3" right="10" bottom="3" left="10"/>
                 </padding>
                 <!-- 텍스트는 코드에서 설정할 수 있도록 임시 유지하거나 번들 참조 -->
-                <Button fx:id="errorButton" text="0 로그" onAction="#toggleConsole" styleClass="status-btn"/>
+                <Button fx:id="errorButton" text="%console.btn.logs" onAction="#toggleConsole" styleClass="status-btn"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label text="%status.title" styleClass="status-label"/>
             </HBox>

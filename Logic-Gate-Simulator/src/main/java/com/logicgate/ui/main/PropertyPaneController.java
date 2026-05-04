@@ -11,6 +11,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 
+import java.util.ResourceBundle;
+import java.util.Locale;
+
 public class PropertyPaneController {
     private final EditorContext context;
     private final VBox propertyPane;
@@ -25,14 +28,31 @@ public class PropertyPaneController {
         update();
     }
 
+    private String getLocalizedPropertyName(String rawName, ResourceBundle bundle) {
+        try {
+            switch(rawName) {
+                case "라벨": return bundle.getString("property.label");
+                case "라벨 표시": return bundle.getString("property.show_label");
+                case "그룹 이름": return bundle.getString("property.group_name");
+                case "단자 수 (2~8)": return bundle.getString("property.pin_count");
+                case "작동 방식": return bundle.getString("property.mode");
+                case "ON 색상": return bundle.getString("property.on_color");
+                default: return rawName;
+            }
+        } catch (Exception e) {
+            return rawName;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public void update() {
         propertyPane.getChildren().clear();
         VisualNode selected = context.getSelectedNode();
+        ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
 
         if (selected == null) {
             propertyPane.setDisable(true);
-            Label placeholder = new Label("선택된 컴포넌트 없음");
+            Label placeholder = new Label(bundle.getString("property.no_selection"));
             placeholder.setStyle("-fx-text-fill: #888888; -fx-font-style: italic;");
             propertyPane.getChildren().add(placeholder);
             return;
@@ -42,7 +62,7 @@ public class PropertyPaneController {
 
         for (com.logicgate.editor.model.Property<?> prop : selected.getProperties(context)) {
             VBox row = new VBox(5);
-            Label nameLabel = new Label(prop.getName());
+            Label nameLabel = new Label(getLocalizedPropertyName(prop.getName(), bundle));
             nameLabel.getStyleClass().add("property-label");
             row.getChildren().add(nameLabel);
 

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -38,8 +39,9 @@ public class ProjectManager {
      */
     public LauncherController.ProjectResult showLauncher(Stage owner, boolean projectInitialized) {
         try {
+            ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
             URL launcherFxml = getClass().getResource("/com/logicgate/ui/launcher.fxml");
-            FXMLLoader loader = new FXMLLoader(launcherFxml);
+            FXMLLoader loader = new FXMLLoader(launcherFxml, bundle);
             Parent root = loader.load();
             
             Stage launcherStage = new Stage();
@@ -298,8 +300,9 @@ public class ProjectManager {
     public void exportJson(Window window) {
         if (context.visualNodes.isEmpty()) return;
 
+        ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("회로 내보내기 (JSON)");
+        fileChooser.setTitle(bundle.getString("dialog.export.title"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
         File file = fileChooser.showSaveDialog(window);
 
@@ -343,8 +346,9 @@ public class ProjectManager {
     }
 
     public void importJson(Window window) {
+        ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("회로 가져오기 (JSON)");
+        fileChooser.setTitle(bundle.getString("dialog.import.title"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
         File file = fileChooser.showOpenDialog(window);
 
@@ -353,7 +357,7 @@ public class ProjectManager {
                 String json = Files.readString(file.toPath());
                 ProjectData data = gson.fromJson(json, ProjectData.class);
                 if (!isValidProjectData(data)) {
-                    showError("JSON 가져오기 실패", "JSON 회로 형식이 올바르지 않습니다: nodes 배열이 없습니다.");
+                    showError(bundle.getString("alert.import_fail.title"), bundle.getString("alert.import_fail.format"));
                     return;
                 }
                 normalizeProjectData(data);
@@ -361,7 +365,7 @@ public class ProjectManager {
                 context.isPlacingImport = true;
                 context.placingRotation = 0; // 붙여넣기 모드 진입 시 회전각 초기화 ✨
             } catch (IOException | JsonSyntaxException e) {
-                showError("JSON 가져오기 실패", "JSON 파일을 읽거나 해석할 수 없습니다.\n" + e.getMessage());
+                showError(bundle.getString("alert.import_fail.title"), bundle.getString("alert.import_fail.read") + "\n" + e.getMessage());
             }
         }
     }

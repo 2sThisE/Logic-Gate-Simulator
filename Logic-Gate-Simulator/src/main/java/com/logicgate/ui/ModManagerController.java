@@ -21,6 +21,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.Locale;
 
 public class ModManagerController {
 
@@ -31,10 +33,12 @@ public class ModManagerController {
     private ProjectManager projectManager;
     private Stage stage;
     private boolean isChanged = false; // 변경 여부 추적 ✨
+    private ResourceBundle bundle;
 
     public void setContext(EditorContext context, ProjectManager projectManager) {
         this.context = context;
         this.projectManager = projectManager;
+        this.bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
         loadModList();
     }
 
@@ -54,7 +58,7 @@ public class ModManagerController {
 @FXML
 public void addMod() {
     FileChooser fileChooser = new FileChooser();
-    fileChooser.setTitle("추가할 모드 파일(.jar) 선택");
+    fileChooser.setTitle(bundle.getString("mod_manager.file_chooser"));
     fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Java Archive", "*.jar"));
     File selectedFile = fileChooser.showOpenDialog(stage);
 
@@ -64,9 +68,9 @@ public void addMod() {
         List<String> suspicious = JarSecurityScanner.scanJarForSuspiciousClasses(selectedFile);
         if (!suspicious.isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("보안 경고: 미확인 클래스 참조 감지");
-            alert.setHeaderText("이 모드는 화이트리스트에 등록되지 않은 외부 클래스를 참조하고 있습니다.");
-            alert.setContentText("악성 코드가 포함되어 있을 위험이 있습니다. 정말로 이 모드를 추가하시겠습니까?");
+            alert.setTitle(bundle.getString("mod_manager.alert.security.title"));
+            alert.setHeaderText(bundle.getString("mod_manager.alert.security.header"));
+            alert.setContentText(bundle.getString("mod_manager.alert.security.content"));
 
             TextArea textArea = new TextArea(String.join("\n", suspicious));
             textArea.setEditable(false);
@@ -78,14 +82,14 @@ public void addMod() {
 
             GridPane expContent = new GridPane();
             expContent.setMaxWidth(Double.MAX_VALUE);
-            expContent.add(new javafx.scene.control.Label("의심스러운 참조 목록:"), 0, 0);
+            expContent.add(new javafx.scene.control.Label(bundle.getString("mod_manager.alert.security.list")), 0, 0);
             expContent.add(textArea, 0, 1);
 
             alert.getDialogPane().setExpandableContent(expContent);
             alert.getDialogPane().setExpanded(true);
 
-            ButtonType btnYes = new ButtonType("무시하고 추가");
-            ButtonType btnNo = new ButtonType("취소", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+            ButtonType btnYes = new ButtonType(bundle.getString("mod_manager.alert.security.btn.ignore"));
+            ButtonType btnNo = new ButtonType(bundle.getString("common.cancel"), javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
             alert.getButtonTypes().setAll(btnYes, btnNo);
 
             Optional<ButtonType> result = alert.showAndWait();
@@ -108,7 +112,7 @@ public void addMod() {
                 copySuccess = true; // 이미 있으니 성공으로 간주
             } else {
                 e.printStackTrace();
-                showError("모드 추가 실패", "파일을 복사할 수 없습니다: " + e.getMessage());
+                showError(bundle.getString("mod_manager.alert.fail.title"), bundle.getString("mod_manager.alert.fail.copy") + " " + e.getMessage());
             }
         }
 
@@ -155,3 +159,4 @@ private void showError(String title, String content) {
         stage.close();
     }
 }
+
