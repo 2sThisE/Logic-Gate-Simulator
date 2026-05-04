@@ -2,6 +2,7 @@ package com.logicgate.editor.io;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.state.EditorContext;
@@ -10,6 +11,8 @@ import javafx.stage.Window;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -143,7 +146,7 @@ public class ProjectManager {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             // 1. Header
             dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(4);          // Version 4 (Waypoints 추가 ✨)
+            dos.writeInt(5);          // Version 5 (Node properties 추가)
 
             // 2. Nodes
             dos.writeInt(context.visualNodes.size());
@@ -155,6 +158,13 @@ public class ProjectManager {
                 dos.writeUTF(vn.label != null ? vn.label : "");
                 dos.writeBoolean(vn.showLabel);
                 dos.writeUTF(vn.group != null ? vn.group : "");
+
+                Map<String, String> properties = vn.node.getProperties();
+                dos.writeInt(properties.size());
+                for (Map.Entry<String, String> entry : properties.entrySet()) {
+                    dos.writeUTF(entry.getKey() != null ? entry.getKey() : "");
+                    dos.writeUTF(entry.getValue() != null ? entry.getValue() : "");
+                }
             }
 
             // 3. Wires
@@ -196,8 +206,21 @@ public class ProjectManager {
                     if (group.isEmpty()) group = null;
                 }
 
+                Map<String, String> properties = new HashMap<>();
+                if (version >= 5) {
+                    int propertyCount = dis.readInt();
+                    for (int j = 0; j < propertyCount; j++) {
+                        String key = dis.readUTF();
+                        String value = dis.readUTF();
+                        if (!key.isEmpty()) {
+                            properties.put(key, value);
+                        }
+                    }
+                }
+
                 com.logicgate.gates.Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(type);
                 if (logicNode != null) {
+                    logicNode.setProperties(properties);
                     context.getCircuit().addNode(logicNode);
                     VisualNode vn = new VisualNode(logicNode, x, y, label);
                     vn.showLabel = showLabel;
@@ -298,10 +321,16 @@ public class ProjectManager {
         if (file != null) {
             try {
                 String json = Files.readString(file.toPath());
-                context.pendingProjectData = gson.fromJson(json, ProjectData.class);
+                ProjectData data = gson.fromJson(json, ProjectData.class);
+                if (!isValidProjectData(data)) {
+                    System.err.println("JSON 회로 형식이 올바르지 않습니다: nodes 배열이 없습니다.");
+                    return;
+                }
+                normalizeProjectData(data);
+                context.pendingProjectData = data;
                 context.isPlacingImport = true;
                 context.placingRotation = 0; // 붙여넣기 모드 진입 시 회전각 초기화 ✨
-            } catch (IOException e) {
+            } catch (IOException | JsonSyntaxException e) {
                 e.printStackTrace();
             }
         }
@@ -352,14 +381,30 @@ public class ProjectManager {
             String json = clipboard.getString();
             try {
                 ProjectData data = gson.fromJson(json, ProjectData.class);
-                if (data != null && data.nodes != null) { // 유효성 검사
+                if (isValidProjectData(data)) {
+                    normalizeProjectData(data);
                     context.pendingProjectData = data;
                     context.isPlacingImport = true;
                     context.placingRotation = 0; // 초기화 ✨
                 }
-            } catch (Exception e) {
+            } catch (JsonSyntaxException e) {
                 // JSON 파싱 실패 시 무시 (외부 텍스트 복사 등)
                 System.out.println("붙여넣기 데이터가 올바른 JSON 회로 형식이 아닙니다.");
+            }
+        }
+    }
+
+    private boolean isValidProjectData(ProjectData data) {
+        return data != null && data.nodes != null;
+    }
+
+    private void normalizeProjectData(ProjectData data) {
+        if (data.wires == null) {
+            data.wires = new java.util.ArrayList<>();
+        }
+        for (NodeData node : data.nodes) {
+            if (node.properties == null) {
+                node.properties = new HashMap<>();
             }
         }
     }
