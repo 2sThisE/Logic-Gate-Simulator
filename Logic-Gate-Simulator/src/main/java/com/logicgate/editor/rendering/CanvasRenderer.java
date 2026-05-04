@@ -28,7 +28,6 @@ public class CanvasRenderer {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
-        // 배경 ✨
         gc.setFill(Color.web("#1E1E1E"));
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
@@ -36,7 +35,6 @@ public class CanvasRenderer {
         gc.translate(context.cameraX, context.cameraY);
         gc.scale(context.zoom, context.zoom);
 
-        // 그리드 렌더링 ✨
         if (context.projectConfig != null && context.projectConfig.showGrid) {
             gc.setLineWidth(1 / context.zoom);
             double unitSize = GateSymbol.UNIT_SIZE;
@@ -45,7 +43,7 @@ public class CanvasRenderer {
             double endX = startX + canvas.getWidth() / context.zoom + unitSize;
             double startY = (Math.floor(-context.cameraY / context.zoom / unitSize) * unitSize);
             double endY = startY + canvas.getHeight() / context.zoom + unitSize;
-            
+
             gc.setStroke(Color.web("#2A2A2A"));
             for (double x = startX; x <= endX; x += unitSize) {
                 gc.strokeLine(x, startY, x, endY);
@@ -68,29 +66,24 @@ public class CanvasRenderer {
             }
         }
 
-        // 전선 그리기 💖
         for (VisualWire wire : context.visualWires) {
             drawWire(gc, wire);
         }
 
-        // 배치 중인 노드 잔상 (Ghost) ✨
         if (context.placingNodeTypeId != null) {
             drawPlacementGhost(gc);
         }
 
-        // 붙여넣기/가져오기 중인 데이터 잔상 ✨
         if (context.isPlacingImport && context.pendingProjectData != null) {
             drawImportGhost(gc);
         }
 
-        // 노드 그리기 ✨
         for (VisualNode vn : context.visualNodes) {
             boolean isHovered = (vn == context.hoveredNode);
             boolean isSelected = context.selectedNodes.contains(vn);
             int hi = (isHovered) ? context.hoveredInPin : -1;
             int ho = (isHovered) ? context.hoveredOutPin : -1;
-            
-            // 배선 가능 여부 시각화 ✨
+
             boolean isInvalid = false;
             if (context.isWiring && isHovered) {
                 if (context.isWiringFromOut) {
@@ -103,12 +96,10 @@ public class CanvasRenderer {
             vn.draw(gc, isHovered, isSelected, hi, ho, context.selectedWire, isInvalid);
         }
 
-        // 현재 배선 중인 선 ✨
         if (context.isWiring && context.wiringNode != null) {
             drawActiveWiring(gc);
         }
 
-        // 선택 영역 사각형 ✨
         if (context.isSelecting) {
             gc.setStroke(Color.web("#00FFFF", 0.5));
             gc.setLineWidth(1 / context.zoom);
@@ -121,12 +112,11 @@ public class CanvasRenderer {
             gc.strokeRect(x1, y1, w, h);
         }
 
-        // 스냅 가이드선 ✨
         drawSnapLines(gc);
 
         gc.restore();
 
-        // 툴팁 렌더링 (줌 영향을 받지 않도록 restore 이후에 수행) ✨
+        // Tooltips are drawn after restoring the camera transform.
         if (context.hoveredPinName != null) {
             gc.setFill(Color.web("#333333", 0.9));
             gc.setStroke(Color.WHITE);
@@ -143,11 +133,11 @@ public class CanvasRenderer {
     private void drawWire(GraphicsContext gc, VisualWire wire) {
         boolean isHigh = (wire.from.node.getOut() & (1 << wire.outPin)) != 0;
         boolean isSelected = (wire == context.selectedWire);
-        
+
         boolean showState = context.projectConfig == null || context.projectConfig.showWireState;
         String highColor = context.projectConfig != null ? context.projectConfig.wireHighColor : "#FF3366";
         String lowColor = context.projectConfig != null ? context.projectConfig.wireLowColor : "#555555";
-        
+
         if (isSelected) {
             gc.setStroke(Color.web("#00FFFF"));
             gc.setLineWidth(5);
@@ -155,14 +145,13 @@ public class CanvasRenderer {
             gc.setStroke((isHigh && showState) ? Color.web(highColor) : Color.web(lowColor));
             gc.setLineWidth(3);
         }
-        
+
         double lastX = wire.from.getOutPinX(wire.outPin);
         double lastY = wire.from.getOutPinY(wire.outPin);
-        
+
         gc.beginPath();
         gc.moveTo(lastX, lastY);
 
-        // 마지막 지점(목적지 핀) 연결 ✨
         double endX = wire.to.getInPinX(wire.inPin);
         double endY = wire.to.getInPinY(wire.inPin);
 
@@ -265,7 +254,7 @@ public class CanvasRenderer {
         gc.setLineDashes(5);
         gc.beginPath();
         gc.moveTo(startX, startY);
-        
+
         if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
             double midX = (startX + context.worldMouseX) / 2;
             gc.lineTo(midX, startY);
@@ -286,7 +275,7 @@ public class CanvasRenderer {
 
         gc.setStroke(Color.web("#FFD700", 0.5));
         gc.setLineWidth(1 / context.zoom);
-        
+
         if (context.snapLineX != null) {
             gc.strokeLine(context.snapLineX, worldMinY, context.snapLineX, worldMaxY);
         }
@@ -300,15 +289,14 @@ public class CanvasRenderer {
         if (symbol != null) {
             gc.save();
             gc.setGlobalAlpha(0.4);
-            
+
             double width = symbol.getUnitWidth() * GateSymbol.UNIT_SIZE;
             double height = symbol.getUnitHeight() * GateSymbol.UNIT_SIZE;
-            
+
             gc.translate(context.worldMouseX, context.worldMouseY);
             gc.rotate(context.placingRotation);
             gc.translate(-width / 2, -height / 2);
-            
-            // 더미 VisualNode 생성하여 그리기 ✨
+
             VisualNode dummy = new VisualNode(NodeFactory.createNodeByType(context.placingNodeTypeId), 0, 0, "");
             symbol.draw(gc, dummy, false, false);
             gc.restore();
@@ -318,7 +306,7 @@ public class CanvasRenderer {
     private void drawImportGhost(GraphicsContext gc) {
         gc.save();
         gc.setGlobalAlpha(0.4);
-        
+
         double rad = Math.toRadians(context.placingRotation);
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);
@@ -326,17 +314,17 @@ public class CanvasRenderer {
         for (com.logicgate.editor.io.NodeData nd : context.pendingProjectData.nodes) {
             double rx = nd.x * cos - nd.y * sin;
             double ry = nd.x * sin + nd.y * cos;
-            
+
             GateSymbol s = SymbolRegistry.getSymbol(nd.type);
             if (s != null) {
                 double w = s.getUnitWidth() * GateSymbol.UNIT_SIZE;
                 double h = s.getUnitHeight() * GateSymbol.UNIT_SIZE;
-                
+
                 gc.save();
                 gc.translate(context.worldMouseX + rx, context.worldMouseY + ry);
                 gc.rotate(nd.rotation + context.placingRotation);
                 gc.translate(-w / 2, -h / 2);
-                
+
                 VisualNode d = new VisualNode(NodeFactory.createNodeByType(nd.type), 0, 0, "");
                 s.draw(gc, d, false, false);
                 gc.restore();

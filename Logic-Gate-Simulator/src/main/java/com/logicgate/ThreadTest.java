@@ -11,19 +11,19 @@ import java.util.Random;
 public class ThreadTest {
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== 스레드 안전성(Thread-Safety) 스트레스 테스트 시작 ===");
-        
+
         Circuit circuit = new Circuit();
         // 틱 딜레이를 1ms로 극단적으로 줄여서 충돌 확률을 높임
         circuit.setTickFrequencyHz(60);
         circuit.startSimulation();
 
         Thread[] threads = new Thread[20]; // 20개의 스레드가 동시에 회로를 수정
-        
+
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(() -> {
                 Random rand = new Random();
                 List<Node> localNodes = new ArrayList<>();
-                
+
                 // 각 스레드당 1,000번의 무작위 회로 조작 수행
                 for (int j = 0; j < 1000; j++) {
                     int action = rand.nextInt(4);
@@ -52,7 +52,7 @@ public class ThreadTest {
                             circuit.removeNode(n);
                         }
                     } catch (Exception e) {
-                        System.err.println("❌ 스레드 충돌 발생! (ConcurrentModificationException 등)");
+                        System.err.println(" 스레드 충돌 발생! (ConcurrentModificationException 등)");
                         e.printStackTrace();
                         System.exit(1);
                     }
@@ -67,6 +67,6 @@ public class ThreadTest {
         }
 
         circuit.stopSimulation();
-        System.out.println("✅ 스트레스 테스트 완료: 단 한 번의 충돌도 발생하지 않았습니다. (스레드 안전함)");
+        System.out.println(" 스트레스 테스트 완료: 단 한 번의 충돌도 발생하지 않았습니다. (스레드 안전함)");
     }
 }

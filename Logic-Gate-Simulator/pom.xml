@@ -60,7 +60,7 @@
       <version>0.21.0</version>
     </dependency>
 
-    <!-- Ikonli for Icons ✨ -->
+    <!-- Ikonli for Icons -->
     <dependency>
         <groupId>org.kordamp.ikonli</groupId>
         <artifactId>ikonli-javafx</artifactId>
@@ -74,7 +74,31 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>com/logicgate/app.properties</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>com/logicgate/app.properties</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <propertiesEncoding>UTF-8</propertiesEncoding>
+        </configuration>
+      </plugin>
       <!-- JavaFX Maven Plugin -->
       <plugin>
         <groupId>org.openjfx</groupId>

@@ -12,13 +12,14 @@ import javafx.util.Callback;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
 public class LauncherController {
 
     @FXML private VBox recentProjectsView;
     @FXML private VBox newProjectView;
-    
+
     @FXML private ListView<RecentProject> recentProjectsList;
     @FXML private TextField projectNameField;
     @FXML private TextField projectLocationField;
@@ -26,9 +27,6 @@ public class LauncherController {
     private Stage stage;
     private Preferences prefs;
 
-    /**
-     * 프로젝트 선택 결과를 담는 클래스 ✨
-     */
     public static class ProjectResult {
         public final File root;
         public final boolean isNew;
@@ -39,6 +37,10 @@ public class LauncherController {
     }
 
     private ProjectResult result = null;
+
+    private ResourceBundle bundle() {
+        return ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
+    }
 
     public ProjectResult getResult() {
         return result;
@@ -51,7 +53,7 @@ public class LauncherController {
     @FXML
     public void initialize() {
         prefs = Preferences.userNodeForPackage(LauncherController.class);
-        
+
         recentProjectsList.setCellFactory(new Callback<ListView<RecentProject>, ListCell<RecentProject>>() {
             @Override
             public ListCell<RecentProject> call(ListView<RecentProject> param) {
@@ -107,8 +109,9 @@ public class LauncherController {
 
     @FXML
     public void browseNewProjectLocation() {
+        ResourceBundle bundle = bundle();
         DirectoryChooser dirChooser = new DirectoryChooser();
-        dirChooser.setTitle("프로젝트 생성 위치 선택");
+        dirChooser.setTitle(bundle.getString("launcher.dir_chooser.new"));
         File defaultDir = new File(projectLocationField.getText());
         if (defaultDir.exists()) {
             dirChooser.setInitialDirectory(defaultDir);
@@ -125,30 +128,33 @@ public class LauncherController {
         String projectPath = projectLocationField.getText();
 
         if (projectName == null || projectName.trim().isEmpty()) {
-            showAlert("오류", "프로젝트 이름을 입력해주세요.");
+            ResourceBundle bundle = bundle();
+            showAlert(bundle.getString("common.error"), bundle.getString("launcher.alert.name_req"));
             return;
         }
         if (projectPath == null || projectPath.trim().isEmpty()) {
-            showAlert("오류", "프로젝트 위치를 지정해주세요.");
+            ResourceBundle bundle = bundle();
+            showAlert(bundle.getString("common.error"), bundle.getString("launcher.alert.loc_req"));
             return;
         }
 
         File baseDir = new File(projectPath);
         File projectRoot = new File(baseDir, projectName.trim());
-        
+
         if (!projectRoot.exists()) {
             projectRoot.mkdirs();
         }
 
         addRecentProject(projectName.trim(), projectRoot.getAbsolutePath());
-        this.result = new ProjectResult(projectRoot, true); // 결과 저장 ✨
+        this.result = new ProjectResult(projectRoot, true);
         stage.close();
     }
 
     @FXML
     public void openExistingProject() {
+        ResourceBundle bundle = bundle();
         DirectoryChooser dirChooser = new DirectoryChooser();
-        dirChooser.setTitle("프로젝트 폴더 선택");
+        dirChooser.setTitle(bundle.getString("launcher.dir_chooser.open"));
         File selectedDir = dirChooser.showDialog(projectNameField.getScene().getWindow());
 
         if (selectedDir != null) {
@@ -159,11 +165,12 @@ public class LauncherController {
     private void openProjectByFile(File dir) {
         File prjFile = new File(dir, "project.prj");
         if (!prjFile.exists()) {
-            showAlert("오류", "선택한 폴더에 project.prj 파일이 없습니다. 올바른 프로젝트 폴더를 선택해주세요.");
+            ResourceBundle bundle = bundle();
+            showAlert(bundle.getString("common.error"), bundle.getString("launcher.alert.invalid_prj"));
             return;
         }
         addRecentProject(dir.getName(), dir.getAbsolutePath());
-        this.result = new ProjectResult(dir, false); // 결과 저장 ✨
+        this.result = new ProjectResult(dir, false);
         stage.close();
     }
 
@@ -206,7 +213,7 @@ public class LauncherController {
         if (list.size() > 10) {
             list = list.subList(0, 10);
         }
-        
+
         StringBuilder sb = new StringBuilder();
         for (RecentProject p : list) {
             sb.append(p.name).append("|").append(p.path).append(";");

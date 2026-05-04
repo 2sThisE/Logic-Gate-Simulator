@@ -1,6 +1,6 @@
 .root {
     -fx-background-color: #1e1e1e;
-    -fx-font-family: "Segoe UI", "Malgun Gothic", sans-serif;
+    -fx-font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Noto Sans KR", "Segoe UI", sans-serif;
 }
 
 .sidebar {

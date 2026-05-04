@@ -11,7 +11,7 @@ import java.util.jar.JarFile;
 
 public class JarSecurityScanner {
 
-    // 오빠가 지정해준 필수 허용 목록 💖 (Java 기본 패키지 일부 포함)
+    // Allow only the simulator API and a small set of Java/JavaFX classes for mods.
     private static final String[] WHITELIST = {
         "com/logicgate/gates/Node",
         "com/logicgate/editor/mod/ComponentMeta",
@@ -31,13 +31,13 @@ public class JarSecurityScanner {
      */
     public static List<String> scanJarForSuspiciousClasses(File jarFile) {
         List<String> suspicious = new ArrayList<>();
-        
+
         try (JarFile jar = new JarFile(jarFile)) {
             Enumeration<JarEntry> entries = jar.entries();
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 if (entry.isDirectory() || !entry.getName().endsWith(".class")) continue;
-                
+
                 // 현재 검사 중인 모드 파일의 최상위 패키지 이름 추출 (자기 자신은 허용하기 위함)
                 String topLevelPackage = "";
                 int firstSlash = entry.getName().indexOf('/');
@@ -47,17 +47,17 @@ public class JarSecurityScanner {
 
                 try (InputStream is = jar.getInputStream(entry);
                      DataInputStream dis = new DataInputStream(is)) {
-                    
+
                     int magic = dis.readInt();
                     if (magic != 0xCAFEBABE) continue; // 클래스 파일 매직 넘버 확인
-                    
+
                     dis.readUnsignedShort(); // minor
                     dis.readUnsignedShort(); // major
-                    
+
                     int cpCount = dis.readUnsignedShort();
                     String[] utf8Pool = new String[cpCount];
                     int[] classPool = new int[cpCount];
-                    
+
                     for (int i = 1; i < cpCount; i++) {
                         int tag = dis.readUnsignedByte();
                         switch (tag) {
@@ -94,7 +94,7 @@ public class JarSecurityScanner {
                                 break; // 알 수 없는 태그는 무시
                         }
                     }
-                    
+
                     // Class 항목 분석
                     for (int i = 1; i < cpCount; i++) {
                         if (classPool[i] > 0 && classPool[i] < cpCount) {
@@ -104,7 +104,7 @@ public class JarSecurityScanner {
                                 if (className.startsWith("[")) {
                                     className = className.replaceAll("^\\[+L", "").replaceAll(";$|^\\[+", "");
                                 }
-                                
+
                                 // 기본 타입이 아니고 패키지 구조를 가졌으며, 자신의 패키지도 아닌 외부 클래스일 때
                                 if (className.contains("/") && !className.startsWith(topLevelPackage)) {
                                     if (!isWhitelisted(className)) {

@@ -28,6 +28,7 @@ public class ConsoleLogController {
     public void setup() {
         if (consoleListView == null) return;
         consoleListView.setItems(consoleMessages);
+        updateStatusButton();
         redirectSystemErr();
         setupContextMenu();
     }
@@ -53,10 +54,7 @@ public class ConsoleLogController {
     private void clearLogs() {
         consoleMessages.clear();
         errorCount = 0;
-        if (errorButton != null) {
-            errorButton.setText(String.format(bundle.getString("console.btn.logs"), 0));
-            errorButton.getStyleClass().remove("status-btn-error");
-        }
+        updateStatusButton();
     }
 
     private void redirectSystemErr() {
@@ -90,18 +88,25 @@ public class ConsoleLogController {
         consoleMessages.add(message);
         if (isError) {
             errorCount++;
-            if (errorButton != null) {
-                errorButton.setText(String.format(bundle.getString("console.btn.errors"), errorCount));
-                if (!errorButton.getStyleClass().contains("status-btn-error")) {
-                    errorButton.getStyleClass().add("status-btn-error");
-                }
-            }
-        } else if (errorCount == 0 && errorButton != null) {
-            errorButton.setText(String.format(bundle.getString("console.btn.logs"), consoleMessages.size()));
         }
+        updateStatusButton();
 
         if (consoleListView != null) {
             consoleListView.scrollTo(consoleMessages.size() - 1);
+        }
+    }
+
+    private void updateStatusButton() {
+        if (errorButton == null) return;
+
+        if (errorCount > 0) {
+            errorButton.setText(String.format(bundle.getString("console.btn.errors"), errorCount));
+            if (!errorButton.getStyleClass().contains("status-btn-error")) {
+                errorButton.getStyleClass().add("status-btn-error");
+            }
+        } else {
+            errorButton.setText(String.format(bundle.getString("console.btn.logs"), consoleMessages.size()));
+            errorButton.getStyleClass().remove("status-btn-error");
         }
     }
 }

@@ -6,7 +6,7 @@ import com.logicgate.editor.model.Property;
 // 사용자가 강제로 0 또는 1을 설정할 수 있는 스위치 노드
 public class InputPin extends Node {
 
-    private String mode = "Toggle"; // Toggle 또는 Momentary ✨
+    private String mode = "Toggle";
 
     public InputPin() {
         super(0, 1); // 입력은 없고, 출력만 1개 나감
@@ -16,7 +16,7 @@ public class InputPin extends Node {
     @Override
     public List<Property<?>> getComponentProperties() {
         List<Property<?>> props = super.getComponentProperties();
-        props.add(new Property<>("작동 방식", mode, Property.Type.CHOICE, 
+        props.add(new Property<>("작동 방식", mode, Property.Type.CHOICE,
             new String[]{"Toggle", "Momentary"}, newVal -> {
                 this.mode = (String) newVal;
                 this.properties.put("mode", mode);

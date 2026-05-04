@@ -5,7 +5,7 @@ import javafx.scene.canvas.GraphicsContext;
 
 public interface GateSymbol {
     /**
-     * 그리드 한 칸의 픽셀 크기입니다. ✨
+     * 그리드 한 칸의 픽셀 크기입니다.
      */
     double UNIT_SIZE = 10.0;
 
@@ -17,7 +17,7 @@ public interface GateSymbol {
     double getLabelX(VisualNode vn);
     double getLabelY(VisualNode vn);
     String getDefaultLabel();
-    
+
     // 툴팁용 핀 이름 가져오기
     String getInPinName(int index);
     String getOutPinName(int index);
@@ -28,13 +28,13 @@ public interface GateSymbol {
     default String getInPinName(VisualNode vn, int index) {
         return getInPinName(index);
     }
-    
+
     default String getOutPinName(VisualNode vn, int index) {
         return getOutPinName(index);
     }
 
     /**
-     * 심볼의 권장 너비와 높이를 '칸(Unit)' 단위로 반환합니다. ✨
+     * 심볼의 권장 너비와 높이를 '칸(Unit)' 단위로 반환합니다.
      * 1 Unit = 10px
      */
     default int getUnitWidth() { return 8; }  // 80px

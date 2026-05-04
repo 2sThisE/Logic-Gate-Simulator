@@ -1,4 +1,4 @@
-# Logic Gate Simulator 모드 제작 가이드 🛠️
+# Logic Gate Simulator 모드 제작 가이드
 
 이 프로젝트는 외부 JAR 파일을 통해 새로운 논리 게이트나 디스플레이 컴포넌트를 추가할 수 있는 모드 시스템을 지원합니다.
 
@@ -34,16 +34,16 @@ public class MyNode extends Node {
         // in: 32비트 비트마스크 입력 상태
         int a = (in & 1);
         int b = (in >> 1) & 1;
-        
+
         // 연산 후 out(32비트 비트마스크)에 결과 저장
-        out = a & b; 
+        out = a & b;
     }
 }
 ```
 
 ---
 
-## 3. ✨ 컴포넌트 속성 추가 (New!)
+## 3.  컴포넌트 속성 추가 (New!)
 사용자가 오른쪽 속성창에서 부품의 설정을 실시간으로 변경할 수 있게 하는 기능입니다. 모든 설정은 **자동으로 저장/불러오기 및 Undo/Redo 대상**이 됩니다.
 
 ### A. 속성 정의 (`getComponentProperties`)
@@ -53,15 +53,15 @@ public class MyNode extends Node {
 @Override
 public List<Property<?>> getComponentProperties() {
     List<Property<?>> props = super.getComponentProperties();
-    
-    // 1. 색상 선택기 추가 🎨
+
+    // 1. 색상 선택기 추가
     props.add(new Property<>("배경 색상", bgColor, Property.Type.COLOR, newVal -> {
         this.bgColor = (String) newVal;
         this.properties.put("bgColor", bgColor); // 맵에 저장 (파일 저장용)
     }));
 
-    // 2. 선택창(ComboBox) 추가 🔘
-    props.add(new Property<>("동작 모드", currentMode, Property.Type.CHOICE, 
+    // 2. 선택창(ComboBox) 추가
+    props.add(new Property<>("동작 모드", currentMode, Property.Type.CHOICE,
         new String[]{"Fast", "Slow", "Normal"}, newVal -> {
             this.currentMode = (String) newVal;
             this.properties.put("mode", currentMode);
@@ -110,16 +110,16 @@ protected void applyProperties() {
 public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
     gc.save();
     gc.translate(vn.x, vn.y);
-    
-    // 노드의 속성 값 참조 예시 🎨
+
+    // 노드의 속성 값 참조 예시
     String color = "#888888";
     if (vn.node instanceof MyNode) {
         color = ((MyNode) vn.node).getBgColor();
     }
-    
+
     gc.setFill(Color.web(color));
     gc.fillRect(0, 0, vn.width, vn.height);
-    
+
     gc.restore();
 }
 ```

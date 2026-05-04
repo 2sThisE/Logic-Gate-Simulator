@@ -22,8 +22,7 @@ public class WiringManager {
         context.wiringNode = node;
         context.wiringPin = pinIndex;
 
-        // 출력 핀에서 선을 뽑을 때는 기존 선을 끊지 않음! 💖 (다중 출력 지원)
-        // 입력 핀에서 선을 뽑을 때는 기존 선을 끊어줌! 🔪💕 (일편단심 입력)
+        // Input pins accept one wire, so starting from an input removes the existing connection.
         if (!isFromOut) {
             boolean willDisconnect = false;
             for (VisualWire w : context.visualWires) {
@@ -41,7 +40,7 @@ public class WiringManager {
                     context.getCircuit().disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
                     if (w == context.selectedWire) context.selectedWire = null;
                     it.remove();
-                    context.setDirty(true); // 변경 감지 ✨
+                    context.setDirty(true);
                 }
             }
         }
@@ -58,13 +57,11 @@ public class WiringManager {
         }
         context.visualWires.removeIf(w -> {
             boolean removed = false;
-            // 입력 핀(toNode)은 "나만 바라봐" 모드! 기존 선이 있으면 잘라버려 🔪💕
             if (w.to == toNode && w.inPin == inPin) {
                 context.getCircuit().disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
                 removed = true;
             }
-            // 출력 핀(fromNode)은 이제 자유야! 기존 로직을 지워서 다중 출력을 허용해 💖
-            
+
             if (removed && w == context.selectedWire) {
                 context.selectedWire = null;
             }
@@ -74,10 +71,10 @@ public class WiringManager {
         context.getCircuit().connect(fromNode.node, outPin, toNode.node, inPin);
         VisualWire newWire = new VisualWire(fromNode, outPin, toNode, inPin);
         context.visualWires.add(newWire);
-        
+
         context.selectedWire = newWire;
         context.setSelectedNode(null);
-        context.setDirty(true); // 변경 감지 ✨
+        context.setDirty(true);
         historySavedForCurrentWiring = false;
     }
 

@@ -15,7 +15,7 @@ public class HistoryManager {
     private final EditorContext context;
     private final Stack<ProjectData> undoStack = new Stack<>();
     private final Stack<ProjectData> redoStack = new Stack<>();
-    private boolean isBatchOperation = false; // 대량 작업 중 저장 방지 ✨
+    private boolean isBatchOperation = false;
 
     public HistoryManager(EditorContext context) {
         this.context = context;
@@ -31,12 +31,11 @@ public class HistoryManager {
 
     public void saveState() {
         if (isBatchOperation) return;
-        
+
         ProjectData data = captureCurrentState();
         undoStack.push(data);
         redoStack.clear();
-        
-        // 메모리 제한 (최대 50단계)
+
         if (undoStack.size() > 50) {
             undoStack.remove(0);
         }
@@ -44,20 +43,20 @@ public class HistoryManager {
 
     public void undo() {
         if (undoStack.isEmpty()) return;
-        
+
         ProjectData currentState = captureCurrentState();
         redoStack.push(currentState);
-        
+
         ProjectData previousState = undoStack.pop();
         restoreState(previousState);
     }
 
     public void redo() {
         if (redoStack.isEmpty()) return;
-        
+
         ProjectData currentState = captureCurrentState();
         undoStack.push(currentState);
-        
+
         ProjectData nextState = redoStack.pop();
         restoreState(nextState);
     }
@@ -69,7 +68,7 @@ public class HistoryManager {
                 vn.node.getTypeId(),
                 vn.x, vn.y, vn.rotation, vn.label, vn.showLabel, vn.group
             );
-            nd.properties.putAll(vn.node.getProperties()); // 속성 복사 ✨
+            nd.properties.putAll(vn.node.getProperties());
             data.nodes.add(nd);
         }
         for (VisualWire vw : context.visualWires) {
@@ -91,54 +90,51 @@ public class HistoryManager {
     }
 
     private void restoreState(ProjectData data) {
-        startBatchOperation(); // 복원 중에는 추가 스냅샷 방지 ✨
-        
-        // 현재 상태 정리
+        startBatchOperation();
+
         context.visualNodes.clear();
         context.visualWires.clear();
         context.getCircuit().clear();
-        
-        // 노드 복원
+
         for (NodeData nd : data.nodes) {
             Node logicNode = NodeFactory.createNodeByType(nd.type);
             if (logicNode != null) {
-                logicNode.setProperties(nd.properties); // 속성 복구 ✨
+                logicNode.setProperties(nd.properties);
                 context.getCircuit().addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, nd.x, nd.y, nd.label);
                 vn.showLabel = nd.showLabel;
-                vn.rotation = nd.rotation; // 회전각 복원 ✨
+                vn.rotation = nd.rotation;
                 vn.group = nd.group;
                 context.visualNodes.add(vn);
             }
         }
-        
-        // 와이어 복원
+
         for (WireData wd : data.wires) {
             if (wd.fromIdx >= 0 && wd.fromIdx < context.visualNodes.size() &&
                 wd.toIdx >= 0 && wd.toIdx < context.visualNodes.size()) {
-                
+
                 VisualNode fromVn = context.visualNodes.get(wd.fromIdx);
                 VisualNode toVn = context.visualNodes.get(wd.toIdx);
-                
+
                 context.getCircuit().connect(fromVn.node, wd.outPin, toVn.node, wd.inPin);
                 VisualWire wire = new VisualWire(fromVn, wd.outPin, toVn, wd.inPin);
                 applyWireData(wire, wd);
                 context.visualWires.add(wire);
-                // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
+                // Advance once after each restored connection to reduce synchronized oscillator artifacts.
                 context.getCircuit().tick();
             }
         }
-        
+
         context.setSelectedNode(null);
         context.selectedNodes.clear();
         context.selectedWire = null;
         context.selectedWireBendIndex = -1;
         context.wireBendEditMode = false;
         context.setDirty(true);
-        
+
         stopBatchOperation();
     }
-    
+
     public void clear() {
         undoStack.clear();
         redoStack.clear();

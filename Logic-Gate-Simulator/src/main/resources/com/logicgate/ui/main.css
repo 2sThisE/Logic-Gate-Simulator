@@ -1,6 +1,7 @@
 .root {
     -fx-base: #2B2B2B;
     -fx-background: #2B2B2B;
+    -fx-font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans CJK KR", "Noto Sans KR", "Segoe UI", sans-serif;
 }
 
 .menu-bar {
@@ -63,7 +64,6 @@
     -fx-text-fill: white;
 }
 
-/* 추가된 하단 상태바 및 콘솔 영역 스타일 */
 .status-bar {
     -fx-background-color: #007acc;
     -fx-border-color: #005a9e transparent transparent transparent;
@@ -111,7 +111,6 @@
     -fx-text-fill: white;
 }
 
-/* 시뮬레이션 제어 버튼 스타일 ✨ */
 .sim-btn {
     -fx-font-size: 12px;
     -fx-font-weight: bold;

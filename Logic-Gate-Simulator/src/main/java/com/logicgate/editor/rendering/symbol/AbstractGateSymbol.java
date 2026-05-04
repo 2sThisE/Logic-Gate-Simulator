@@ -5,25 +5,23 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 public abstract class AbstractGateSymbol implements GateSymbol {
-    
+
     public abstract String getSvgPathData(VisualNode vn);
 
     @Override
     public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
         gc.save();
         prepareFill(gc, vn, isHovered, isSelected);
-        
+
         gc.beginPath();
         String path = getSvgPathData(vn);
         if (path != null && !path.isEmpty()) {
             gc.appendSVGPath(path);
         }
-        // gc.fill();
         gc.stroke();
-        
+
         drawExtra(gc, vn);
-        // drawLabel(gc, vn); // VisualNode에서 통합 관리하도록 변경 ✨
-        
+
         gc.restore();
     }
 
@@ -41,16 +39,15 @@ public abstract class AbstractGateSymbol implements GateSymbol {
     protected void drawLabel(GraphicsContext gc, VisualNode vn) {
         if (vn.showLabel) {
             gc.save();
-            // 라벨 위치로 이동 후 부품 회전의 반대 방향으로 회전 적용 ✨
             gc.translate(getLabelX(vn), getLabelY(vn));
             gc.rotate(-vn.rotation);
-            
+
             gc.setFill(Color.WHITE);
-            gc.fillText(vn.label, 0, 0); // 이미 이동했으므로 0,0에 그림
+            gc.fillText(vn.label, 0, 0);
             gc.restore();
         }
     }
-    
+
     protected void prepareFill(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
         gc.setFill(Color.web("#4A90E2", 0.8));
         if (isSelected) {
@@ -63,7 +60,6 @@ public abstract class AbstractGateSymbol implements GateSymbol {
             gc.setLineWidth(2);
             gc.setStroke(Color.WHITE);
         }
-        // gc.translate(vn.x, vn.y); // VisualNode에서 이미 처리함 ✨
     }
 
     @Override
@@ -75,7 +71,7 @@ public abstract class AbstractGateSymbol implements GateSymbol {
     public double getInPinY(VisualNode vn, int index) {
         int count = vn.node.getInputSize();
         double centerY = vn.y + vn.height / 2;
-        double spacing = 20.0; // 픽셀 단위 핀 간격 (20px) ✨
+        double spacing = 20.0;
         return centerY + (index - (count - 1) / 2.0) * spacing;
     }
 
@@ -88,7 +84,7 @@ public abstract class AbstractGateSymbol implements GateSymbol {
     public double getOutPinY(VisualNode vn, int index) {
         int count = vn.node.getOutputSize();
         double centerY = vn.y + vn.height / 2;
-        double spacing = 20.0; // 픽셀 단위 핀 간격 (20px) ✨
+        double spacing = 20.0;
         return centerY + (index - (count - 1) / 2.0) * spacing;
     }
 
@@ -119,11 +115,11 @@ public abstract class AbstractGateSymbol implements GateSymbol {
 
     @Override
     public int getUnitWidth() {
-        return 8; // 80px
+        return 8;
     }
 
     @Override
     public int getUnitHeight() {
-        return 6; // 60px ✨ (20px 그리드 배수)
+        return 6;
     }
 }

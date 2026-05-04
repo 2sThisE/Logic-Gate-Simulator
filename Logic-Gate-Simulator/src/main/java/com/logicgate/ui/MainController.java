@@ -2,6 +2,7 @@ package com.logicgate.ui;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
 
 import com.logicgate.Circuit;
 import com.logicgate.editor.interaction.KeyboardInteractionHandler;
@@ -43,6 +44,7 @@ public class MainController {
 
     @FXML private ListView<String> consoleListView;
     @FXML private Button errorButton;
+    @FXML private javafx.scene.control.Label versionLabel;
     @FXML private Pane canvasPane;
     @FXML private Canvas simulationCanvas;
     @FXML private TreeView<String> componentTreeView;
@@ -73,6 +75,11 @@ public class MainController {
     private PropertyPaneController propertyPaneController;
     private EditorContextMenuController contextMenuController;
     private ConsoleLogController consoleLogController;
+    private Runnable restartCallback;
+
+    private ResourceBundle bundle() {
+        return ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
+    }
 
     @FXML
     public void clearFocusFromCanvas(javafx.scene.input.MouseEvent event) {
@@ -112,7 +119,20 @@ public class MainController {
 
         circuit.startSimulation();
         setupSimulationButtons();
+        setupVersionLabel();
         consoleLogController.setup();
+    }
+
+    private void setupVersionLabel() {
+        if (versionLabel == null) return;
+
+        try {
+            ResourceBundle appBundle = ResourceBundle.getBundle("com.logicgate.app");
+            versionLabel.setText("v" + appBundle.getString("app.version"));
+        } catch (Exception e) {
+            String version = MainController.class.getPackage().getImplementationVersion();
+            versionLabel.setText(version != null ? "v" + version : "");
+        }
     }
 
     private void setupChildControllers() {
@@ -263,11 +283,20 @@ public class MainController {
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
 
-            controller.setContext(context, stage, () -> {
-                applyProjectOptions();
-                projectManager.saveProjectConfig();
-                context.setDirty(false);
-            });
+            boolean hadUnsavedChanges = context.isDirty();
+            controller.setContext(
+                context,
+                stage,
+                languageChanged -> !languageChanged || !hadUnsavedChanges || confirmClose(),
+                languageChanged -> {
+                    applyProjectOptions();
+                    projectManager.saveProjectConfig();
+                    context.setDirty(!languageChanged && hadUnsavedChanges);
+                    if (languageChanged && restartCallback != null) {
+                        Platform.runLater(restartCallback);
+                    }
+                }
+            );
 
             stage.showAndWait();
         } catch (Exception e) {
@@ -310,6 +339,20 @@ public class MainController {
         return projectManager;
     }
 
+    public java.io.File getProjectRoot() {
+        return context != null ? context.projectRoot : null;
+    }
+
+    public void setRestartCallback(Runnable restartCallback) {
+        this.restartCallback = restartCallback;
+    }
+
+    public void prepareForRestart() {
+        if (autosaveTimer != null) autosaveTimer.stop();
+        if (timer != null) timer.stop();
+        if (circuit != null) circuit.stopSimulation();
+    }
+
     @FXML
     public void saveProject() {
         projectManager.saveCurrentProject();
@@ -318,14 +361,15 @@ public class MainController {
     @FXML
     public void newProject() {
         if (context.isDirty()) {
+            ResourceBundle bundle = bundle();
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("저장되지 않은 변경 사항");
-            alert.setHeaderText("현재 프로젝트에 저장되지 않은 변경 사항이 있습니다.");
-            alert.setContentText("다른 프로젝트로 전환하기 전에 저장하시겠습니까?");
+            alert.setTitle(bundle.getString("alert.unsaved.title"));
+            alert.setHeaderText(bundle.getString("alert.unsaved.header"));
+            alert.setContentText(bundle.getString("alert.unsaved.content"));
 
-            ButtonType btnSave = new ButtonType("저장");
-            ButtonType btnDontSave = new ButtonType("저장 안 함");
-            ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
+            ButtonType btnSave = new ButtonType(bundle.getString("alert.unsaved.btn.save"));
+            ButtonType btnDontSave = new ButtonType(bundle.getString("alert.unsaved.btn.dont_save"));
+            ButtonType btnCancel = new ButtonType(bundle.getString("common.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
 
             alert.getButtonTypes().setAll(btnSave, btnDontSave, btnCancel);
 
@@ -384,10 +428,11 @@ public class MainController {
     }
 
     private void handleModManagerChanges() {
+        ResourceBundle bundle = bundle();
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("프로젝트 재로드");
-        alert.setHeaderText("모드 설정이 변경되었습니다.");
-        alert.setContentText("변경 사항을 적용하려면 프로젝트를 다시 불러와야 합니다. 지금 다시 불러오시겠습니까?");
+        alert.setTitle(bundle.getString("alert.mod_reload.title"));
+        alert.setHeaderText(bundle.getString("alert.mod_reload.header"));
+        alert.setContentText(bundle.getString("alert.mod_reload.content"));
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -399,14 +444,15 @@ public class MainController {
 
     private void reloadProjectAfterModChanges() {
         if (context.isDirty()) {
+            ResourceBundle bundle = bundle();
             Alert saveAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            saveAlert.setTitle("저장되지 않은 변경 사항");
-            saveAlert.setHeaderText("현재 프로젝트에 저장되지 않은 내용이 있습니다.");
-            saveAlert.setContentText("재로드하기 전에 저장하시겠습니까?");
+            saveAlert.setTitle(bundle.getString("alert.unsaved.title"));
+            saveAlert.setHeaderText(bundle.getString("alert.mod_save.header"));
+            saveAlert.setContentText(bundle.getString("alert.mod_save.content"));
 
-            ButtonType btnSave = new ButtonType("저장 후 재로드");
-            ButtonType btnJustLoad = new ButtonType("저장 없이 재로드");
-            ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
+            ButtonType btnSave = new ButtonType(bundle.getString("alert.mod_save.btn.save"));
+            ButtonType btnJustLoad = new ButtonType(bundle.getString("alert.mod_save.btn.reload"));
+            ButtonType btnCancel = new ButtonType(bundle.getString("common.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
 
             saveAlert.getButtonTypes().setAll(btnSave, btnJustLoad, btnCancel);
             Optional<ButtonType> saveResult = saveAlert.showAndWait();
@@ -551,14 +597,15 @@ public class MainController {
     private boolean confirmClose() {
         if (!context.isDirty()) return true;
 
+        ResourceBundle bundle = bundle();
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("저장되지 않은 변경 사항");
-        alert.setHeaderText("프로젝트에 저장되지 않은 변경 사항이 있습니다.");
-        alert.setContentText("변경 사항을 저장하시겠습니까?");
+        alert.setTitle(bundle.getString("alert.unsaved.title"));
+        alert.setHeaderText(bundle.getString("alert.confirm_close.header"));
+        alert.setContentText(bundle.getString("alert.confirm_close.content"));
 
-        ButtonType btnSave = new ButtonType("저장");
-        ButtonType btnDontSave = new ButtonType("저장 안 함");
-        ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType btnSave = new ButtonType(bundle.getString("alert.unsaved.btn.save"));
+        ButtonType btnDontSave = new ButtonType(bundle.getString("alert.unsaved.btn.dont_save"));
+        ButtonType btnCancel = new ButtonType(bundle.getString("common.cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
 
         alert.getButtonTypes().setAll(btnSave, btnDontSave, btnCancel);
 
@@ -576,9 +623,10 @@ public class MainController {
         List<String> warnings = projectManager.consumeLoadWarnings();
         if (warnings.isEmpty()) return;
 
+        ResourceBundle bundle = bundle();
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("프로젝트 불러오기 경고");
-        alert.setHeaderText("일부 컴포넌트를 불러오지 못했습니다.");
+        alert.setTitle(bundle.getString("alert.load_warn.title"));
+        alert.setHeaderText(bundle.getString("alert.load_warn.header"));
         alert.setContentText(String.join("\n", warnings));
         alert.showAndWait();
     }

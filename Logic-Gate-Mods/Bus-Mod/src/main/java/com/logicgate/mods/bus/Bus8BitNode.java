@@ -19,8 +19,8 @@ public class Bus8BitNode extends Node {
         int a = in & 0xFF;
         int b = (in >> 8) & 0xFF;
         int c = (in >> 16) & 0xFF;
-        
-        // 여러 소스에서 오는 데이터를 OR하여 통합 (High-Z 대체 시뮬레이션) 🔗💕
+
+        // 여러 소스에서 오는 데이터를 OR하여 통합 (High-Z 대체 시뮬레이션)
         out = a | b | c;
     }
 }

@@ -14,9 +14,8 @@ public class OutputPinSymbol extends AbstractGateSymbol {
     @Override
     public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
         gc.save();
-        // gc.translate(vn.x, vn.y); // VisualNode에서 이미 처리함 ✨
         boolean isOn = vn.node.getOut() > 0;
-        
+
         if (isSelected) {
             gc.setLineWidth(4);
             gc.setStroke(Color.web("#00FFFF"));
@@ -32,11 +31,11 @@ public class OutputPinSymbol extends AbstractGateSymbol {
         if (vn.node instanceof com.logicgate.gates.OutputPin) {
             colorHex = ((com.logicgate.gates.OutputPin) vn.node).getOnColor();
         }
-        
+
         gc.setFill(isOn ? Color.web(colorHex) : Color.web("#333333"));
         gc.fillOval(0, 0, vn.width, vn.height);
         gc.strokeOval(0, 0, vn.width, vn.height);
-        
+
         gc.restore();
     }
 

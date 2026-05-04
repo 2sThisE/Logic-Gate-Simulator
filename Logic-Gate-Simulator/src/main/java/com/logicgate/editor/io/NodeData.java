@@ -3,7 +3,7 @@ package com.logicgate.editor.io;
 public class NodeData {
     public String type;
     public double x, y;
-    public double rotation; // 회전각 ✨
+    public double rotation;
     public String label;
     public boolean showLabel;
     public String group;

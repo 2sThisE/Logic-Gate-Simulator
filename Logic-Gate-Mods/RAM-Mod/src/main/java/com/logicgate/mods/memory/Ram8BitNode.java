@@ -34,7 +34,7 @@ public class Ram8BitNode extends Node {
         if (oe) {
             out = memory[addr] & 0xFF;
         } else {
-            out = 0; // High-Z 대신 0 (OR 버스용) 🔗💕
+            out = 0; // High-Z 대신 0 (OR 버스용)
         }
     }
 }

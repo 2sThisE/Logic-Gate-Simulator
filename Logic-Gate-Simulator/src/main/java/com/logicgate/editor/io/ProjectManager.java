@@ -34,39 +34,34 @@ public class ProjectManager {
         this.context = context;
     }
 
-    /**
-     * 프로젝트 매니저(런처) 창을 띄우고 사용자의 선택 결과를 반환합니다. ✨
-     */
     public LauncherController.ProjectResult showLauncher(Stage owner, boolean projectInitialized) {
         try {
             ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
             URL launcherFxml = getClass().getResource("/com/logicgate/ui/launcher.fxml");
             FXMLLoader loader = new FXMLLoader(launcherFxml, bundle);
             Parent root = loader.load();
-            
+
             Stage launcherStage = new Stage();
             launcherStage.initModality(Modality.APPLICATION_MODAL);
             launcherStage.initOwner(owner);
-            launcherStage.setTitle("Project Manager");
-            
+            launcherStage.setTitle(bundle.getString("launcher.title"));
+
             launcherStage.setOnCloseRequest(event -> {
                 if (!projectInitialized) {
                     javafx.application.Platform.exit();
                     System.exit(0);
                 }
             });
-            
+
             LauncherController controller = loader.getController();
             controller.setStage(launcherStage);
 
             Scene scene = new Scene(root, 800, 500);
             launcherStage.setScene(scene);
             launcherStage.setResizable(true);
-            
-            // 창이 닫힐 때까지 대기 ✨
+
             launcherStage.showAndWait();
-            
-            // 컨트롤러로부터 결과 받아오기 ✨
+
             return controller.getResult();
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,7 +74,7 @@ public class ProjectManager {
 
         File prjFile = new File(context.projectRoot, "project.prj");
         File modsDir = new File(context.projectRoot, "mods");
-        
+
         if (!modsDir.exists()) {
             modsDir.mkdirs();
         }
@@ -96,7 +91,7 @@ public class ProjectManager {
             e.printStackTrace();
         }
         context.historyManager.clear();
-        context.setDirty(false); // 초기화 ✨
+        context.setDirty(false);
     }
 
     public void loadProjectConfigOnly() {
@@ -123,7 +118,7 @@ public class ProjectManager {
             loadBinaryCircuit(lgsFile);
         }
         context.historyManager.clear();
-        context.setDirty(false); // 초기화 ✨
+        context.setDirty(false);
     }
 
     public java.util.List<String> consumeLoadWarnings() {
@@ -134,12 +129,12 @@ public class ProjectManager {
 
     public void saveCurrentProject() {
         if (context.projectRoot == null) return;
-        
+
         File lgsFile = new File(context.projectRoot, "circuit.lgs");
         saveBinaryCircuit(lgsFile);
         saveProjectConfig();
         System.out.println("프로젝트 전체 저장 완료: " + context.projectRoot.getAbsolutePath());
-        context.setDirty(false); // 초기화 ✨
+        context.setDirty(false);
     }
 
     public void saveProjectConfig() {
@@ -155,17 +150,15 @@ public class ProjectManager {
 
     private void saveBinaryCircuit(File file) {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
-            // 1. Header
             dos.writeInt(0x4C475321); // Magic Number
             dos.writeInt(6);          // Version 6 (Wire route/bend points 추가)
 
-            // 2. Nodes
             dos.writeInt(context.visualNodes.size());
             for (VisualNode vn : context.visualNodes) {
                 dos.writeUTF(vn.node.getTypeId());
                 dos.writeDouble(vn.x);
                 dos.writeDouble(vn.y);
-                dos.writeDouble(vn.rotation); // 회전각 추가 ✨
+                dos.writeDouble(vn.rotation);
                 dos.writeUTF(vn.label != null ? vn.label : "");
                 dos.writeBoolean(vn.showLabel);
                 dos.writeUTF(vn.group != null ? vn.group : "");
@@ -178,14 +171,13 @@ public class ProjectManager {
                 }
             }
 
-            // 3. Wires
             dos.writeInt(context.visualWires.size());
             for (VisualWire vw : context.visualWires) {
                 dos.writeInt(context.visualNodes.indexOf(vw.from));
                 dos.writeInt(vw.outPin);
                 dos.writeInt(context.visualNodes.indexOf(vw.to));
                 dos.writeInt(vw.inPin);
-                
+
                 dos.writeUTF(vw.routeMode != null ? vw.routeMode.name() : "");
                 dos.writeInt(vw.bendPoints.size());
                 for (Point2D point : vw.bendPoints) {
@@ -205,14 +197,14 @@ public class ProjectManager {
 
             context.visualNodes.clear();
             context.visualWires.clear();
-            context.getCircuit().clear(); // 회로 엔진도 초기화
+            context.getCircuit().clear();
 
             int nodeCount = dis.readInt();
             for (int i = 0; i < nodeCount; i++) {
                 String type = dis.readUTF();
                 double x = dis.readDouble();
                 double y = dis.readDouble();
-                double rotation = (version >= 3) ? dis.readDouble() : 0; // 버전 3부터 회전각 ✨
+                double rotation = (version >= 3) ? dis.readDouble() : 0;
                 String label = dis.readUTF();
                 boolean showLabel = dis.readBoolean();
                 String group = null;
@@ -278,17 +270,17 @@ public class ProjectManager {
 
                 if (fromIdx >= 0 && fromIdx < context.visualNodes.size() &&
                     toIdx >= 0 && toIdx < context.visualNodes.size()) {
-                    
+
                     VisualNode fromVn = context.visualNodes.get(fromIdx);
                     VisualNode toVn = context.visualNodes.get(toIdx);
-                    
+
                     context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
                     VisualWire vw = new VisualWire(fromVn, outPin, toVn, inPin);
                     vw.routeMode = routeMode;
                     vw.bendPoints.addAll(bendPoints);
-                    
+
                     context.visualWires.add(vw);
-                    // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
+                    // Advance once after each restored connection to reduce synchronized oscillator artifacts.
                     context.getCircuit().tick();
                 }
             }
@@ -303,12 +295,11 @@ public class ProjectManager {
         ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(bundle.getString("dialog.export.title"));
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(bundle.getString("file_filter.logicgate_json"), "*.json"));
         File file = fileChooser.showSaveDialog(window);
 
         if (file != null) {
             try {
-                // 중앙 좌표 기준 계산 🔪💕
                 double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
                 double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
                 for (VisualNode vn : context.visualNodes) {
@@ -324,7 +315,7 @@ public class ProjectManager {
                         vn.node.getTypeId(),
                         vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.group
                     );
-                    nd.properties.putAll(vn.node.getProperties()); // 속성 포함 ✨
+                    nd.properties.putAll(vn.node.getProperties());
                     data.nodes.add(nd);
                 }
                 for (VisualWire vw : context.visualWires) {
@@ -349,7 +340,7 @@ public class ProjectManager {
         ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle(bundle.getString("dialog.import.title"));
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("LogicGate Files", "*.json"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(bundle.getString("file_filter.logicgate_json"), "*.json"));
         File file = fileChooser.showOpenDialog(window);
 
         if (file != null) {
@@ -363,7 +354,7 @@ public class ProjectManager {
                 normalizeProjectData(data);
                 context.pendingProjectData = data;
                 context.isPlacingImport = true;
-                context.placingRotation = 0; // 붙여넣기 모드 진입 시 회전각 초기화 ✨
+                context.placingRotation = 0;
             } catch (IOException | JsonSyntaxException e) {
                 showError(bundle.getString("alert.import_fail.title"), bundle.getString("alert.import_fail.read") + "\n" + e.getMessage());
             }
@@ -373,7 +364,6 @@ public class ProjectManager {
     public void copyToClipboard() {
         if (context.selectedNodes.isEmpty()) return;
 
-        // 선택 영역의 중앙점 찾기 🔪💕
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         for (VisualNode vn : context.selectedNodes) {
@@ -385,13 +375,13 @@ public class ProjectManager {
 
         ProjectData data = new ProjectData();
         java.util.List<VisualNode> copiedNodes = new java.util.ArrayList<>(context.selectedNodes);
-        
+
         for (VisualNode vn : copiedNodes) {
             NodeData nd = new NodeData(
                 vn.node.getTypeId(),
                 vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.group
             );
-            nd.properties.putAll(vn.node.getProperties()); // 속성 복사 추가 💖
+            nd.properties.putAll(vn.node.getProperties());
             data.nodes.add(nd);
         }
 
@@ -421,7 +411,7 @@ public class ProjectManager {
                     normalizeProjectData(data);
                     context.pendingProjectData = data;
                     context.isPlacingImport = true;
-                    context.placingRotation = 0; // 초기화 ✨
+                    context.placingRotation = 0;
                 }
             } catch (JsonSyntaxException e) {
                 // JSON 파싱 실패 시 무시 (외부 텍스트 복사 등)

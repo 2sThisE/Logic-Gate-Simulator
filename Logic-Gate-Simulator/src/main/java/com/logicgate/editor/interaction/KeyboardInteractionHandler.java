@@ -31,7 +31,7 @@ public class KeyboardInteractionHandler {
                 context.wireBendEditMode = false;
                 context.isPlacingImport = false;
                 context.pendingProjectData = null;
-                context.placingNodeTypeId = null; // 배치 모드 취소 ✨
+                context.placingNodeTypeId = null;
                 break;
             case DELETE:
             case BACK_SPACE:
@@ -62,7 +62,7 @@ public class KeyboardInteractionHandler {
                     context.selectedWire = null;
                     context.selectedWireBendIndex = -1;
                     context.wireBendEditMode = false;
-                    context.setDirty(true); // 변경 감지 ✨
+                    context.setDirty(true);
                 }
                 break;
             case Z:
@@ -93,13 +93,12 @@ public class KeyboardInteractionHandler {
                 break;
             case V:
                 if (event.isShortcutDown()) {
-                    // 붙여넣기 시 기존 선택 해제 ✨
                     context.selectedNodes.clear();
                     context.setSelectedNode(null);
                     context.selectedWire = null;
                     context.selectedWireBendIndex = -1;
                     context.wireBendEditMode = false;
-                    
+
                     if (context.onPasteRequested != null) {
                         context.onPasteRequested.run();
                     }
@@ -108,13 +107,11 @@ public class KeyboardInteractionHandler {
             case Q:
             case E:
                 double angle = (event.getCode() == KeyCode.Q) ? -10 : 10;
-                if (event.isShiftDown()) angle *= 9; // Shift 누르면 90도씩 회전 ✨
+                if (event.isShiftDown()) angle *= 9;
 
                 if (context.placingNodeTypeId != null || context.isPlacingImport) {
-                    // 배치 모드(단일/그룹)일 때는 배치 예정 각도 조절 ✨
                     context.placingRotation = (context.placingRotation + angle) % 360;
                 } else if (!context.selectedNodes.isEmpty()) {
-                    // 선택된 노드들이 있을 때는 그룹 회전 수행 🔪💕
                     rotateSelection(angle);
                 }
                 break;
@@ -125,7 +122,6 @@ public class KeyboardInteractionHandler {
     private void rotateSelection(double angle) {
         context.historyManager.saveState();
 
-        // 1. 선택된 모든 노드의 전체 영역(Bounding Box)의 중앙을 찾음 ✨
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
 
@@ -143,7 +139,6 @@ public class KeyboardInteractionHandler {
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);
 
-        // 2. 각 노드를 그룹 중앙을 기준으로 위치 이동 및 개별 회전 ✨
         for (VisualNode vn : context.selectedNodes) {
             double nodeCx = vn.x + vn.width / 2;
             double nodeCy = vn.y + vn.height / 2;
@@ -151,7 +146,6 @@ public class KeyboardInteractionHandler {
             double dx = nodeCx - groupCx;
             double dy = nodeCy - groupCy;
 
-            // 좌표 회전 공식 적용 🔪💕
             double newNodeCx = groupCx + (dx * cos - dy * sin);
             double newNodeCy = groupCy + (dx * sin + dy * cos);
 
@@ -164,7 +158,7 @@ public class KeyboardInteractionHandler {
 
     public void handleKeyReleased(KeyEvent event) {
         if (event.getCode() == KeyCode.S && event.isShortcutDown() && context.onSaveRequested != null) {
-            context.onSaveRequested.run(); // 키를 뗄 때 딱 한 번 저장! 🔪💕
+            context.onSaveRequested.run();
         }
         context.activeKeys.remove(event.getCode());
     }
@@ -183,10 +177,10 @@ public class KeyboardInteractionHandler {
         if (moveX != 0 || moveY != 0) {
             double length = Math.hypot(moveX, moveY);
             double speed = 10.0;
-            
+
             context.cameraX += (moveX / length) * speed;
             context.cameraY += (moveY / length) * speed;
-            
+
             context.updateWorldCoordinates();
         }
     }
@@ -199,6 +193,6 @@ public class KeyboardInteractionHandler {
             if (related && w == context.selectedWire) context.selectedWire = null;
             return related;
         });
-        context.setDirty(true); // 변경 감지 ✨
+        context.setDirty(true);
     }
 }

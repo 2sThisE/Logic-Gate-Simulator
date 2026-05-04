@@ -22,7 +22,7 @@ public class TriStateBuffer8BitNode extends Node {
             // A0-A7 (비트 0-7)을 그대로 출력 (비트 0-7)
             out = in & 0xFF;
         } else {
-            // 비활성화 시 모든 출력 0 (High-Z 시뮬레이션: OR 버스용) 🔗💕
+            // 비활성화 시 모든 출력 0 (High-Z 시뮬레이션: OR 버스용)
             out = 0;
         }
     }

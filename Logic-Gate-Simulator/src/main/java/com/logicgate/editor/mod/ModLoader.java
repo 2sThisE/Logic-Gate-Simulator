@@ -19,7 +19,7 @@ import java.lang.reflect.Modifier;
  * 외부 JAR 파일에서 커스텀 컴포넌트를 동적으로 불러오는 모드 로더입니다.
  */
 public class ModLoader {
-    
+
     private final File modsDir;
 
     public ModLoader(File projectRoot) {
@@ -63,7 +63,7 @@ public class ModLoader {
     @SuppressWarnings("unchecked")
     private List<ModComponentInfo> loadJar(File jarFile) {
         List<ModComponentInfo> infos = new ArrayList<>();
-        // try-with-resources를 사용하여 로딩 후 클래스 로더를 닫음 🔪💕
+        // try-with-resources를 사용하여 로딩 후 클래스 로더를 닫음
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{ jarFile.toURI().toURL() }, this.getClass().getClassLoader())) {
             try (JarFile jar = new JarFile(jarFile)) {
                 Enumeration<JarEntry> entries = jar.entries();

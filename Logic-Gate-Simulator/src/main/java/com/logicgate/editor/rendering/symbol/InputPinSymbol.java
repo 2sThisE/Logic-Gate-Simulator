@@ -14,9 +14,8 @@ public class InputPinSymbol extends AbstractGateSymbol {
     @Override
     public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
         gc.save();
-        // gc.translate(vn.x, vn.y); // VisualNode에서 이미 처리함 ✨
         boolean isOn = vn.node.getOut() > 0;
-        
+
         if (isSelected) {
             gc.setLineWidth(4);
             gc.setStroke(Color.web("#00FFFF"));
@@ -33,7 +32,7 @@ public class InputPinSymbol extends AbstractGateSymbol {
         gc.strokeRoundRect(0, 0, vn.width, vn.height, 10, 10);
         gc.setFill(Color.WHITE);
         gc.fillText(isOn ? "ON" : "OFF", 13, 30);
-        
+
         gc.restore();
     }
 

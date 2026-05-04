@@ -18,12 +18,12 @@ public class EditorContext {
     public ProjectConfig projectConfig;
     public List<VisualNode> visualNodes = new ArrayList<>();
     public List<VisualWire> visualWires = new ArrayList<>();
-    
+
     // Camera
     public double cameraX = 0;
     public double cameraY = 0;
     public double zoom = 1.0;
-    
+
     // Mouse
     public double screenMouseX, screenMouseY;
     public double worldMouseX, worldMouseY;
@@ -35,7 +35,7 @@ public class EditorContext {
     public String hoveredPinName = null;
     public double tooltipX = 0;
     public double tooltipY = 0;
-    
+
     // Selection state
     private VisualNode selectedNode = null;
     public final List<VisualNode> selectedNodes = new ArrayList<>();
@@ -52,18 +52,18 @@ public class EditorContext {
     public java.util.function.BiConsumer<Double, Double> onContextMenuRequested;
     public double contextMenuWorldX;
     public double contextMenuWorldY;
-    
+
     // Clipboard callbacks
     public Runnable onCopyRequested;
     public Runnable onPasteRequested;
 
-    // Dirty state (저장 여부 표시용 ✨)
+    // Dirty state
     public Runnable onDirtyChanged;
     public Runnable onSaveRequested;
     private boolean isDirty = false;
 
     public boolean isDirty() { return isDirty; }
-    
+
     public void setDirty(boolean dirty) {
         if (this.isDirty != dirty) {
             this.isDirty = dirty;
@@ -95,9 +95,9 @@ public class EditorContext {
     // Placing state
     public boolean isPlacingImport = false;
     public ProjectData pendingProjectData = null;
-    public String placingNodeTypeId = null; // 단일 부품 연속 배치 모드용 💖
-    public double placingRotation = 0; // 배치 시 적용할 회전각 ✨
-    
+    public String placingNodeTypeId = null;
+    public double placingRotation = 0;
+
     // Snapping state
     public Double snapLineX = null;
     public Double snapLineY = null;

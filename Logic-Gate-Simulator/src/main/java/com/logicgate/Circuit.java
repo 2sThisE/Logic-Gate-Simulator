@@ -21,9 +21,6 @@ public class Circuit {
     private Thread simulationThread;
     private int tickDelayMs = 16; // 기본 약 60Hz (16ms)
 
-    /**
-     * 1. 빵판(Board)에 새로운 게이트를 올려놓습니다.
-     */
     public synchronized void addNode(Node node) {
         if (!nodes.contains(node)) {
             nodes.add(node);
@@ -31,9 +28,6 @@ public class Circuit {
         }
     }
 
-    /**
-     * 2. 빵판에서 특정 게이트를 제거합니다.
-     */
     public synchronized void removeNode(Node node) {
         if (!nodes.contains(node)) return;
 
@@ -51,38 +45,29 @@ public class Circuit {
                 prevNode.disconnectTarget(node);
             }
         }
-        
+
         incomingGraph.remove(node);
         nodes.remove(node);
     }
 
-    /**
-     * 3. 전선 연결 (A의 특정 출력 핀을 B의 특정 입력 핀에 꽂습니다)
-     */
     public synchronized void connect(Node fromNode, int outPin, Node toNode, int inPin) {
         fromNode.addNode(toNode, outPin, inPin);
-        
+
         if (incomingGraph.containsKey(toNode) && !incomingGraph.get(toNode).contains(fromNode)) {
             incomingGraph.get(toNode).add(fromNode);
         }
     }
 
-    /**
-     * 4. 전선 해제 (A의 특정 출력 핀에 꽂힌 선을 뽑습니다 - 기존, 모든 연결 해제)
-     */
     public synchronized void disconnect(Node fromNode, int outPin) {
         Node targetNode = fromNode.getTargetNode(outPin);
-        
+
         if (targetNode != null && incomingGraph.containsKey(targetNode)) {
             incomingGraph.get(targetNode).remove(fromNode);
         }
-        
+
         fromNode.disconnectNextNode(outPin);
     }
 
-    /**
-     * 4.1 특정 전선 1개만 해제 (A의 특정 핀에서 B의 특정 핀으로 가는 선만 뽑습니다)
-     */
     public synchronized void disconnectSpecific(Node fromNode, int outPin, Node toNode, int inPin) {
         if (incomingGraph.containsKey(toNode)) {
             incomingGraph.get(toNode).remove(fromNode);
@@ -90,9 +75,6 @@ public class Circuit {
         fromNode.disconnectSpecificNode(outPin, toNode, inPin);
     }
 
-    /**
-     * 5. 전체 회로 시뮬레이션 (1 Tick)
-     */
     public synchronized void tick() {
         for (Node node : nodes) {
             node.compute();
@@ -103,9 +85,6 @@ public class Circuit {
         }
     }
 
-    /**
-     * 6. 실시간 시뮬레이션 스레드 시작
-     */
     public void startSimulation() {
         if (isRunning) return;
         isRunning = true;
@@ -124,9 +103,6 @@ public class Circuit {
         simulationThread.start();
     }
 
-    /**
-     * 7. 실시간 시뮬레이션 스레드 정지
-     */
     public void stopSimulation() {
         isRunning = false;
         if (simulationThread != null) {
@@ -138,26 +114,16 @@ public class Circuit {
         return isRunning;
     }
 
-    /**
-     * 8. 틱 딜레이(속도) 설정 (Hz 기반) ✨
-     */
     public void setTickFrequencyHz(double hz) {
         if (hz <= 0) hz = 1.0;
         this.tickDelayMs = (int) (1000.0 / hz);
     }
-    /**
-     * 9.1 회로 상태만 초기화 (모든 부품을 LOW로 변경) ✨
-     */
     public synchronized void resetState() {
         for (Node node : nodes) {
             node.resetState();
         }
     }
 
-    /**
-     * 9. 회로 전체 초기화
-     * 오빠, 새로운 프로젝트를 위해 기존 찌꺼기들을 싹 청소해줄게! 🧹✨
-     */
     public synchronized void clear() {
         for (Node node : nodes) {
             removeNode(node);
