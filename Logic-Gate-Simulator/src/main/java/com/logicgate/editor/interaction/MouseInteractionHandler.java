@@ -24,26 +24,25 @@ public class MouseInteractionHandler {
         this.wiringManager = wiringManager;
     }
 
+    private double getGridSize() {
+        return GateSymbol.UNIT_SIZE;
+    }
+
+    private double snapToGrid(double value) {
+        double gridSize = getGridSize();
+        return Math.round(value / gridSize) * gridSize;
+    }
+
     private void applyPlacementSnapping(MouseEvent event) {
         context.snapLineX = null;
         context.snapLineY = null;
         
         if (event.isShiftDown()) return;
 
-        double targetX = context.worldMouseX;
-        double targetY = context.worldMouseY;
-
-        // 그리드 스냅 적용 (UNIT_SIZE 단위로) ✨
-        if (context.projectConfig != null && context.projectConfig.snapToGrid) {
-            double gs = GateSymbol.UNIT_SIZE;
-            targetX = Math.round(targetX / gs) * gs;
-            targetY = Math.round(targetY / gs) * gs;
-            context.worldMouseX = targetX;
-            context.worldMouseY = targetY;
-        }
-        
-        double nodeWidth = 0;
-        double nodeHeight = 0;
+        double targetX;
+        double targetY;
+        double nodeWidth;
+        double nodeHeight;
         
         if (context.placingNodeTypeId != null) {
             Node logicNode = NodeFactory.createNodeByType(context.placingNodeTypeId);
@@ -57,12 +56,36 @@ public class MouseInteractionHandler {
                 return;
             }
         } else if (context.isPlacingImport && context.pendingProjectData != null && !context.pendingProjectData.nodes.isEmpty()) {
-            targetX = context.worldMouseX;
-            targetY = context.worldMouseY;
-            nodeWidth = 0;
-            nodeHeight = 0;
+            double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
+            double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+
+            for (NodeData nd : context.pendingProjectData.nodes) {
+                Node logicNode = NodeFactory.createNodeByType(nd.type);
+                if (logicNode == null) continue;
+                VisualNode dummyVn = new VisualNode(logicNode, 0, 0, nd.label);
+                minX = Math.min(minX, nd.x);
+                minY = Math.min(minY, nd.y);
+                maxX = Math.max(maxX, nd.x + dummyVn.width);
+                maxY = Math.max(maxY, nd.y + dummyVn.height);
+            }
+
+            if (minX == Double.MAX_VALUE) return;
+
+            targetX = context.worldMouseX + minX;
+            targetY = context.worldMouseY + minY;
+            nodeWidth = maxX - minX;
+            nodeHeight = maxY - minY;
         } else {
             return;
+        }
+
+        if (context.projectConfig != null && context.projectConfig.snapToGrid) {
+            double snappedX = snapToGrid(targetX);
+            double snappedY = snapToGrid(targetY);
+            context.worldMouseX += snappedX - targetX;
+            context.worldMouseY += snappedY - targetY;
+            targetX = snappedX;
+            targetY = snappedY;
         }
         
         double snapThreshold = 8.0 / context.zoom; // 감도 약간 하향 ✨
@@ -319,62 +342,63 @@ public class MouseInteractionHandler {
 
                 // 1. 그리드 스냅 적용 ✨
                 if (context.projectConfig != null && context.projectConfig.snapToGrid) {
-                    int gs = context.projectConfig.gridSize;
-                    targetX = Math.round(targetX / gs) * gs;
-                    targetY = Math.round(targetY / gs) * gs;
+                    targetX = snapToGrid(targetX);
+                    targetY = snapToGrid(targetY);
                     // dx, dy를 그리드에 맞게 보정
                     dx = targetX - primaryNode.getDragStartX();
                     dy = targetY - primaryNode.getDragStartY();
                 }
 
                 // 2. 정렬 가이드 스냅 (가이드선에 걸리면 그리드보다 가이드선이 우선함) ✨
-                double snapThreshold = 10.0 / context.zoom;
-                double[] primaryXs = { targetX, targetX + primaryNode.width / 2, targetX + primaryNode.width };
-                double[] primaryYs = { targetY, targetY + primaryNode.height / 2, targetY + primaryNode.height };
-                
-                double minDiffX = snapThreshold;
-                double minDiffY = snapThreshold;
-                boolean snappedX = false;
-                boolean snappedY = false;
-                Double bestSnapLineX = null;
-                Double bestSnapLineY = null;
+                if (context.projectConfig == null || context.projectConfig.showAlignmentGuides) {
+                    double snapThreshold = 10.0 / context.zoom;
+                    double[] primaryXs = { targetX, targetX + primaryNode.width / 2, targetX + primaryNode.width };
+                    double[] primaryYs = { targetY, targetY + primaryNode.height / 2, targetY + primaryNode.height };
+                    
+                    double minDiffX = snapThreshold;
+                    double minDiffY = snapThreshold;
+                    boolean snappedX = false;
+                    boolean snappedY = false;
+                    Double bestSnapLineX = null;
+                    Double bestSnapLineY = null;
 
-                for (VisualNode other : context.visualNodes) {
-                    if (context.selectedNodes.contains(other)) continue;
+                    for (VisualNode other : context.visualNodes) {
+                        if (context.selectedNodes.contains(other)) continue;
 
-                    double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
-                    double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };
+                        double[] otherXs = { other.x, other.x + other.width / 2, other.x + other.width };
+                        double[] otherYs = { other.y, other.y + other.height / 2, other.y + other.height };
 
-                    for (double px : primaryXs) {
-                        for (double ox : otherXs) {
-                            double diff = ox - px;
-                            if (Math.abs(diff) < Math.abs(minDiffX)) {
-                                minDiffX = diff;
-                                snappedX = true;
-                                bestSnapLineX = ox;
+                        for (double px : primaryXs) {
+                            for (double ox : otherXs) {
+                                double diff = ox - px;
+                                if (Math.abs(diff) < Math.abs(minDiffX)) {
+                                    minDiffX = diff;
+                                    snappedX = true;
+                                    bestSnapLineX = ox;
+                                }
+                            }
+                        }
+
+                        for (double py : primaryYs) {
+                            for (double oy : otherYs) {
+                                double diff = oy - py;
+                                if (Math.abs(diff) < Math.abs(minDiffY)) {
+                                    minDiffY = diff;
+                                    snappedY = true;
+                                    bestSnapLineY = oy;
+                                }
                             }
                         }
                     }
-
-                    for (double py : primaryYs) {
-                        for (double oy : otherYs) {
-                            double diff = oy - py;
-                            if (Math.abs(diff) < Math.abs(minDiffY)) {
-                                minDiffY = diff;
-                                snappedY = true;
-                                bestSnapLineY = oy;
-                            }
-                        }
+                    
+                    if (snappedX) {
+                        dx += minDiffX;
+                        context.snapLineX = bestSnapLineX;
                     }
-                }
-                
-                if (snappedX) {
-                    dx += minDiffX;
-                    context.snapLineX = bestSnapLineX;
-                }
-                if (snappedY) {
-                    dy += minDiffY;
-                    context.snapLineY = bestSnapLineY;
+                    if (snappedY) {
+                        dy += minDiffY;
+                        context.snapLineY = bestSnapLineY;
+                    }
                 }
             }
 

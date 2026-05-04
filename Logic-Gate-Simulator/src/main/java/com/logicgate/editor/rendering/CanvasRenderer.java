@@ -37,19 +37,33 @@ public class CanvasRenderer {
 
         // 그리드 렌더링 ✨
         if (context.projectConfig != null && context.projectConfig.showGrid) {
-            gc.setStroke(Color.web("#3A3A3A"));
             gc.setLineWidth(1 / context.zoom);
-            int gridSize = context.projectConfig.gridSize;
-            double startX = (Math.floor(-context.cameraX / context.zoom / gridSize) * gridSize);
-            double endX = startX + canvas.getWidth() / context.zoom + gridSize;
-            double startY = (Math.floor(-context.cameraY / context.zoom / gridSize) * gridSize);
-            double endY = startY + canvas.getHeight() / context.zoom + gridSize;
+            double unitSize = GateSymbol.UNIT_SIZE;
+            double majorGridSize = Math.max(unitSize, context.projectConfig.gridSize);
+            double startX = (Math.floor(-context.cameraX / context.zoom / unitSize) * unitSize);
+            double endX = startX + canvas.getWidth() / context.zoom + unitSize;
+            double startY = (Math.floor(-context.cameraY / context.zoom / unitSize) * unitSize);
+            double endY = startY + canvas.getHeight() / context.zoom + unitSize;
             
-            for (double x = startX; x <= endX; x += gridSize) {
+            gc.setStroke(Color.web("#2A2A2A"));
+            for (double x = startX; x <= endX; x += unitSize) {
                 gc.strokeLine(x, startY, x, endY);
             }
-            for (double y = startY; y <= endY; y += gridSize) {
+            for (double y = startY; y <= endY; y += unitSize) {
                 gc.strokeLine(startX, y, endX, y);
+            }
+
+            if (majorGridSize > unitSize) {
+                double majorStartX = (Math.floor(-context.cameraX / context.zoom / majorGridSize) * majorGridSize);
+                double majorStartY = (Math.floor(-context.cameraY / context.zoom / majorGridSize) * majorGridSize);
+
+                gc.setStroke(Color.web("#3A3A3A"));
+                for (double x = majorStartX; x <= endX; x += majorGridSize) {
+                    gc.strokeLine(x, startY, x, endY);
+                }
+                for (double y = majorStartY; y <= endY; y += majorGridSize) {
+                    gc.strokeLine(startX, y, endX, y);
+                }
             }
         }
 

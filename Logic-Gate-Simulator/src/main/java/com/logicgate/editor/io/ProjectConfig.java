@@ -14,7 +14,7 @@ public class ProjectConfig {
     // 에디터 및 그리드 설정 ✨
     public boolean showGrid = true;
     public boolean snapToGrid = false;
-    public int gridSize = 20;
+    public int gridSize = 10;
     public boolean showAlignmentGuides = true;
 
     // 시각적 설정 ✨
