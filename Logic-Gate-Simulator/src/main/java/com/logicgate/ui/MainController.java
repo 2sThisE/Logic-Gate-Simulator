@@ -24,6 +24,7 @@ import com.logicgate.ui.main.EditorContextMenuController;
 import com.logicgate.ui.main.PropertyPaneController;
 
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
@@ -65,6 +66,7 @@ public class MainController {
     private javafx.stage.Stage primaryStage;
     private javafx.animation.Timeline autosaveTimer;
     private org.kordamp.ikonli.javafx.FontIcon playPauseIcon;
+    private boolean shutdownInProgress = false;
 
     private ComponentTreeController componentTreeController;
     private ComponentSearchController componentSearchController;
@@ -222,6 +224,7 @@ public class MainController {
             projectManager.loadProjectConfigOnly();
             loadModsAndUpdateTree();
             projectManager.loadCircuitOnly();
+            showProjectLoadWarnings();
         }
         applyProjectOptions();
         updateTitle();
@@ -262,6 +265,7 @@ public class MainController {
             controller.setContext(context, stage, () -> {
                 applyProjectOptions();
                 projectManager.saveProjectConfig();
+                context.setDirty(false);
             });
 
             stage.showAndWait();
@@ -417,9 +421,11 @@ public class MainController {
 
     @FXML
     public void clearCircuit() {
+        context.historyManager.saveState();
         circuit.clear();
         context.visualNodes.clear();
         context.visualWires.clear();
+        context.selectedNodes.clear();
         context.setSelectedNode(null);
         context.selectedWire = null;
         context.setDirty(true);
@@ -500,34 +506,7 @@ public class MainController {
         context.onSaveRequested = this::saveProject;
         updateTitle();
 
-        stage.setOnCloseRequest(event -> {
-            if (context.isDirty()) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("저장되지 않은 변경 사항");
-                alert.setHeaderText("프로젝트에 저장되지 않은 변경 사항이 있습니다.");
-                alert.setContentText("변경 사항을 저장하시겠습니까?");
-
-                ButtonType btnSave = new ButtonType("저장");
-                ButtonType btnDontSave = new ButtonType("저장 안 함");
-                ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
-
-                alert.getButtonTypes().setAll(btnSave, btnDontSave, btnCancel);
-
-                Optional<ButtonType> result = alert.showAndWait();
-                if (result.isPresent()) {
-                    if (result.get() == btnSave) {
-                        saveProject();
-                        shutdown();
-                    } else if (result.get() == btnCancel) {
-                        event.consume();
-                    } else {
-                        shutdown();
-                    }
-                }
-            } else {
-                shutdown();
-            }
-        });
+        stage.setOnCloseRequest(this::handleCloseRequest);
     }
 
     private void updateTitle() {
@@ -538,7 +517,65 @@ public class MainController {
     }
 
     public void shutdown() {
+        if (shutdownInProgress) return;
+
+        if (!confirmClose()) return;
+        shutdownInProgress = true;
+
         if (timer != null) timer.stop();
         if (circuit != null) circuit.stopSimulation();
+        if (primaryStage != null) {
+            primaryStage.close();
+        } else {
+            Platform.exit();
+        }
+    }
+
+    private void handleCloseRequest(javafx.stage.WindowEvent event) {
+        if (shutdownInProgress) return;
+
+        if (!confirmClose()) {
+            event.consume();
+            return;
+        }
+
+        shutdownInProgress = true;
+        if (timer != null) timer.stop();
+        if (circuit != null) circuit.stopSimulation();
+    }
+
+    private boolean confirmClose() {
+        if (!context.isDirty()) return true;
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("저장되지 않은 변경 사항");
+        alert.setHeaderText("프로젝트에 저장되지 않은 변경 사항이 있습니다.");
+        alert.setContentText("변경 사항을 저장하시겠습니까?");
+
+        ButtonType btnSave = new ButtonType("저장");
+        ButtonType btnDontSave = new ButtonType("저장 안 함");
+        ButtonType btnCancel = new ButtonType("취소", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(btnSave, btnDontSave, btnCancel);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isEmpty() || result.get() == btnCancel) {
+            return false;
+        }
+        if (result.get() == btnSave) {
+            saveProject();
+        }
+        return true;
+    }
+
+    private void showProjectLoadWarnings() {
+        List<String> warnings = projectManager.consumeLoadWarnings();
+        if (warnings.isEmpty()) return;
+
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("프로젝트 불러오기 경고");
+        alert.setHeaderText("일부 컴포넌트를 불러오지 못했습니다.");
+        alert.setContentText(String.join("\n", warnings));
+        alert.showAndWait();
     }
 }

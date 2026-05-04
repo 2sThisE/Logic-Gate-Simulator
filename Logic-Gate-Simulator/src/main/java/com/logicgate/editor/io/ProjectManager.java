@@ -26,6 +26,7 @@ import java.net.URL;
 public class ProjectManager {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final EditorContext context;
+    private final java.util.List<String> loadWarnings = new java.util.ArrayList<>();
 
     public ProjectManager(EditorContext context) {
         this.context = context;
@@ -113,12 +114,19 @@ public class ProjectManager {
 
     public void loadCircuitOnly() {
         if (context.projectRoot == null) return;
+        loadWarnings.clear();
         File lgsFile = new File(context.projectRoot, "circuit.lgs");
         if (lgsFile.exists() && lgsFile.length() > 0) {
             loadBinaryCircuit(lgsFile);
         }
         context.historyManager.clear();
         context.setDirty(false); // 초기화 ✨
+    }
+
+    public java.util.List<String> consumeLoadWarnings() {
+        java.util.List<String> copy = new java.util.ArrayList<>(loadWarnings);
+        loadWarnings.clear();
+        return copy;
     }
 
     public void saveCurrentProject() {
@@ -227,6 +235,8 @@ public class ProjectManager {
                     vn.rotation = rotation;
                     vn.group = group;
                     context.visualNodes.add(vn);
+                } else {
+                    loadWarnings.add("노드 타입을 찾을 수 없어 건너뜀: " + type);
                 }
             }
 
@@ -323,7 +333,7 @@ public class ProjectManager {
                 String json = Files.readString(file.toPath());
                 ProjectData data = gson.fromJson(json, ProjectData.class);
                 if (!isValidProjectData(data)) {
-                    System.err.println("JSON 회로 형식이 올바르지 않습니다: nodes 배열이 없습니다.");
+                    showError("JSON 가져오기 실패", "JSON 회로 형식이 올바르지 않습니다: nodes 배열이 없습니다.");
                     return;
                 }
                 normalizeProjectData(data);
@@ -331,7 +341,7 @@ public class ProjectManager {
                 context.isPlacingImport = true;
                 context.placingRotation = 0; // 붙여넣기 모드 진입 시 회전각 초기화 ✨
             } catch (IOException | JsonSyntaxException e) {
-                e.printStackTrace();
+                showError("JSON 가져오기 실패", "JSON 파일을 읽거나 해석할 수 없습니다.\n" + e.getMessage());
             }
         }
     }
@@ -396,6 +406,14 @@ public class ProjectManager {
 
     private boolean isValidProjectData(ProjectData data) {
         return data != null && data.nodes != null;
+    }
+
+    private void showError(String title, String content) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     private void normalizeProjectData(ProjectData data) {
