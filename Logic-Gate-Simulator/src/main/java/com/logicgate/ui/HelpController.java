@@ -39,7 +39,6 @@ public class HelpController {
     @FXML private VBox introPane;
     @FXML private VBox componentPane;
     @FXML private VBox wiringPane;
-    @FXML private VBox simControlPane;
     @FXML private VBox gateHelpPane;
     @FXML private VBox shortcutPane;
     @FXML private TextField gateHelpSearchField;
@@ -61,7 +60,6 @@ public class HelpController {
             "시뮬레이터 소개",
             "부품 조작 가이드",
             "전선 연결 및 관리",
-            "시뮬레이션 제어",
             "게이트 도움말",
             "단축키 일람"
         );
@@ -92,9 +90,8 @@ public class HelpController {
         introPane.setVisible(index == 0);
         componentPane.setVisible(index == 1);
         wiringPane.setVisible(index == 2);
-        simControlPane.setVisible(index == 3);
-        gateHelpPane.setVisible(index == 4);
-        shortcutPane.setVisible(index == 5);
+        gateHelpPane.setVisible(index == 3);
+        shortcutPane.setVisible(index == 4);
     }
 
     private void initializeMarkdownRenderer() {

@@ -21,9 +21,14 @@ public class KeyboardInteractionHandler {
                 context.wiringNode = null;
                 context.wiringPin = -1;
                 context.draggingNode = null;
+                context.draggingWire = null;
+                context.draggingWireBendIndex = -1;
+                context.draggingWireSegmentIndex = -1;
                 context.isPanning = false;
                 context.setSelectedNode(null);
                 context.selectedWire = null;
+                context.selectedWireBendIndex = -1;
+                context.wireBendEditMode = false;
                 context.isPlacingImport = false;
                 context.pendingProjectData = null;
                 context.placingNodeTypeId = null; // 배치 모드 취소 ✨
@@ -37,15 +42,26 @@ public class KeyboardInteractionHandler {
                     }
                     context.selectedNodes.clear();
                     context.setSelectedNode(null);
+                    context.wireBendEditMode = false;
                 } else if (context.getSelectedNode() != null) {
                     context.historyManager.saveState();
                     removeNode(context.getSelectedNode());
                     context.setSelectedNode(null);
+                    context.wireBendEditMode = false;
+                } else if (context.selectedWire != null && context.selectedWireBendIndex >= 0) {
+                    context.historyManager.saveState();
+                    if (context.selectedWireBendIndex < context.selectedWire.bendPoints.size()) {
+                        context.selectedWire.bendPoints.remove(context.selectedWireBendIndex);
+                    }
+                    context.selectedWireBendIndex = -1;
+                    context.setDirty(true);
                 } else if (context.selectedWire != null) {
                     context.historyManager.saveState();
                     context.getCircuit().disconnectSpecific(context.selectedWire.from.node, context.selectedWire.outPin, context.selectedWire.to.node, context.selectedWire.inPin);
                     context.visualWires.remove(context.selectedWire);
                     context.selectedWire = null;
+                    context.selectedWireBendIndex = -1;
+                    context.wireBendEditMode = false;
                     context.setDirty(true); // 변경 감지 ✨
                 }
                 break;
@@ -66,6 +82,8 @@ public class KeyboardInteractionHandler {
                         context.setSelectedNode(context.selectedNodes.get(context.selectedNodes.size() - 1));
                     }
                     context.selectedWire = null;
+                    context.selectedWireBendIndex = -1;
+                    context.wireBendEditMode = false;
                 }
                 break;
             case C:
@@ -79,6 +97,8 @@ public class KeyboardInteractionHandler {
                     context.selectedNodes.clear();
                     context.setSelectedNode(null);
                     context.selectedWire = null;
+                    context.selectedWireBendIndex = -1;
+                    context.wireBendEditMode = false;
                     
                     if (context.onPasteRequested != null) {
                         context.onPasteRequested.run();

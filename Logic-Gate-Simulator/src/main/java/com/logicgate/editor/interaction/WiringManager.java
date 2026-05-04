@@ -48,6 +48,11 @@ public class WiringManager {
     }
 
     public void connectWires(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {
+        if (!isValidConnection(fromNode, outPin, toNode, inPin)) {
+            historySavedForCurrentWiring = false;
+            return;
+        }
+
         if (!historySavedForCurrentWiring) {
             context.historyManager.saveState();
         }
@@ -78,6 +83,7 @@ public class WiringManager {
 
     public boolean isValidConnection(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {
         if (fromNode == toNode) return false;
+        if (isJointAlreadyDriven(toNode)) return false;
 
         if (fromNode.node instanceof Joint) {
             java.util.Set<Integer> usedOutPins = new java.util.HashSet<>();
@@ -90,5 +96,16 @@ public class WiringManager {
         }
 
         return true;
+    }
+
+    private boolean isJointAlreadyDriven(VisualNode toNode) {
+        if (!(toNode.node instanceof Joint)) return false;
+
+        for (VisualWire wire : context.visualWires) {
+            if (wire.to == toNode) {
+                return true;
+            }
+        }
+        return false;
     }
 }

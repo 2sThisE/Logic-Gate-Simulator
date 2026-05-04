@@ -9,6 +9,7 @@ import com.logicgate.editor.utils.NodeFactory;
 import com.logicgate.gates.Node;
 
 import java.util.Stack;
+import javafx.geometry.Point2D;
 
 public class HistoryManager {
     private final EditorContext context;
@@ -72,12 +73,19 @@ public class HistoryManager {
             data.nodes.add(nd);
         }
         for (VisualWire vw : context.visualWires) {
-            data.wires.add(new WireData(
+            WireData wd = new WireData(
                 context.visualNodes.indexOf(vw.from),
                 vw.outPin,
                 context.visualNodes.indexOf(vw.to),
                 vw.inPin
-            ));
+            );
+            if (vw.routeMode != null) {
+                wd.routeMode = vw.routeMode.name();
+            }
+            for (Point2D point : vw.bendPoints) {
+                wd.bendPoints.add(new WireData.PointData(point.getX(), point.getY()));
+            }
+            data.wires.add(wd);
         }
         return data;
     }
@@ -113,7 +121,9 @@ public class HistoryManager {
                 VisualNode toVn = context.visualNodes.get(wd.toIdx);
                 
                 context.getCircuit().connect(fromVn.node, wd.outPin, toVn.node, wd.inPin);
-                context.visualWires.add(new VisualWire(fromVn, wd.outPin, toVn, wd.inPin));
+                VisualWire wire = new VisualWire(fromVn, wd.outPin, toVn, wd.inPin);
+                applyWireData(wire, wd);
+                context.visualWires.add(wire);
                 // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
                 context.getCircuit().tick();
             }
@@ -122,6 +132,8 @@ public class HistoryManager {
         context.setSelectedNode(null);
         context.selectedNodes.clear();
         context.selectedWire = null;
+        context.selectedWireBendIndex = -1;
+        context.wireBendEditMode = false;
         context.setDirty(true);
         
         stopBatchOperation();
@@ -130,5 +142,20 @@ public class HistoryManager {
     public void clear() {
         undoStack.clear();
         redoStack.clear();
+    }
+
+    private void applyWireData(VisualWire wire, WireData data) {
+        if (data.routeMode != null) {
+            try {
+                wire.routeMode = VisualWire.RouteMode.valueOf(data.routeMode);
+            } catch (IllegalArgumentException ignored) {
+                wire.routeMode = null;
+            }
+        }
+        if (data.bendPoints != null) {
+            for (WireData.PointData point : data.bendPoints) {
+                wire.bendPoints.add(new Point2D(point.x, point.y));
+            }
+        }
     }
 }

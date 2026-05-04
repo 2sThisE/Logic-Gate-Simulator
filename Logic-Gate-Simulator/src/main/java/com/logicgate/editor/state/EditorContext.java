@@ -40,6 +40,7 @@ public class EditorContext {
     private VisualNode selectedNode = null;
     public final List<VisualNode> selectedNodes = new ArrayList<>();
     public VisualWire selectedWire = null;
+    public boolean wireBendEditMode = false;
     public Runnable onSelectionChanged;
 
     // Selection Area state
@@ -49,6 +50,8 @@ public class EditorContext {
 
     // Context Menu callback
     public java.util.function.BiConsumer<Double, Double> onContextMenuRequested;
+    public double contextMenuWorldX;
+    public double contextMenuWorldY;
     
     // Clipboard callbacks
     public Runnable onCopyRequested;
@@ -77,6 +80,11 @@ public class EditorContext {
     // Drag state
     public VisualNode draggingNode = null;
     public double dragOffsetX, dragOffsetY;
+    public VisualWire draggingWire = null;
+    public int draggingWireBendIndex = -1;
+    public int draggingWireSegmentIndex = -1;
+    public boolean draggingWireSegmentHorizontal = false;
+    public int selectedWireBendIndex = -1;
 
     // Wiring state
     public boolean isWiring = false;

@@ -6,6 +6,7 @@ import com.google.gson.JsonSyntaxException;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.state.EditorContext;
+import javafx.geometry.Point2D;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import java.io.File;
@@ -154,7 +155,7 @@ public class ProjectManager {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             // 1. Header
             dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(5);          // Version 5 (Node properties 추가)
+            dos.writeInt(6);          // Version 6 (Wire route/bend points 추가)
 
             // 2. Nodes
             dos.writeInt(context.visualNodes.size());
@@ -183,8 +184,12 @@ public class ProjectManager {
                 dos.writeInt(context.visualNodes.indexOf(vw.to));
                 dos.writeInt(vw.inPin);
                 
-                // Waypoints 저장 ✨ - 제거됨 (호환성을 위해 사이즈 0 기록)
-                dos.writeInt(0);
+                dos.writeUTF(vw.routeMode != null ? vw.routeMode.name() : "");
+                dos.writeInt(vw.bendPoints.size());
+                for (Point2D point : vw.bendPoints) {
+                    dos.writeDouble(point.getX());
+                    dos.writeDouble(point.getY());
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -246,6 +251,28 @@ public class ProjectManager {
                 int outPin = dis.readInt();
                 int toIdx = dis.readInt();
                 int inPin = dis.readInt();
+                VisualWire.RouteMode routeMode = null;
+                java.util.List<Point2D> bendPoints = new java.util.ArrayList<>();
+
+                if (version >= 6) {
+                    String routeModeName = dis.readUTF();
+                    if (!routeModeName.isEmpty()) {
+                        try {
+                            routeMode = VisualWire.RouteMode.valueOf(routeModeName);
+                        } catch (IllegalArgumentException ignored) {
+                            routeMode = null;
+                        }
+                    }
+                    int bendCount = dis.readInt();
+                    for (int j = 0; j < bendCount; j++) {
+                        bendPoints.add(new Point2D(dis.readDouble(), dis.readDouble()));
+                    }
+                } else if (version >= 4) {
+                    int wpCount = dis.readInt();
+                    for (int j = 0; j < wpCount; j++) {
+                        bendPoints.add(new Point2D(dis.readDouble(), dis.readDouble()));
+                    }
+                }
 
                 if (fromIdx >= 0 && fromIdx < context.visualNodes.size() &&
                     toIdx >= 0 && toIdx < context.visualNodes.size()) {
@@ -255,15 +282,8 @@ public class ProjectManager {
                     
                     context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
                     VisualWire vw = new VisualWire(fromVn, outPin, toVn, inPin);
-                    
-                    // Waypoints 로드 (버전 4 이상) ✨ - 무시
-                    if (version >= 4) {
-                        int wpCount = dis.readInt();
-                        for (int j = 0; j < wpCount; j++) {
-                            dis.readDouble();
-                            dis.readDouble();
-                        }
-                    }
+                    vw.routeMode = routeMode;
+                    vw.bendPoints.addAll(bendPoints);
                     
                     context.visualWires.add(vw);
                     // 인위적인 틱을 발생시켜 완벽한 동기화로 인한 발진(Ring Oscillator) 방지 ✨
@@ -311,7 +331,7 @@ public class ProjectManager {
                         context.visualNodes.indexOf(vw.to),
                         vw.inPin
                     );
-                    // JSON 내보내기 시 Waypoints 포함 (필요 시 WireData 클래스도 확장해야 함)
+                    copyWireRouteToData(vw, wd, -cx, -cy, 0);
                     data.wires.add(wd);
                 }
                 String json = gson.toJson(data);
@@ -375,7 +395,9 @@ public class ProjectManager {
             int fromIdx = copiedNodes.indexOf(vw.from);
             int toIdx = copiedNodes.indexOf(vw.to);
             if (fromIdx != -1 && toIdx != -1) {
-                data.wires.add(new WireData(fromIdx, vw.outPin, toIdx, vw.inPin));
+                WireData wd = new WireData(fromIdx, vw.outPin, toIdx, vw.inPin);
+                copyWireRouteToData(vw, wd, -cx, -cy, 0);
+                data.wires.add(wd);
             }
         }
 
@@ -424,6 +446,27 @@ public class ProjectManager {
             if (node.properties == null) {
                 node.properties = new HashMap<>();
             }
+        }
+        for (WireData wire : data.wires) {
+            if (wire.bendPoints == null) {
+                wire.bendPoints = new java.util.ArrayList<>();
+            }
+        }
+    }
+
+    private void copyWireRouteToData(VisualWire wire, WireData data, double offsetX, double offsetY, double rotationDegrees) {
+        if (wire.routeMode != null) {
+            data.routeMode = wire.routeMode.name();
+        }
+        double rad = Math.toRadians(rotationDegrees);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+        for (Point2D point : wire.bendPoints) {
+            double translatedX = point.getX() + offsetX;
+            double translatedY = point.getY() + offsetY;
+            double rotatedX = translatedX * cos - translatedY * sin;
+            double rotatedY = translatedX * sin + translatedY * cos;
+            data.bendPoints.add(new WireData.PointData(rotatedX, rotatedY));
         }
     }
 }

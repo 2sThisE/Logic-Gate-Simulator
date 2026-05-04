@@ -10,6 +10,7 @@ import com.logicgate.editor.utils.NodeFactory;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 
 public class CanvasRenderer {
@@ -161,21 +162,89 @@ public class CanvasRenderer {
         gc.beginPath();
         gc.moveTo(lastX, lastY);
 
-        boolean isOrthogonal = context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle);
-
         // 마지막 지점(목적지 핀) 연결 ✨
         double endX = wire.to.getInPinX(wire.inPin);
         double endY = wire.to.getInPinY(wire.inPin);
 
-        if (isOrthogonal) {
-            double midX = (lastX + endX) / 2;
-            gc.lineTo(midX, lastY);
-            gc.lineTo(midX, endY);
-            gc.lineTo(endX, endY);
+        VisualWire.RouteMode routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null);
+        if (routeMode == VisualWire.RouteMode.ORTHOGONAL) {
+            for (Point2D point : buildOrthogonalPath(wire, lastX, lastY, endX, endY)) {
+                gc.lineTo(point.getX(), point.getY());
+            }
         } else {
-            gc.bezierCurveTo(lastX + 50, lastY, endX - 50, endY, endX, endY);
+            drawCurvedWirePath(gc, lastX, lastY, endX, endY, wire);
         }
         gc.stroke();
+
+        if (isSelected && context.wireBendEditMode) {
+            drawBendPointHandles(gc, wire);
+        }
+    }
+
+    private java.util.List<Point2D> buildOrthogonalPath(VisualWire wire, double startX, double startY, double endX, double endY) {
+        java.util.List<Point2D> path = new java.util.ArrayList<>();
+        path.add(new Point2D(startX, startY));
+        if (wire.bendPoints.isEmpty()) {
+            double midX = (startX + endX) / 2;
+            path.add(new Point2D(midX, startY));
+            path.add(new Point2D(midX, endY));
+            path.add(new Point2D(endX, endY));
+            return path.subList(1, path.size());
+        }
+
+        for (Point2D point : wire.bendPoints) {
+            appendOrthogonalPoint(path, point);
+        }
+        appendOrthogonalPoint(path, new Point2D(endX, endY));
+        return path.subList(1, path.size());
+    }
+
+    private void appendOrthogonalPoint(java.util.List<Point2D> path, Point2D target) {
+        Point2D last = path.get(path.size() - 1);
+        if (Math.abs(last.getX() - target.getX()) > 0.001 && Math.abs(last.getY() - target.getY()) > 0.001) {
+            path.add(new Point2D(target.getX(), last.getY()));
+        }
+        if (path.isEmpty() || path.get(path.size() - 1).distance(target) > 0.001) {
+            path.add(target);
+        }
+    }
+
+    private void drawCurvedWirePath(GraphicsContext gc, double startX, double startY, double endX, double endY, VisualWire wire) {
+        if (wire.bendPoints.isEmpty()) {
+            gc.bezierCurveTo(startX + 50, startY, endX - 50, endY, endX, endY);
+        } else if (wire.bendPoints.size() == 1) {
+            Point2D control = wire.bendPoints.get(0);
+            gc.quadraticCurveTo(control.getX(), control.getY(), endX, endY);
+        } else {
+            Point2D c1 = wire.bendPoints.get(0);
+            Point2D c2 = wire.bendPoints.get(1);
+            gc.bezierCurveTo(c1.getX(), c1.getY(), c2.getX(), c2.getY(), endX, endY);
+            for (int i = 2; i < wire.bendPoints.size(); i++) {
+                Point2D point = wire.bendPoints.get(i);
+                gc.lineTo(point.getX(), point.getY());
+            }
+        }
+    }
+
+    private void drawBendPointHandles(GraphicsContext gc, VisualWire wire) {
+        gc.save();
+        gc.setFill(Color.web("#1E1E1E"));
+        gc.setStroke(Color.web("#00FFFF"));
+        gc.setLineWidth(2 / context.zoom);
+        double size = 8 / context.zoom;
+        for (int i = 0; i < wire.bendPoints.size(); i++) {
+            Point2D point = wire.bendPoints.get(i);
+            double x = point.getX() - size / 2;
+            double y = point.getY() - size / 2;
+            gc.fillOval(x, y, size, size);
+            gc.strokeOval(x, y, size, size);
+            if (i == context.selectedWireBendIndex) {
+                gc.setStroke(Color.web("#FFD700"));
+                gc.strokeOval(x - 3 / context.zoom, y - 3 / context.zoom, size + 6 / context.zoom, size + 6 / context.zoom);
+                gc.setStroke(Color.web("#00FFFF"));
+            }
+        }
+        gc.restore();
     }
 
     private void drawActiveWiring(GraphicsContext gc) {

@@ -13,6 +13,7 @@ import com.logicgate.gates.Node;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.geometry.Point2D;
 import java.util.List;
 
 public class MouseInteractionHandler {
@@ -239,6 +240,8 @@ public class MouseInteractionHandler {
                     
                     context.setSelectedNode(context.selectedNodes.isEmpty() ? null : context.selectedNodes.get(context.selectedNodes.size() - 1));
                     context.selectedWire = null;
+                    context.selectedWireBendIndex = -1;
+                    context.wireBendEditMode = false;
                     
                     if (context.hoveredNode.node instanceof InputPin) {
                         InputPin pin = (InputPin) context.hoveredNode.node;
@@ -263,17 +266,53 @@ public class MouseInteractionHandler {
             }
 
             // 전선 상호작용 ✨
-            VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
-            if (clickedWire != null) {
-                context.selectedWire = clickedWire;
+            WireBendHit bendHit = getWireBendAt(context.worldMouseX, context.worldMouseY);
+            if (bendHit != null) {
+                context.historyManager.saveState();
+                context.selectedWire = bendHit.wire;
+                context.selectedWireBendIndex = bendHit.index;
                 context.setSelectedNode(null);
                 context.selectedNodes.clear();
+                context.draggingWire = bendHit.wire;
+                context.draggingWireBendIndex = bendHit.index;
+                return;
+            }
+
+            VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
+            if (clickedWire != null) {
+                boolean wasSelected = context.selectedWire == clickedWire;
+                context.selectedWire = clickedWire;
+                context.selectedWireBendIndex = -1;
+                context.setSelectedNode(null);
+                context.selectedNodes.clear();
+                if (event.getClickCount() == 2) {
+                    clickedWire.routeMode = clickedWire.getEffectiveRouteMode(
+                        context.projectConfig != null ? context.projectConfig.wireStyle : null
+                    );
+                    if (wasSelected) {
+                        if (clickedWire.routeMode == VisualWire.RouteMode.ORTHOGONAL) {
+                            ensureExplicitOrthogonalBends(clickedWire);
+                        }
+                        context.wireBendEditMode = true;
+                    }
+                } else {
+                    if (!wasSelected) {
+                        context.wireBendEditMode = false;
+                    }
+                    WireSegmentHit segmentHit = getOrthogonalWireSegmentAt(clickedWire, context.worldMouseX, context.worldMouseY);
+                    if (segmentHit != null) {
+                        context.historyManager.saveState();
+                        startDraggingOrthogonalSegment(clickedWire, segmentHit);
+                    }
+                }
                 return;
             }
 
             context.setSelectedNode(null);
             context.selectedNodes.clear();
             context.selectedWire = null;
+            context.selectedWireBendIndex = -1;
+            context.wireBendEditMode = false;
             
             context.isSelecting = true;
             context.selectionStartX = context.worldMouseX;
@@ -297,8 +336,12 @@ public class MouseInteractionHandler {
                         context.selectedNodes.add(context.hoveredNode);
                         context.setSelectedNode(context.hoveredNode);
                         context.selectedWire = null;
+                        context.selectedWireBendIndex = -1;
+                        context.wireBendEditMode = false;
                     }
                     if (context.onContextMenuRequested != null) {
+                        context.contextMenuWorldX = context.worldMouseX;
+                        context.contextMenuWorldY = context.worldMouseY;
                         context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
                     }
                     return;
@@ -306,10 +349,17 @@ public class MouseInteractionHandler {
                     // 노드가 없으면 선이라도 있는지 확인 🔪💕
                     VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
                     if (clickedWire != null) {
+                        boolean wasSelected = context.selectedWire == clickedWire;
                         context.selectedWire = clickedWire;
+                        context.selectedWireBendIndex = -1;
+                        if (!wasSelected) {
+                            context.wireBendEditMode = false;
+                        }
                         context.setSelectedNode(null);
                         context.selectedNodes.clear();
                         if (context.onContextMenuRequested != null) {
+                            context.contextMenuWorldX = context.worldMouseX;
+                            context.contextMenuWorldY = context.worldMouseY;
                             context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
                         }
                         return;
@@ -406,6 +456,17 @@ public class MouseInteractionHandler {
                 vn.x = vn.getDragStartX() + dx;
                 vn.y = vn.getDragStartY() + dy;
             }
+        } else if (context.draggingWire != null && context.draggingWireBendIndex >= 0) {
+            double x = context.worldMouseX;
+            double y = context.worldMouseY;
+            if (!(event != null && event.isShiftDown()) && context.projectConfig != null && context.projectConfig.snapToGrid) {
+                x = snapToGrid(x);
+                y = snapToGrid(y);
+            }
+            context.draggingWire.bendPoints.set(context.draggingWireBendIndex, new Point2D(x, y));
+            context.setDirty(true);
+        } else if (context.draggingWire != null && context.draggingWireSegmentIndex >= 0) {
+            dragOrthogonalWireSegment(event);
         } else if (context.isSelecting) {
             context.selectionEndX = context.worldMouseX;
             context.selectionEndY = context.worldMouseY;
@@ -479,6 +540,9 @@ public class MouseInteractionHandler {
         context.wiringNode = null;
         context.wiringPin = -1;
         context.draggingNode = null;
+        context.draggingWire = null;
+        context.draggingWireBendIndex = -1;
+        context.draggingWireSegmentIndex = -1;
         context.isPanning = false;
         updateHoverState();
     }
@@ -620,6 +684,10 @@ public class MouseInteractionHandler {
                 
                 if (from != null && to != null) {
                     wiringManager.connectWires(from, wd.outPin, to, wd.inPin);
+                    VisualWire addedWire = context.selectedWire;
+                    if (addedWire != null) {
+                        applyWireRouteData(addedWire, wd, context.worldMouseX, context.worldMouseY, groupRotation);
+                    }
                     context.getCircuit().tick();
                 }
             }
@@ -635,23 +703,266 @@ public class MouseInteractionHandler {
     private VisualWire getWireAt(double x, double y) {
         double threshold = 10 / context.zoom;
         for (VisualWire wire : context.visualWires) {
-            double p1x = wire.from.getOutPinX(wire.outPin);
-            double p1y = wire.from.getOutPinY(wire.outPin);
-            double p2x = wire.to.getInPinX(wire.inPin);
-            double p2y = wire.to.getInPinY(wire.inPin);
+            if (distanceToWire(x, y, wire) < threshold) return wire;
+        }
+        return null;
+    }
 
-            if (context.projectConfig != null && "Orthogonal".equals(context.projectConfig.wireStyle)) {
-                double midX = (p1x + p2x) / 2;
-                double d1 = distanceToSegment(x, y, p1x, p1y, midX, p1y);
-                double d2 = distanceToSegment(x, y, midX, p1y, midX, p2y);
-                double d3 = distanceToSegment(x, y, midX, p2y, p2x, p2y);
-                if (Math.min(d1, Math.min(d2, d3)) < threshold) return wire;
-            } else {
-                if (distanceToSegment(x, y, p1x, p1y, p2x, p2y) < threshold) return wire;
+    private WireBendHit getWireBendAt(double x, double y) {
+        if (!context.wireBendEditMode) {
+            return null;
+        }
+
+        double threshold = 9 / context.zoom;
+        for (VisualWire wire : context.visualWires) {
+            for (int i = 0; i < wire.bendPoints.size(); i++) {
+                Point2D point = wire.bendPoints.get(i);
+                if (Math.hypot(point.getX() - x, point.getY() - y) <= threshold) {
+                    return new WireBendHit(wire, i);
+                }
             }
         }
         return null;
     }
+
+    private WireSegmentHit getOrthogonalWireSegmentAt(VisualWire wire, double x, double y) {
+        VisualWire.RouteMode routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null);
+        if (routeMode != VisualWire.RouteMode.ORTHOGONAL) {
+            return null;
+        }
+
+        double threshold = 10 / context.zoom;
+        List<Point2D> points = buildWireHitPath(wire);
+        double minDistance = Double.MAX_VALUE;
+        WireSegmentHit best = null;
+        for (int i = 0; i < points.size() - 1; i++) {
+            Point2D a = points.get(i);
+            Point2D b = points.get(i + 1);
+            double distance = distanceToSegment(x, y, a.getX(), a.getY(), b.getX(), b.getY());
+            if (distance < threshold && distance < minDistance) {
+                minDistance = distance;
+                boolean horizontal = Math.abs(a.getY() - b.getY()) <= Math.abs(a.getX() - b.getX());
+                best = new WireSegmentHit(i, horizontal);
+            }
+        }
+        return best;
+    }
+
+    private void startDraggingOrthogonalSegment(VisualWire wire, WireSegmentHit segmentHit) {
+        wire.routeMode = VisualWire.RouteMode.ORTHOGONAL;
+        List<Point2D> points = buildWireHitPath(wire);
+        int segmentIndex = Math.min(segmentHit.index, points.size() - 2);
+
+        if (wire.bendPoints.isEmpty()) {
+            wire.bendPoints.addAll(points.subList(1, points.size() - 1));
+        } else {
+            normalizeOrthogonalBendPoints(wire, points);
+        }
+
+        points = buildWireHitPath(wire);
+        segmentIndex = prepareSegmentEndpointsForDrag(wire, points, segmentIndex, segmentHit.horizontal);
+
+        context.draggingWire = wire;
+        context.draggingWireSegmentIndex = segmentIndex;
+        context.draggingWireSegmentHorizontal = segmentHit.horizontal;
+    }
+
+    private int prepareSegmentEndpointsForDrag(VisualWire wire, List<Point2D> points, int segmentIndex, boolean horizontal) {
+        int lastIndex = points.size() - 1;
+
+        if (segmentIndex == 0) {
+            Point2D start = points.get(0);
+            Point2D next = points.get(1);
+            Point2D inserted = horizontal
+                ? new Point2D(start.getX(), next.getY())
+                : new Point2D(next.getX(), start.getY());
+            wire.bendPoints.add(0, inserted);
+            segmentIndex = 1;
+            lastIndex++;
+        }
+
+        if (segmentIndex + 1 == lastIndex) {
+            Point2D prev = points.get(segmentIndex);
+            Point2D end = points.get(points.size() - 1);
+            Point2D inserted = horizontal
+                ? new Point2D(end.getX(), prev.getY())
+                : new Point2D(prev.getX(), end.getY());
+            wire.bendPoints.add(segmentIndex, inserted);
+        }
+
+        return segmentIndex;
+    }
+
+    private void dragOrthogonalWireSegment(MouseEvent event) {
+        VisualWire wire = context.draggingWire;
+        List<Point2D> points = buildWireHitPath(wire);
+        int segmentIndex = context.draggingWireSegmentIndex;
+        if (segmentIndex < 0 || segmentIndex >= points.size() - 1) {
+            return;
+        }
+
+        double target = context.draggingWireSegmentHorizontal ? context.worldMouseY : context.worldMouseX;
+        if (!(event != null && event.isShiftDown()) && context.projectConfig != null && context.projectConfig.snapToGrid) {
+            target = snapToGrid(target);
+        }
+
+        updateBendPointAxis(wire, segmentIndex, context.draggingWireSegmentHorizontal, target);
+        updateBendPointAxis(wire, segmentIndex + 1, context.draggingWireSegmentHorizontal, target);
+        context.setDirty(true);
+    }
+
+    private void updateBendPointAxis(VisualWire wire, int pathPointIndex, boolean horizontal, double target) {
+        int bendIndex = pathPointIndex - 1;
+        if (bendIndex < 0 || bendIndex >= wire.bendPoints.size()) {
+            return;
+        }
+
+        Point2D point = wire.bendPoints.get(bendIndex);
+        wire.bendPoints.set(bendIndex, horizontal
+            ? new Point2D(point.getX(), target)
+            : new Point2D(target, point.getY()));
+    }
+
+    private double distanceToWire(double x, double y, VisualWire wire) {
+        List<Point2D> points = buildWireHitPath(wire);
+        double min = Double.MAX_VALUE;
+        for (int i = 0; i < points.size() - 1; i++) {
+            Point2D a = points.get(i);
+            Point2D b = points.get(i + 1);
+            min = Math.min(min, distanceToSegment(x, y, a.getX(), a.getY(), b.getX(), b.getY()));
+        }
+        return min;
+    }
+
+    private int getBendInsertIndex(VisualWire wire, double x, double y) {
+        if (wire.bendPoints.isEmpty()) {
+            return 0;
+        }
+
+        List<Point2D> points = buildWireHitPath(wire);
+        double minDistance = Double.MAX_VALUE;
+        int bestSegmentIndex = 0;
+        for (int i = 0; i < points.size() - 1; i++) {
+            Point2D a = points.get(i);
+            Point2D b = points.get(i + 1);
+            double distance = distanceToSegment(x, y, a.getX(), a.getY(), b.getX(), b.getY());
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestSegmentIndex = i;
+            }
+        }
+        return Math.max(0, Math.min(bestSegmentIndex, wire.bendPoints.size()));
+    }
+
+    private List<Point2D> buildWireHitPath(VisualWire wire) {
+        java.util.ArrayList<Point2D> points = new java.util.ArrayList<>();
+        Point2D start = new Point2D(wire.from.getOutPinX(wire.outPin), wire.from.getOutPinY(wire.outPin));
+        Point2D end = new Point2D(wire.to.getInPinX(wire.inPin), wire.to.getInPinY(wire.inPin));
+        VisualWire.RouteMode routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null);
+
+        if (routeMode == VisualWire.RouteMode.ORTHOGONAL) {
+            points.add(start);
+            if (wire.bendPoints.isEmpty()) {
+                double midX = (start.getX() + end.getX()) / 2;
+                points.add(new Point2D(midX, start.getY()));
+                points.add(new Point2D(midX, end.getY()));
+            } else {
+                for (Point2D point : wire.bendPoints) {
+                    appendOrthogonalPoint(points, point);
+                }
+            }
+            appendOrthogonalPoint(points, end);
+            return points;
+        }
+
+        int samples = 28;
+        for (int i = 0; i <= samples; i++) {
+            double t = i / (double) samples;
+            points.add(sampleCurvedWire(wire, start, end, t));
+        }
+        return points;
+    }
+
+    private void appendOrthogonalPoint(List<Point2D> points, Point2D target) {
+        Point2D last = points.get(points.size() - 1);
+        if (Math.abs(last.getX() - target.getX()) > 0.001 && Math.abs(last.getY() - target.getY()) > 0.001) {
+            points.add(new Point2D(target.getX(), last.getY()));
+        }
+        if (points.get(points.size() - 1).distance(target) > 0.001) {
+            points.add(target);
+        }
+    }
+
+    private void normalizeOrthogonalBendPoints(VisualWire wire, List<Point2D> currentPath) {
+        wire.bendPoints.clear();
+        if (currentPath.size() > 2) {
+            wire.bendPoints.addAll(currentPath.subList(1, currentPath.size() - 1));
+        }
+    }
+
+    private void ensureExplicitOrthogonalBends(VisualWire wire) {
+        if (!wire.bendPoints.isEmpty()) {
+            normalizeOrthogonalBendPoints(wire, buildWireHitPath(wire));
+            return;
+        }
+
+        List<Point2D> points = buildWireHitPath(wire);
+        if (points.size() > 2) {
+            wire.bendPoints.addAll(points.subList(1, points.size() - 1));
+        }
+    }
+
+    private Point2D sampleCurvedWire(VisualWire wire, Point2D start, Point2D end, double t) {
+        if (wire.bendPoints.isEmpty()) {
+            Point2D c1 = new Point2D(start.getX() + 50, start.getY());
+            Point2D c2 = new Point2D(end.getX() - 50, end.getY());
+            return cubic(start, c1, c2, end, t);
+        }
+        if (wire.bendPoints.size() == 1) {
+            return quadratic(start, wire.bendPoints.get(0), end, t);
+        }
+        return cubic(start, wire.bendPoints.get(0), wire.bendPoints.get(1), end, t);
+    }
+
+    private Point2D quadratic(Point2D a, Point2D b, Point2D c, double t) {
+        double u = 1 - t;
+        return new Point2D(
+            u * u * a.getX() + 2 * u * t * b.getX() + t * t * c.getX(),
+            u * u * a.getY() + 2 * u * t * b.getY() + t * t * c.getY()
+        );
+    }
+
+    private Point2D cubic(Point2D a, Point2D b, Point2D c, Point2D d, double t) {
+        double u = 1 - t;
+        return new Point2D(
+            u * u * u * a.getX() + 3 * u * u * t * b.getX() + 3 * u * t * t * c.getX() + t * t * t * d.getX(),
+            u * u * u * a.getY() + 3 * u * u * t * b.getY() + 3 * u * t * t * c.getY() + t * t * t * d.getY()
+        );
+    }
+
+    private void applyWireRouteData(VisualWire wire, WireData data, double offsetX, double offsetY, double rotationDegrees) {
+        wire.bendPoints.clear();
+        if (data.routeMode != null) {
+            try {
+                wire.routeMode = VisualWire.RouteMode.valueOf(data.routeMode);
+            } catch (IllegalArgumentException ignored) {
+                wire.routeMode = null;
+            }
+        }
+        if (data.bendPoints == null) return;
+
+        double rad = Math.toRadians(rotationDegrees);
+        double cos = Math.cos(rad);
+        double sin = Math.sin(rad);
+        for (WireData.PointData point : data.bendPoints) {
+            double rx = point.x * cos - point.y * sin;
+            double ry = point.x * sin + point.y * cos;
+            wire.bendPoints.add(new Point2D(offsetX + rx, offsetY + ry));
+        }
+    }
+
+    private record WireBendHit(VisualWire wire, int index) {}
+    private record WireSegmentHit(int index, boolean horizontal) {}
 
     private boolean isGroupExists(String name) {
         if (name == null || name.isEmpty()) return false;

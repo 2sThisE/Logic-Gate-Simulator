@@ -12,6 +12,7 @@
 
 - `Toggle`: 클릭할 때마다 LOW/HIGH가 전환됩니다.
 - `Momentary`: 누르고 있는 동안만 HIGH가 되고, 놓으면 LOW로 돌아갑니다.
+- 작동 방식 속성은 LGS 저장, JSON 내보내기/가져오기, 복사/붙여넣기, undo/redo에 포함됩니다.
 
 ## 결과
 
