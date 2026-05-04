@@ -15,10 +15,13 @@ jobs:
         include:
           - os: windows-latest
             type: exe
+            package-options: --win-menu --win-shortcut --win-dir-chooser --win-per-user-install
           - os: macos-latest
             type: dmg
+            package-options: ""
           - os: ubuntu-latest
             type: deb
+            package-options: --linux-shortcut
 
     runs-on: ${{ matrix.os }}
 
@@ -37,17 +40,31 @@ jobs:
         working-directory: ./Logic-Gate-Simulator
         run: mvn clean package -DskipTests
 
+      - name: Resolve Release Version
+        shell: bash
+        run: echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
       - name: Build Native Installer with jpackage
         working-directory: ./Logic-Gate-Simulator
+        shell: bash
         run: |
-          jpackage --type ${{ matrix.type }} --input target --name LogicGateSimulator --main-jar logicgate-1.0.0.jar --main-class com.logicgate.ui.Launcher --app-version 1.0.0
+          mkdir -p dist
+          jpackage \
+            --type "${{ matrix.type }}" \
+            --dest dist \
+            --input target \
+            --name LogicGateSimulator \
+            --main-jar "logicgate-${APP_VERSION}.jar" \
+            --main-class com.logicgate.ui.Launcher \
+            --app-version "${APP_VERSION}" \
+            ${{ matrix.package-options }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./Logic-Gate-Simulator/*.exe
-            ./Logic-Gate-Simulator/*.dmg
-            ./Logic-Gate-Simulator/*.deb
+            ./Logic-Gate-Simulator/dist/*.exe
+            ./Logic-Gate-Simulator/dist/*.dmg
+            ./Logic-Gate-Simulator/dist/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
