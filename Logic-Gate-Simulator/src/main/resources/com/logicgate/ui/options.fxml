@@ -42,7 +42,7 @@
                 <CheckBox fx:id="showGridCheck" text="그리드(모눈종이) 표시" styleClass="options-checkbox"/>
                 <CheckBox fx:id="snapToGridCheck" text="그리드 스냅 (부품 이동 시 칸에 맞춤)" styleClass="options-checkbox"/>
                 <HBox alignment="CENTER_LEFT" spacing="15">
-                    <Label text="큰 그리드 간격 (1 Unit = 10px):" styleClass="options-label"/>
+                    <Label text="큰 그리드 간격:" styleClass="options-label"/>
                     <Spinner fx:id="gridSizeSpinner" prefWidth="100" styleClass="options-spinner"/>
                 </HBox>
                 <CheckBox fx:id="showAlignGuidesCheck" text="정렬 가이드선 표시 (부품 간 위치 안내)" styleClass="options-checkbox"/>

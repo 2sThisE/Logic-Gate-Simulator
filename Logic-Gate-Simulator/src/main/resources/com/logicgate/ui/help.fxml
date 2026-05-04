@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.web.WebView?>
 <?import java.net.URL?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
@@ -19,7 +20,7 @@
     </left>
     
     <center>
-        <ScrollPane fitToWidth="true" styleClass="options-content-area" hbarPolicy="NEVER">
+        <ScrollPane fx:id="helpScrollPane" fitToWidth="true" styleClass="options-content-area" hbarPolicy="NEVER">
             <StackPane fx:id="helpContentArea">
                 <!-- 1. 소개 -->
                 <VBox fx:id="introPane" spacing="20" styleClass="options-pane">
@@ -108,8 +109,22 @@
                     </HBox>
                     <Label text="옵션 창에서 초당 연산 횟수(Tick Frequency)를 조절할 수 있습니다. 복잡한 회로일수록 낮은 Hz를 권장합니다." styleClass="options-label" wrapText="true"/>
                 </VBox>
+
+                <!-- 5. 게이트 도움말 -->
+                <VBox fx:id="gateHelpPane" spacing="14" styleClass="options-pane" visible="false">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="게이트 도움말" styleClass="options-title"/>
+                        <FontIcon iconLiteral="mdi2b-book-open-page-variant" iconSize="24" iconColor="#4A90E2"/>
+                    </HBox>
+                    <Separator styleClass="options-separator"/>
+                    <TextField fx:id="gateHelpSearchField" promptText="게이트, 모드 컴포넌트, 핀 이름 검색" styleClass="options-textfield"/>
+                    <VBox spacing="10" VBox.vgrow="ALWAYS" prefHeight="610">
+                        <ListView fx:id="gateHelpListView" minHeight="110" prefHeight="150" styleClass="options-category-list"/>
+                        <WebView fx:id="gateHelpWebView" minHeight="420" prefHeight="420"/>
+                    </VBox>
+                </VBox>
                 
-                <!-- 5. 단축키 모음 -->
+                <!-- 6. 단축키 모음 -->
                 <VBox fx:id="shortcutPane" spacing="20" styleClass="options-pane" visible="false">
                     <Label text="단축키 일람" styleClass="options-title"/>
                     <Separator styleClass="options-separator"/>

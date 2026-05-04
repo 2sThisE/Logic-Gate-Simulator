@@ -289,6 +289,7 @@ public class MainController {
             stage.setScene(new javafx.scene.Scene(root));
 
             controller.setStage(stage);
+            controller.setProjectRoot(context.projectRoot);
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
