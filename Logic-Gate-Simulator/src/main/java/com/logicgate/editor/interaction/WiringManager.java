@@ -9,12 +9,14 @@ import java.util.Iterator;
 
 public class WiringManager {
     private final EditorContext context;
+    private boolean historySavedForCurrentWiring = false;
 
     public WiringManager(EditorContext context) {
         this.context = context;
     }
 
     public void startWiring(VisualNode node, int pinIndex, boolean isFromOut) {
+        historySavedForCurrentWiring = false;
         context.isWiring = true;
         context.isWiringFromOut = isFromOut;
         context.wiringNode = node;
@@ -27,7 +29,10 @@ public class WiringManager {
             for (VisualWire w : context.visualWires) {
                 if (w.to == node && w.inPin == pinIndex) willDisconnect = true;
             }
-            if (willDisconnect) context.historyManager.saveState();
+            if (willDisconnect) {
+                context.historyManager.saveState();
+                historySavedForCurrentWiring = true;
+            }
 
             Iterator<VisualWire> it = context.visualWires.iterator();
             while (it.hasNext()) {
@@ -43,7 +48,9 @@ public class WiringManager {
     }
 
     public void connectWires(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {
-        context.historyManager.saveState();
+        if (!historySavedForCurrentWiring) {
+            context.historyManager.saveState();
+        }
         context.visualWires.removeIf(w -> {
             boolean removed = false;
             // 입력 핀(toNode)은 "나만 바라봐" 모드! 기존 선이 있으면 잘라버려 🔪💕
@@ -66,6 +73,7 @@ public class WiringManager {
         context.selectedWire = newWire;
         context.setSelectedNode(null);
         context.setDirty(true); // 변경 감지 ✨
+        historySavedForCurrentWiring = false;
     }
 
     public boolean isValidConnection(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {

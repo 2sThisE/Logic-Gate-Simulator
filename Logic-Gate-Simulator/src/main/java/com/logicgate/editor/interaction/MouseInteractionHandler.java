@@ -539,8 +539,8 @@ public class MouseInteractionHandler {
     private void finalizePlacement() {
         if (context.pendingProjectData == null) return;
 
-        context.historyManager.startBatchOperation();
         context.historyManager.saveState(); // 대량 작업 시작 전 상태 저장 ✨
+        context.historyManager.startBatchOperation();
 
         // 그룹 이름 재매핑을 위한 맵 (원본 그룹명 -> 새 그룹명) 🔪💕
         java.util.Map<String, String> groupRemap = new java.util.HashMap<>();

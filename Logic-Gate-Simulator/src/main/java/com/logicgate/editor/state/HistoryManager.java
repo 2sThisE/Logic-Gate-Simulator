@@ -120,6 +120,7 @@ public class HistoryManager {
         }
         
         context.setSelectedNode(null);
+        context.selectedNodes.clear();
         context.selectedWire = null;
         context.setDirty(true);
         

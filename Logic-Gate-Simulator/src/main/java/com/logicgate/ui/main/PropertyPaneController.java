@@ -49,11 +49,16 @@ public class PropertyPaneController {
             switch (prop.getType()) {
                 case STRING -> {
                     TextField tf = new TextField((String) prop.getValue());
-                    tf.textProperty().addListener((obs, oldVal, newVal) ->
-                        ((com.logicgate.editor.model.Property<String>) prop).setValue(newVal)
-                    );
+                    boolean[] editSnapshotSaved = { false };
+                    tf.textProperty().addListener((obs, oldVal, newVal) -> {
+                        if (tf.isFocused() && !editSnapshotSaved[0]) {
+                            context.historyManager.saveState();
+                            editSnapshotSaved[0] = true;
+                        }
+                        ((com.logicgate.editor.model.Property<String>) prop).setValue(newVal);
+                    });
                     tf.focusedProperty().addListener((obs, oldF, newF) -> {
-                        if (!newF) context.historyManager.saveState();
+                        if (newF) editSnapshotSaved[0] = false;
                     });
                     row.getChildren().add(tf);
                 }
