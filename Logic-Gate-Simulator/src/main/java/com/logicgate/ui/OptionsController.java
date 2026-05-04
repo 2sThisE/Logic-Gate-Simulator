@@ -8,6 +8,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.util.ResourceBundle;
+import java.util.prefs.Preferences;
+
 public class OptionsController {
     
     @FXML private ListView<String> categoryList;
@@ -32,26 +35,36 @@ public class OptionsController {
     @FXML private Spinner<Integer> autosaveSpinner;
     @FXML private Slider zoomSensSlider;
     @FXML private Label zoomSensLabel;
+    @FXML private ComboBox<String> languageCombo;
 
     private EditorContext context;
     private Stage stage;
     private ProjectConfig config;
     private Runnable onApplyCallback;
+    private Preferences prefs;
 
     public void setContext(EditorContext context, Stage stage, Runnable onApplyCallback) {
         this.context = context;
         this.stage = stage;
         this.config = context.projectConfig;
         this.onApplyCallback = onApplyCallback;
+        this.prefs = Preferences.userNodeForPackage(MainApp.class);
         
         initUI();
     }
 
     private void initUI() {
         if (config == null) return;
+        
+        ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
 
         // 좌측 리스트 뷰 설정 ✨
-        categoryList.getItems().addAll("시뮬레이션", "에디터 & 그리드", "시각적 설정", "편의성");
+        categoryList.getItems().addAll(
+            bundle.getString("options.category.sim"),
+            bundle.getString("options.category.grid"),
+            bundle.getString("options.category.visual"),
+            bundle.getString("options.category.ux")
+        );
         categoryList.getSelectionModel().select(0);
         
         categoryList.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
@@ -100,6 +113,17 @@ public class OptionsController {
         zoomSensSlider.valueProperty().addListener((obs, oldVal, newVal) -> 
             zoomSensLabel.setText(String.format("%.2f", newVal.doubleValue()))
         );
+
+        // 언어 콤보박스 설정
+        languageCombo.getItems().addAll("System Default", "English", "한국어");
+        String currentLang = prefs.get("language", "system");
+        if ("ko".equals(currentLang)) {
+            languageCombo.setValue("한국어");
+        } else if ("en".equals(currentLang)) {
+            languageCombo.setValue("English");
+        } else {
+            languageCombo.setValue("System Default");
+        }
     }
 
     @FXML
@@ -131,6 +155,16 @@ public class OptionsController {
             config.autosaveIntervalMin = autosaveSpinner.getValue();
             config.cameraZoomSensitivity = zoomSensSlider.getValue();
             
+            // 언어 설정 저장
+            String selectedLang = languageCombo.getValue();
+            if ("한국어".equals(selectedLang)) {
+                prefs.put("language", "ko");
+            } else if ("English".equals(selectedLang)) {
+                prefs.put("language", "en");
+            } else {
+                prefs.put("language", "system");
+            }
+
             context.setDirty(true);
             if (onApplyCallback != null) onApplyCallback.run();
         }

@@ -14,25 +14,25 @@
     <top>
         <HBox alignment="CENTER_LEFT" style="-fx-background-color: #202020;" onMousePressed="#clearFocusFromCanvas">
             <MenuBar fx:id="mainMenuBar" HBox.hgrow="ALWAYS" style="-fx-background-color: transparent;">
-                <Menu text="파일">
-                    <MenuItem text="새 프로젝트" onAction="#newProject"/>
+                <Menu text="%menu.file">
+                    <MenuItem text="%menu.file.new_project" onAction="#newProject"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="프로젝트 저장" onAction="#saveProject"/>
+                    <MenuItem text="%menu.file.save_project" onAction="#saveProject"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="JSON 내보내기" onAction="#exportJson"/>
-                    <MenuItem text="JSON 가져오기" onAction="#importJson"/>
+                    <MenuItem text="%menu.file.export_json" onAction="#exportJson"/>
+                    <MenuItem text="%menu.file.import_json" onAction="#importJson"/>
                     <SeparatorMenuItem/>
-                    <MenuItem text="종료" onAction="#shutdown"/>
+                    <MenuItem text="%menu.file.exit" onAction="#shutdown"/>
                 </Menu>
-                <Menu text="편집">
-                    <MenuItem text="모두 지우기" onAction="#clearCircuit"/>
+                <Menu text="%menu.edit">
+                    <MenuItem text="%menu.edit.clear_all" onAction="#clearCircuit"/>
                 </Menu>
-                <Menu text="설정">
-                    <MenuItem text="모드 관리자" onAction="#openModManager"/>
-                    <MenuItem text="옵션" onAction="#openOptions"/>
+                <Menu text="%menu.settings">
+                    <MenuItem text="%menu.settings.mod_manager" onAction="#openModManager"/>
+                    <MenuItem text="%menu.settings.options" onAction="#openOptions"/>
                 </Menu>
-                <Menu text="도움말">
-                    <MenuItem text="사용법" onAction="#openHelp"/>
+                <Menu text="%menu.help">
+                    <MenuItem text="%menu.help.usage" onAction="#openHelp"/>
                 </Menu>
             </MenuBar>
             <HBox alignment="CENTER" spacing="10" style="-fx-padding: 0 15 0 0;">
@@ -58,7 +58,7 @@
                         <Insets top="20" right="10" bottom="20" left="10"/>
                     </padding>
                     
-                    <Label text="부품 상자" styleClass="section-header"/>
+                    <Label text="%sidebar.components" styleClass="section-header"/>
                     <TreeView fx:id="componentTreeView" focusTraversable="false" VBox.vgrow="ALWAYS" />
                 </VBox>
                 
@@ -73,15 +73,15 @@
                         <Insets top="20" right="10" bottom="20" left="10"/>
                     </padding>
                     
-                    <Label text="컴포넌트 검색" styleClass="section-header"/>
+                    <Label text="%sidebar.search" styleClass="section-header"/>
                     <VBox spacing="5">
-                        <TextField fx:id="searchTextField" promptText="라벨로 검색..."/>
+                        <TextField fx:id="searchTextField" promptText="%sidebar.search.prompt"/>
                         <ListView fx:id="searchResultsListView" prefHeight="200" visible="false" managed="false"/>
                     </VBox>
                     
                     <Separator/>
                     
-                    <Label text="컴포넌트 속성" styleClass="section-header"/>
+                    <Label text="%sidebar.properties" styleClass="section-header"/>
                     <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
                         <VBox fx:id="propertyPane" spacing="12" styleClass="property-section"/>
                     </ScrollPane>
@@ -96,9 +96,10 @@
                 <padding>
                     <Insets top="3" right="10" bottom="3" left="10"/>
                 </padding>
+                <!-- 텍스트는 코드에서 설정할 수 있도록 임시 유지하거나 번들 참조 -->
                 <Button fx:id="errorButton" text="0 로그" onAction="#toggleConsole" styleClass="status-btn"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label text="Logic Gate Simulator v1.0" styleClass="status-label"/>
+                <Label text="%status.title" styleClass="status-label"/>
             </HBox>
         </VBox>
     </bottom>

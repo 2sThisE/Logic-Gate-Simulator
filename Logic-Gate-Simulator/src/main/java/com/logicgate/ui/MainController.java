@@ -251,13 +251,14 @@ public class MainController {
     @FXML
     public void openOptions() {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("options.fxml"));
+            java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("options.fxml"), bundle);
             javafx.scene.Parent root = loader.load();
 
             OptionsController controller = loader.getController();
 
             javafx.stage.Stage stage = new javafx.stage.Stage();
-            stage.setTitle("프로젝트 설정");
+            stage.setTitle(bundle.getString("options.title"));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
@@ -277,13 +278,14 @@ public class MainController {
     @FXML
     public void openHelp() {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("help.fxml"));
+            java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("help.fxml"), bundle);
             javafx.scene.Parent root = loader.load();
 
             HelpController controller = loader.getController();
 
             javafx.stage.Stage stage = new javafx.stage.Stage();
-            stage.setTitle("도움말");
+            stage.setTitle(bundle.getString("menu.help"));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
@@ -356,13 +358,14 @@ public class MainController {
     @FXML
     public void openModManager() {
         try {
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("mod_manager.fxml"));
+            java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault());
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("mod_manager.fxml"), bundle);
             javafx.scene.Parent root = loader.load();
 
             ModManagerController controller = loader.getController();
 
             javafx.stage.Stage stage = new javafx.stage.Stage();
-            stage.setTitle("모드 관리자");
+            stage.setTitle(bundle.getString("mod_manager.title"));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(simulationCanvas.getScene().getWindow());
             stage.setScene(new javafx.scene.Scene(root));
