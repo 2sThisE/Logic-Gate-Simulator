@@ -40,6 +40,12 @@ jobs:
         working-directory: ./Logic-Gate-Simulator
         run: mvn clean package -DskipTests
 
+      - name: Include Legal Notices
+        shell: bash
+        run: |
+          cp LICENSE ./Logic-Gate-Simulator/target/LICENSE
+          cp THIRD_PARTY_NOTICES.md ./Logic-Gate-Simulator/target/THIRD_PARTY_NOTICES.md
+
       - name: Resolve Release Version
         shell: bash
         run: echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
