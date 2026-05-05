@@ -26,6 +26,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
@@ -34,6 +35,8 @@ import javafx.concurrent.Worker;
 
 public class HelpController {
 
+    @FXML private BorderPane helpRoot;
+    @FXML private VBox sidebar;
     @FXML private ListView<String> helpCategoryList;
     @FXML private ScrollPane helpScrollPane;
     @FXML private StackPane helpContentArea;
@@ -57,6 +60,9 @@ public class HelpController {
     @FXML
     public void initialize() {
         bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
+        ResponsiveTextSupport.apply(helpRoot);
+        ResponsiveTextSupport.useWrappingCells(helpCategoryList);
+        ResponsiveTextSupport.useWrappingCells(gateHelpListView);
         initializeMarkdownRenderer();
         initializeGateHelpDocs();
 
@@ -67,6 +73,7 @@ public class HelpController {
             bundle.getString("help.gate.title"),
             bundle.getString("help.shortcut.title")
         );
+        ResponsiveTextSupport.fitListWidthToItems(helpCategoryList, sidebar, 240, 320);
 
         helpCategoryList.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
             updateContent(newVal.intValue());
@@ -279,6 +286,8 @@ public class HelpController {
               <meta charset="utf-8">
               <style>
                 body {
+                  box-sizing: border-box;
+                  max-width: 100%;
                   margin: 0;
                   padding: 18px 20px 28px;
                   color: #202124;
@@ -286,6 +295,7 @@ public class HelpController {
                   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
                   font-size: 14px;
                   line-height: 1.62;
+                  overflow-wrap: anywhere;
                 }
                 h1 { font-size: 24px; margin: 0 0 12px; }
                 h2 { font-size: 18px; margin: 24px 0 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
@@ -308,7 +318,7 @@ public class HelpController {
                   overflow-x: auto;
                 }
                 pre code { border: 0; background: transparent; padding: 0; }
-                table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+                table { border-collapse: collapse; width: 100%; margin: 12px 0; table-layout: fixed; }
                 th, td { border: 1px solid #e5e7eb; padding: 7px 9px; text-align: left; }
                 th { background: #f8fafc; }
               </style>
@@ -345,4 +355,3 @@ public class HelpController {
         if (stage != null) stage.close();
     }
 }
-

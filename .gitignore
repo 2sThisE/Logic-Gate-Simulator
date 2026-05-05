@@ -1,3 +1,5 @@
+# Maven build artifacts
+**/dependency-reduced-pom.xml
 target/
 .idea/
 *.class

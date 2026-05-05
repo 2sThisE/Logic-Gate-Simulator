@@ -222,7 +222,7 @@ public class MouseInteractionHandler {
                                 context.selectedNodes.add(vn);
                             }
                         }
-                    } else if (event.isShortcutDown()) {
+                    } else if (event.isShiftDown()) {
                         if (context.selectedNodes.contains(context.hoveredNode)) {
                             context.selectedNodes.remove(context.hoveredNode);
                         } else {

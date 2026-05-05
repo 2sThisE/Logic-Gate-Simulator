@@ -16,6 +16,7 @@
     -fx-font-weight: bold;
     -fx-text-fill: #EEEEEE;
     -fx-padding: 0 0 10 20;
+    -fx-wrap-text: true;
 }
 
 .options-category-list {
@@ -30,6 +31,7 @@
     -fx-font-size: 14px;
     -fx-padding: 10 20 10 20;
     -fx-cursor: hand;
+    -fx-wrap-text: true;
 }
 
 .options-category-list .list-cell:hover {
@@ -49,9 +51,35 @@
     -fx-font-weight: bold;
 }
 
+.options-category-list .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+
+.options-category-list .scroll-bar:horizontal .increment-button,
+.options-category-list .scroll-bar:horizontal .decrement-button {
+    -fx-padding: 0;
+}
+
 .options-content-area {
     -fx-background-color: #2B2B2B;
     -fx-padding: 30 40 30 40;
+}
+
+.options-content-area > .viewport {
+    -fx-background-color: #2B2B2B;
+}
+
+.options-content-area .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+
+.options-content-area .scroll-bar:horizontal .increment-button,
+.options-content-area .scroll-bar:horizontal .decrement-button {
+    -fx-padding: 0;
 }
 
 .options-pane {
@@ -62,11 +90,13 @@
     -fx-font-size: 20px;
     -fx-font-weight: bold;
     -fx-text-fill: #FFFFFF;
+    -fx-wrap-text: true;
 }
 
 .options-desc {
     -fx-font-size: 13px;
     -fx-text-fill: #888888;
+    -fx-wrap-text: true;
 }
 
 .options-subtitle {
@@ -74,27 +104,32 @@
     -fx-font-weight: bold;
     -fx-text-fill: #DDDDDD;
     -fx-padding: 15 0 0 0;
+    -fx-wrap-text: true;
 }
 
 .options-label {
     -fx-font-size: 14px;
     -fx-text-fill: #CCCCCC;
+    -fx-wrap-text: true;
 }
 
 .options-label-sub {
     -fx-font-size: 13px;
     -fx-text-fill: #AAAAAA;
+    -fx-wrap-text: true;
 }
 
 .options-hint {
     -fx-font-size: 12px;
     -fx-text-fill: #777777;
+    -fx-wrap-text: true;
 }
 
 .options-value {
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-text-fill: #4A90E2;
+    -fx-wrap-text: false;
 }
 
 .options-bottom-bar {
@@ -119,6 +154,7 @@
 .options-checkbox {
     -fx-text-fill: #CCCCCC;
     -fx-font-size: 14px;
+    -fx-wrap-text: true;
 }
 
 .options-btn-cancel {

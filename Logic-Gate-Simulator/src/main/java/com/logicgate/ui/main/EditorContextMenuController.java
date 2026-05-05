@@ -1,6 +1,8 @@
 package com.logicgate.ui.main;
 
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
@@ -39,7 +41,7 @@ public class EditorContextMenuController {
         hide();
         contextMenu.getItems().clear();
 
-        MenuItem deleteItem = new MenuItem("삭제");
+        MenuItem deleteItem = menuItem("context.delete");
 
         if (!context.selectedNodes.isEmpty()) {
             addNodeSelectionItems(deleteItem);
@@ -53,8 +55,8 @@ public class EditorContextMenuController {
     }
 
     private void addNodeSelectionItems(MenuItem deleteItem) {
-        MenuItem groupItem = new MenuItem("그룹화");
-        MenuItem ungroupItem = new MenuItem("그룹화 취소");
+        MenuItem groupItem = menuItem("context.group");
+        MenuItem ungroupItem = menuItem("context.ungroup");
 
         boolean hasUngrouped = false;
         boolean hasGrouped = false;
@@ -81,15 +83,15 @@ public class EditorContextMenuController {
 
     private void addWireSelectionItems(MenuItem deleteItem) {
         if (context.wireBendEditMode && context.selectedWireBendIndex >= 0) {
-            MenuItem deleteBendItem = new MenuItem("꺾임점 삭제");
+            MenuItem deleteBendItem = menuItem("context.bend.delete");
             contextMenu.getItems().add(deleteBendItem);
             deleteBendItem.setOnAction(e -> deleteSelectedWireBend());
         }
 
-        MenuItem addBendItem = new MenuItem("꺾임점 추가");
-        MenuItem orthogonalItem = new MenuItem("직각 방식으로 전환");
-        MenuItem curvedItem = new MenuItem("곡선 방식으로 전환");
-        MenuItem resetRouteItem = new MenuItem("꺾임점 초기화");
+        MenuItem addBendItem = menuItem("context.bend.add");
+        MenuItem orthogonalItem = menuItem("context.orthogonal");
+        MenuItem curvedItem = menuItem("context.curved");
+        MenuItem resetRouteItem = menuItem("context.reset_route");
 
         contextMenu.getItems().addAll(addBendItem, orthogonalItem, curvedItem);
         if (!context.selectedWire.bendPoints.isEmpty()) {
@@ -116,6 +118,14 @@ public class EditorContextMenuController {
             context.wireBendEditMode = false;
             context.setDirty(true);
         });
+    }
+
+    private MenuItem menuItem(String key) {
+        return new MenuItem(bundle().getString(key));
+    }
+
+    private ResourceBundle bundle() {
+        return ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
     }
 
     private void addBendAtContextMenuPosition() {

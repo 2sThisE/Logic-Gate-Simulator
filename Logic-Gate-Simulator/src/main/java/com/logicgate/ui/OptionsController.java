@@ -4,6 +4,7 @@ import com.logicgate.editor.io.ProjectConfig;
 import com.logicgate.editor.state.EditorContext;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -15,6 +16,8 @@ import java.util.prefs.Preferences;
 
 public class OptionsController {
 
+    @FXML private BorderPane optionsRoot;
+    @FXML private VBox sidebar;
     @FXML private ListView<String> categoryList;
     @FXML private VBox simPane;
     @FXML private VBox gridPane;
@@ -46,6 +49,12 @@ public class OptionsController {
     private Consumer<Boolean> afterApplyCallback;
     private Preferences prefs;
 
+    @FXML
+    public void initialize() {
+        ResponsiveTextSupport.apply(optionsRoot);
+        ResponsiveTextSupport.useWrappingCells(categoryList);
+    }
+
     public void setContext(
             EditorContext context,
             Stage stage,
@@ -72,6 +81,7 @@ public class OptionsController {
             bundle.getString("options.category.visual"),
             bundle.getString("options.category.ux")
         );
+        ResponsiveTextSupport.fitListWidthToItems(categoryList, sidebar, 180, 260);
         categoryList.getSelectionModel().select(0);
 
         categoryList.getSelectionModel().selectedIndexProperty().addListener((obs, oldVal, newVal) -> {
@@ -109,6 +119,9 @@ public class OptionsController {
 
         autosaveSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 60, config.autosaveIntervalMin, 1));
         zoomSensSlider.setValue(config.cameraZoomSensitivity);
+        zoomSensLabel.setWrapText(false);
+        zoomSensLabel.setMinWidth(42);
+        zoomSensLabel.setPrefWidth(42);
         zoomSensLabel.setText(String.format("%.2f", config.cameraZoomSensitivity));
         zoomSensSlider.valueProperty().addListener((obs, oldVal, newVal) ->
             zoomSensLabel.setText(String.format("%.2f", newVal.doubleValue()))

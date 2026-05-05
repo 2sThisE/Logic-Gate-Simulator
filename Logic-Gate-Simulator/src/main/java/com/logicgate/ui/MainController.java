@@ -298,6 +298,7 @@ public class MainController {
                 }
             );
 
+            ResponsiveTextSupport.fitStageToContent(stage, root, 0.9, 0.9);
             stage.showAndWait();
         } catch (Exception e) {
             e.printStackTrace();
@@ -321,6 +322,7 @@ public class MainController {
 
             controller.setStage(stage);
             controller.setProjectRoot(context.projectRoot);
+            ResponsiveTextSupport.fitStageToContent(stage, root, 0.9, 0.9);
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
