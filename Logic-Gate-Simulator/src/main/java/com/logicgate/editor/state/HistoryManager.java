@@ -78,9 +78,7 @@ public class HistoryManager {
                 context.visualNodes.indexOf(vw.to),
                 vw.inPin
             );
-            if (vw.routeMode != null) {
-                wd.routeMode = vw.routeMode.name();
-            }
+            wd.routeMode = vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name();
             for (Point2D point : vw.bendPoints) {
                 wd.bendPoints.add(new WireData.PointData(point.getX(), point.getY()));
             }
@@ -145,8 +143,10 @@ public class HistoryManager {
             try {
                 wire.routeMode = VisualWire.RouteMode.valueOf(data.routeMode);
             } catch (IllegalArgumentException ignored) {
-                wire.routeMode = null;
+                wire.setRouteModeFromProjectStyle(context.projectConfig != null ? context.projectConfig.wireStyle : null);
             }
+        } else {
+            wire.setRouteModeFromProjectStyle(context.projectConfig != null ? context.projectConfig.wireStyle : null);
         }
         if (data.bendPoints != null) {
             for (WireData.PointData point : data.bendPoints) {

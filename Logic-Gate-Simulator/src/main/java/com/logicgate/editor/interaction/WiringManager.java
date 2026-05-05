@@ -70,6 +70,7 @@ public class WiringManager {
 
         context.getCircuit().connect(fromNode.node, outPin, toNode.node, inPin);
         VisualWire newWire = new VisualWire(fromNode, outPin, toNode, inPin);
+        newWire.setRouteModeFromProjectStyle(context.projectConfig != null ? context.projectConfig.wireStyle : null);
         context.visualWires.add(newWire);
 
         context.selectedWire = newWire;
@@ -79,7 +80,6 @@ public class WiringManager {
     }
 
     public boolean isValidConnection(VisualNode fromNode, int outPin, VisualNode toNode, int inPin) {
-        if (fromNode == toNode) return false;
         if (isJointAlreadyDriven(toNode)) return false;
 
         if (fromNode.node instanceof Joint) {

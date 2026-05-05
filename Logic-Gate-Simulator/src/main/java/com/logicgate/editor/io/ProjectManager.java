@@ -178,7 +178,7 @@ public class ProjectManager {
                 dos.writeInt(context.visualNodes.indexOf(vw.to));
                 dos.writeInt(vw.inPin);
 
-                dos.writeUTF(vw.routeMode != null ? vw.routeMode.name() : "");
+                dos.writeUTF(vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name());
                 dos.writeInt(vw.bendPoints.size());
                 for (Point2D point : vw.bendPoints) {
                     dos.writeDouble(point.getX());
@@ -276,7 +276,11 @@ public class ProjectManager {
 
                     context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
                     VisualWire vw = new VisualWire(fromVn, outPin, toVn, inPin);
-                    vw.routeMode = routeMode;
+                    if (routeMode != null) {
+                        vw.routeMode = routeMode;
+                    } else {
+                        vw.setRouteModeFromProjectStyle(context.projectConfig != null ? context.projectConfig.wireStyle : null);
+                    }
                     vw.bendPoints.addAll(bendPoints);
 
                     context.visualWires.add(vw);
@@ -449,9 +453,7 @@ public class ProjectManager {
     }
 
     private void copyWireRouteToData(VisualWire wire, WireData data, double offsetX, double offsetY, double rotationDegrees) {
-        if (wire.routeMode != null) {
-            data.routeMode = wire.routeMode.name();
-        }
+        data.routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name();
         double rad = Math.toRadians(rotationDegrees);
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);

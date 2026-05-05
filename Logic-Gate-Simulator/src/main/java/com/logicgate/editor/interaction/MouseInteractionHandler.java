@@ -498,7 +498,7 @@ public class MouseInteractionHandler {
         }
 
         if (context.isWiring && context.wiringNode != null) {
-            if (context.hoveredNode != null && context.hoveredNode != context.wiringNode) {
+            if (context.hoveredNode != null) {
                 if (context.isWiringFromOut && context.hoveredInPin != -1) {
                     if (wiringManager.isValidConnection(context.wiringNode, context.wiringPin, context.hoveredNode, context.hoveredInPin)) {
                         wiringManager.connectWires(context.wiringNode, context.wiringPin, context.hoveredNode, context.hoveredInPin);
@@ -686,7 +686,10 @@ public class MouseInteractionHandler {
     }
 
     private VisualWire getWireAt(double x, double y) {
-        double threshold = 10 / context.zoom;
+        double threshold = 3 / context.zoom;
+        if (context.selectedWire != null && distanceToWire(x, y, context.selectedWire) < threshold) {
+            return context.selectedWire;
+        }
         for (VisualWire wire : context.visualWires) {
             if (distanceToWire(x, y, wire) < threshold) return wire;
         }
@@ -716,7 +719,7 @@ public class MouseInteractionHandler {
             return null;
         }
 
-        double threshold = 10 / context.zoom;
+        double threshold = 3 / context.zoom;
         List<Point2D> points = buildWireHitPath(wire);
         double minDistance = Double.MAX_VALUE;
         WireSegmentHit best = null;

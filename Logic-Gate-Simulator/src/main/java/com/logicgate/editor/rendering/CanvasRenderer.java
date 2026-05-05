@@ -7,6 +7,7 @@ import com.logicgate.editor.rendering.symbol.GateSymbol;
 import com.logicgate.editor.rendering.symbol.SymbolRegistry;
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.editor.utils.NodeFactory;
+import com.logicgate.gates.Node;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -285,7 +286,14 @@ public class CanvasRenderer {
     }
 
     private void drawPlacementGhost(GraphicsContext gc) {
+        Node node = NodeFactory.createNodeByType(context.placingNodeTypeId);
+        if (node == null) return;
+
         GateSymbol symbol = SymbolRegistry.getSymbol(context.placingNodeTypeId);
+        if (symbol == null) {
+            symbol = SymbolRegistry.getSymbol(node.getTypeId());
+        }
+
         if (symbol != null) {
             gc.save();
             gc.setGlobalAlpha(0.4);
@@ -297,7 +305,7 @@ public class CanvasRenderer {
             gc.rotate(context.placingRotation);
             gc.translate(-width / 2, -height / 2);
 
-            VisualNode dummy = new VisualNode(NodeFactory.createNodeByType(context.placingNodeTypeId), 0, 0, "");
+            VisualNode dummy = new VisualNode(node, 0, 0, "");
             symbol.draw(gc, dummy, false, false);
             gc.restore();
         }

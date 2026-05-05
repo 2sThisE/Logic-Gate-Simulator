@@ -4,7 +4,7 @@
   <groupId>com.logicgate</groupId>
   <artifactId>logicgate</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
   <name>logicgate</name>
   <url>http://maven.apache.org</url>
 

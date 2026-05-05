@@ -38,4 +38,8 @@ public class VisualWire {
         }
         return "Orthogonal".equals(projectWireStyle) ? RouteMode.ORTHOGONAL : RouteMode.CURVED;
     }
+
+    public void setRouteModeFromProjectStyle(String projectWireStyle) {
+        routeMode = "Orthogonal".equals(projectWireStyle) ? RouteMode.ORTHOGONAL : RouteMode.CURVED;
+    }
 }
