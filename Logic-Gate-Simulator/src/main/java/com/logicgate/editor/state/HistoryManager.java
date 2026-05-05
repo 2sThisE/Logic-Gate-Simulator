@@ -6,8 +6,13 @@ import com.logicgate.editor.io.WireData;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.utils.NodeFactory;
+import com.logicgate.Circuit;
 import com.logicgate.gates.Node;
 
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import javafx.geometry.Point2D;
 
@@ -45,92 +50,135 @@ public class HistoryManager {
         if (undoStack.isEmpty()) return;
 
         ProjectData currentState = captureCurrentState();
-        redoStack.push(currentState);
-
         ProjectData previousState = undoStack.pop();
-        restoreState(previousState);
+        if (restoreState(previousState)) {
+            redoStack.push(currentState);
+        }
     }
 
     public void redo() {
         if (redoStack.isEmpty()) return;
 
         ProjectData currentState = captureCurrentState();
-        undoStack.push(currentState);
-
         ProjectData nextState = redoStack.pop();
-        restoreState(nextState);
+        if (restoreState(nextState)) {
+            undoStack.push(currentState);
+        }
     }
 
     private ProjectData captureCurrentState() {
         ProjectData data = new ProjectData();
+        Map<VisualNode, Integer> nodeIndexes = new IdentityHashMap<>();
         for (VisualNode vn : context.visualNodes) {
+            if (vn == null || vn.node == null) continue;
+
             NodeData nd = new NodeData(
                 vn.node.getTypeId(),
                 vn.x, vn.y, vn.rotation, vn.label, vn.showLabel, vn.group
             );
-            nd.properties.putAll(vn.node.getProperties());
+            if (vn.node.getProperties() != null) {
+                nd.properties.putAll(vn.node.getProperties());
+            }
+            nodeIndexes.put(vn, data.nodes.size());
             data.nodes.add(nd);
         }
         for (VisualWire vw : context.visualWires) {
+            if (vw == null) continue;
+            Integer fromIdx = nodeIndexes.get(vw.from);
+            Integer toIdx = nodeIndexes.get(vw.to);
+            if (fromIdx == null || toIdx == null) continue;
+
             WireData wd = new WireData(
-                context.visualNodes.indexOf(vw.from),
+                fromIdx,
                 vw.outPin,
-                context.visualNodes.indexOf(vw.to),
+                toIdx,
                 vw.inPin
             );
             wd.routeMode = vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name();
-            for (Point2D point : vw.bendPoints) {
-                wd.bendPoints.add(new WireData.PointData(point.getX(), point.getY()));
+            if (vw.bendPoints != null) {
+                for (Point2D point : vw.bendPoints) {
+                    if (point != null) {
+                        wd.bendPoints.add(new WireData.PointData(point.getX(), point.getY()));
+                    }
+                }
             }
             data.wires.add(wd);
         }
         return data;
     }
 
-    private void restoreState(ProjectData data) {
+    private boolean restoreState(ProjectData data) {
+        if (data == null || data.nodes == null || data.wires == null) return false;
         startBatchOperation();
 
-        context.visualNodes.clear();
-        context.visualWires.clear();
-        context.getCircuit().clear();
+        try {
+            Circuit restoredCircuit = new Circuit();
+            List<VisualNode> restoredNodes = new ArrayList<>();
+            List<VisualNode> nodesByOriginalIndex = new ArrayList<>();
+            List<VisualWire> restoredWires = new ArrayList<>();
 
-        for (NodeData nd : data.nodes) {
-            Node logicNode = NodeFactory.createNodeByType(nd.type);
-            if (logicNode != null) {
+            List<NodeData> nodes = data.nodes;
+            List<WireData> wires = data.wires;
+
+            for (NodeData nd : nodes) {
+                if (nd == null || nd.type == null) {
+                    nodesByOriginalIndex.add(null);
+                    continue;
+                }
+
+                Node logicNode = NodeFactory.createNodeByType(nd.type);
+                if (logicNode == null) {
+                    nodesByOriginalIndex.add(null);
+                    continue;
+                }
                 logicNode.setProperties(nd.properties);
-                context.getCircuit().addNode(logicNode);
+                restoredCircuit.addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, nd.x, nd.y, nd.label);
                 vn.showLabel = nd.showLabel;
                 vn.rotation = nd.rotation;
                 vn.group = nd.group;
-                context.visualNodes.add(vn);
+                restoredNodes.add(vn);
+                nodesByOriginalIndex.add(vn);
             }
-        }
 
-        for (WireData wd : data.wires) {
-            if (wd.fromIdx >= 0 && wd.fromIdx < context.visualNodes.size() &&
-                wd.toIdx >= 0 && wd.toIdx < context.visualNodes.size()) {
+            for (WireData wd : wires) {
+                if (wd == null) continue;
+                if (wd.fromIdx < 0 || wd.fromIdx >= nodesByOriginalIndex.size() ||
+                    wd.toIdx < 0 || wd.toIdx >= nodesByOriginalIndex.size()) {
+                    continue;
+                }
 
-                VisualNode fromVn = context.visualNodes.get(wd.fromIdx);
-                VisualNode toVn = context.visualNodes.get(wd.toIdx);
+                VisualNode fromVn = nodesByOriginalIndex.get(wd.fromIdx);
+                VisualNode toVn = nodesByOriginalIndex.get(wd.toIdx);
+                if (fromVn == null || toVn == null) continue;
 
-                context.getCircuit().connect(fromVn.node, wd.outPin, toVn.node, wd.inPin);
+                restoredCircuit.connect(fromVn.node, wd.outPin, toVn.node, wd.inPin);
                 VisualWire wire = new VisualWire(fromVn, wd.outPin, toVn, wd.inPin);
                 applyWireData(wire, wd);
-                context.visualWires.add(wire);
-                // Advance once after each restored connection to reduce synchronized oscillator artifacts.
-                context.getCircuit().tick();
+                restoredWires.add(wire);
+                restoredCircuit.tick();
             }
+
+            context.replaceCircuit(restoredCircuit);
+            context.visualNodes.clear();
+            context.visualNodes.addAll(restoredNodes);
+            context.visualWires.clear();
+            context.visualWires.addAll(restoredWires);
+
+            context.setSelectedNode(null);
+            context.selectedNodes.clear();
+            context.selectedWire = null;
+            context.selectedWireBendIndex = -1;
+            context.wireBendEditMode = false;
+            context.setDirty(true);
+            return true;
+        } catch (RuntimeException ex) {
+            System.err.println("Failed to restore history state. Current canvas was left unchanged.");
+            ex.printStackTrace();
+            return false;
+        } finally {
+            stopBatchOperation();
         }
-
-        context.setSelectedNode(null);
-        context.selectedNodes.clear();
-        context.selectedWire = null;
-        context.selectedWireBendIndex = -1;
-        context.wireBendEditMode = false;
-        context.setDirty(true);
-
-        stopBatchOperation();
     }
 
     public void clear() {
@@ -150,6 +198,7 @@ public class HistoryManager {
         }
         if (data.bendPoints != null) {
             for (WireData.PointData point : data.bendPoints) {
+                if (point == null) continue;
                 wire.bendPoints.add(new Point2D(point.x, point.y));
             }
         }

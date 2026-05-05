@@ -20,6 +20,7 @@ public class KeyboardInteractionHandler {
                 context.isWiring = false;
                 context.wiringNode = null;
                 context.wiringPin = -1;
+                context.wiringPinName = null;
                 context.draggingNode = null;
                 context.draggingWire = null;
                 context.draggingWireBendIndex = -1;

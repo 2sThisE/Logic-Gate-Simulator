@@ -91,6 +91,7 @@ public class EditorContext {
     public boolean isWiringFromOut = true;
     public VisualNode wiringNode = null;
     public int wiringPin = -1;
+    public String wiringPinName = null;
 
     // Placing state
     public boolean isPlacingImport = false;
@@ -111,6 +112,10 @@ public class EditorContext {
     }
 
     public Circuit getCircuit() { return circuit; }
+
+    void replaceCircuit(Circuit circuit) {
+        this.circuit = circuit;
+    }
 
     public VisualNode getSelectedNode() { return selectedNode; }
 

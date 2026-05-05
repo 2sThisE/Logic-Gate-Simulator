@@ -2,6 +2,8 @@ package com.logicgate.editor.interaction;
 
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
+import com.logicgate.editor.rendering.symbol.GateSymbol;
+import com.logicgate.editor.rendering.symbol.SymbolRegistry;
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.gates.Joint;
 
@@ -21,6 +23,7 @@ public class WiringManager {
         context.isWiringFromOut = isFromOut;
         context.wiringNode = node;
         context.wiringPin = pinIndex;
+        context.wiringPinName = getPinName(node, pinIndex, isFromOut);
 
         // Input pins accept one wire, so starting from an input removes the existing connection.
         if (!isFromOut) {
@@ -104,5 +107,11 @@ public class WiringManager {
             }
         }
         return false;
+    }
+
+    private String getPinName(VisualNode node, int pinIndex, boolean isFromOut) {
+        GateSymbol symbol = SymbolRegistry.getSymbol(node.node.getTypeId());
+        if (symbol == null) return null;
+        return isFromOut ? symbol.getOutPinName(pinIndex) : symbol.getInPinName(pinIndex);
     }
 }

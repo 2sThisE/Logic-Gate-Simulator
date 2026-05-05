@@ -70,6 +70,11 @@ public class CanvasRenderer {
         for (VisualWire wire : context.visualWires) {
             drawWire(gc, wire);
         }
+        for (VisualWire wire : context.visualWires) {
+            if (isConnectedToHoveredPin(wire) && wire != context.selectedWire) {
+                drawWireHighlight(gc, wire);
+            }
+        }
 
         if (context.placingNodeTypeId != null) {
             drawPlacementGhost(gc);
@@ -118,17 +123,33 @@ public class CanvasRenderer {
         gc.restore();
 
         // Tooltips are drawn after restoring the camera transform.
-        if (context.hoveredPinName != null) {
+        String tooltipText = getPinTooltipText();
+        if (tooltipText != null) {
             gc.setFill(Color.web("#333333", 0.9));
             gc.setStroke(Color.WHITE);
             gc.setLineWidth(1);
-            double tw = context.hoveredPinName.length() * 7 + 10;
-            gc.fillRoundRect(context.tooltipX, context.tooltipY - 25, tw, 20, 5, 5);
-            gc.strokeRoundRect(context.tooltipX, context.tooltipY - 25, tw, 20, 5, 5);
+            double x = context.screenMouseX + 15;
+            double y = context.screenMouseY + 15;
+            double tw = tooltipText.length() * 7 + 10;
+            gc.fillRoundRect(x, y - 25, tw, 20, 5, 5);
+            gc.strokeRoundRect(x, y - 25, tw, 20, 5, 5);
             gc.setFill(Color.WHITE);
             gc.setFont(javafx.scene.text.Font.font("Arial", 11));
-            gc.fillText(context.hoveredPinName, context.tooltipX + 5, context.tooltipY - 11);
+            gc.fillText(tooltipText, x + 5, y - 11);
         }
+    }
+
+    private String getPinTooltipText() {
+        if (!context.isWiring) {
+            return context.hoveredPinName;
+        }
+        if (context.wiringPinName == null) {
+            return null;
+        }
+        boolean hoveringTargetPin = context.isWiringFromOut
+            ? context.hoveredInPin != -1
+            : context.hoveredOutPin != -1;
+        return hoveringTargetPin ? context.hoveredPinName : context.wiringPinName;
     }
 
     private void drawWire(GraphicsContext gc, VisualWire wire) {
@@ -156,18 +177,58 @@ public class CanvasRenderer {
         double endX = wire.to.getInPinX(wire.inPin);
         double endY = wire.to.getInPinY(wire.inPin);
 
-        VisualWire.RouteMode routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null);
-        if (routeMode == VisualWire.RouteMode.ORTHOGONAL) {
-            for (Point2D point : buildOrthogonalPath(wire, lastX, lastY, endX, endY)) {
-                gc.lineTo(point.getX(), point.getY());
-            }
-        } else {
-            drawCurvedWirePath(gc, lastX, lastY, endX, endY, wire);
-        }
+        traceWirePath(gc, wire, lastX, lastY, endX, endY);
         gc.stroke();
 
         if (isSelected && context.wireBendEditMode) {
             drawBendPointHandles(gc, wire);
+        }
+    }
+
+    private boolean isConnectedToHoveredPin(VisualWire wire) {
+        if (context.hoveredNode == null) {
+            return false;
+        }
+        if (context.hoveredOutPin != -1) {
+            return wire.from == context.hoveredNode && wire.outPin == context.hoveredOutPin;
+        }
+        if (context.hoveredInPin != -1) {
+            return wire.to == context.hoveredNode && wire.inPin == context.hoveredInPin;
+        }
+        return false;
+    }
+
+    private void drawWireHighlight(GraphicsContext gc, VisualWire wire) {
+        double startX = wire.from.getOutPinX(wire.outPin);
+        double startY = wire.from.getOutPinY(wire.outPin);
+        double endX = wire.to.getInPinX(wire.inPin);
+        double endY = wire.to.getInPinY(wire.inPin);
+
+        gc.save();
+        gc.setStroke(Color.web("#FFD700", 0.9));
+        gc.setLineWidth(7 / context.zoom);
+        gc.beginPath();
+        gc.moveTo(startX, startY);
+        traceWirePath(gc, wire, startX, startY, endX, endY);
+        gc.stroke();
+
+        gc.setStroke(Color.web("#FFFFFF", 0.85));
+        gc.setLineWidth(2 / context.zoom);
+        gc.beginPath();
+        gc.moveTo(startX, startY);
+        traceWirePath(gc, wire, startX, startY, endX, endY);
+        gc.stroke();
+        gc.restore();
+    }
+
+    private void traceWirePath(GraphicsContext gc, VisualWire wire, double startX, double startY, double endX, double endY) {
+        VisualWire.RouteMode routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null);
+        if (routeMode == VisualWire.RouteMode.ORTHOGONAL) {
+            for (Point2D point : buildOrthogonalPath(wire, startX, startY, endX, endY)) {
+                gc.lineTo(point.getX(), point.getY());
+            }
+        } else {
+            drawCurvedWirePath(gc, startX, startY, endX, endY, wire);
         }
     }
 
