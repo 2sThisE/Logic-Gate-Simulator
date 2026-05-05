@@ -1,211 +1,224 @@
-# Logic Gate Simulator 모드(Mod) 제작 가이드
+# Logic Gate Simulator 모드 제작 가이드
 
-Logic Gate Simulator는 외부 JAR 파일을 통해 새로운 논리 게이트나 디스플레이 컴포넌트, 메모리 등을 동적으로 추가할 수 있는 강력한 **모딩(Modding) 시스템**을 지원합니다.
+[English](MODDING.en.md) | 한국어
 
----
+Logic Gate Simulator는 외부 JAR 파일을 통해 새로운 논리 게이트, 표시 장치, 메모리, 연산 컴포넌트를 추가할 수 있는 모딩 시스템을 제공합니다.
+
+이 문서는 모드 컴포넌트를 만드는 기본 구조와 주의할 점을 설명합니다.
 
 ## 1. 모딩 시스템 개요
-모드 컴포넌트는 크게 **로직(Node)**과 **그래픽(Symbol)** 두 부분으로 나뉘며, 메타데이터 어노테이션인 `@ComponentMeta`를 통해 서로 연결됩니다. 시뮬레이터 구동 중에 모드 로더(ModLoader)가 JAR 파일을 스캔하여 이 두 가지 클래스를 런타임에 등록합니다.
 
-- **Node**: 컴포넌트의 내부 상태, 핀의 개수, 시뮬레이션 연산 로직을 정의합니다.
-- **Symbol**: 에디터 상에서 컴포넌트가 어떻게 그려질지, 핀의 위치는 어디일지를 정의합니다.
-- **ComponentMeta**: 트리 뷰에 표시될 정보와 Node, Symbol을 하나로 묶어주는 `typeId`를 제공합니다.
+모드 컴포넌트는 보통 두 클래스로 구성됩니다.
 
----
+- **Node**: 핀 개수, 내부 상태, 논리 연산을 담당합니다.
+- **Symbol**: 에디터 화면에서 컴포넌트를 어떻게 그릴지와 핀 위치를 담당합니다.
 
-## 2. 노드 구현 (Node 클래스)
-실제 논리 연산이나 상태를 관리하는 클래스입니다.
-
-- **상속**: `com.logicgate.gates.Node`
-- **어노테이션**: `@ComponentMeta` 필수
-  - `name`: 좌측 컴포넌트 트리에 표시될 이름
-  - `section`: 컴포넌트 트리의 카테고리 (예: "Arithmetic", "Memory")
-  - `typeId`: 심볼과 노드를 연결하는 고유 ID 문자열
+두 클래스는 `@ComponentMeta`의 `typeId`로 연결됩니다. 앱은 모드 JAR을 스캔해 같은 `typeId`를 가진 Node와 Symbol을 등록합니다.
 
 ```java
+@ComponentMeta(section = "Arithmetic", name = "Full Adder", typeId = "FULL_ADDER")
+public class FullAdderNode extends Node {
+    ...
+}
+
+@ComponentMeta(section = "Arithmetic", name = "Full Adder Symbol", typeId = "FULL_ADDER")
+public class FullAdderSymbol extends AbstractGateSymbol {
+    ...
+}
+```
+
+## 2. Node 만들기
+
+Node는 실제 회로 시뮬레이션 로직을 담당합니다.
+
+- `com.logicgate.gates.Node`를 상속합니다.
+- 매개변수가 없는 기본 생성자가 필요합니다.
+- 생성자에서 `super(inputSize, outputSize)`로 입력/출력 핀 개수를 지정합니다.
+- `compute()`에서 입력 비트 `in`을 읽고 출력 비트 `out`을 설정합니다.
+- `in`과 `out`은 `int` 기반 비트 필드입니다. 현재 구조에서는 최대 32개의 입력/출력 비트를 다룰 수 있습니다.
+
+```java
+package com.example.logicgate.mods;
+
 import com.logicgate.editor.mod.ComponentMeta;
 import com.logicgate.gates.Node;
 
-@ComponentMeta(
-    name = "My Custom Gate",
-    section = "Logic",
-    typeId = "MY_CUSTOM_GATE"
-)
-public class MyNode extends Node {
-    
-    public MyNode() {
-        // 부모 생성자: (입력 핀 개수, 출력 핀 개수)
-        super(2, 1); 
-        this.typeId = "MY_CUSTOM_GATE"; // 부모 필드에 typeId 지정
+@ComponentMeta(section = "Logic", name = "My AND", typeId = "MY_AND")
+public class MyAndNode extends Node {
+
+    public MyAndNode() {
+        super(2, 1);
     }
 
-    /**
-     * 시뮬레이터 틱마다 호출되는 연산 로직.
-     * in 필드(long 타입)에는 연결된 입력 핀들의 비트 상태가 들어있습니다.
-     * 연산 후 out 필드(long 타입)에 결과를 저장합니다.
-     */
     @Override
     public void compute() {
-        // 비트 연산을 통한 입력 값 추출 (예: 최대 64개 핀)
-        long a = (in & 1);
-        long b = (in >> 1) & 1;
-
-        // 예시: AND 연산 후 출력에 저장
+        int a = in & 1;
+        int b = (in >> 1) & 1;
         out = a & b;
     }
 }
 ```
 
----
+## 3. Symbol 만들기
 
-## 3. 심볼 구현 (Symbol 클래스)
-화면에 그려질 모양과 각 핀의 정확한 렌더링 위치를 정의합니다. Node의 상태나 동적 속성을 참조하여 그래픽을 그릴 수 있습니다.
+Symbol은 컴포넌트의 모양, 크기, 핀 위치, 툴팁 이름을 정의합니다.
 
-- **상속**: `com.logicgate.editor.rendering.symbol.AbstractGateSymbol`
-- **어노테이션**: Node와 동일한 `typeId`를 가진 `@ComponentMeta` 필수
+- `com.logicgate.editor.rendering.symbol.AbstractGateSymbol`을 상속합니다.
+- Node와 같은 `typeId`를 가진 `@ComponentMeta`를 붙입니다.
+- `getSvgPathData()`에서 컴포넌트 외형을 SVG path 문자열로 반환합니다.
+- 기본 핀 위치 계산이 충분하면 `getInPinX/Y`, `getOutPinX/Y`는 생략할 수 있습니다.
 
 ```java
-import com.logicgate.editor.mod.ComponentMeta;
+package com.example.logicgate.mods;
+
 import com.logicgate.editor.model.VisualNode;
+import com.logicgate.editor.mod.ComponentMeta;
 import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
 
-@ComponentMeta(
-    name = "My Custom Gate",
-    section = "Logic",
-    typeId = "MY_CUSTOM_GATE"
-)
-public class MySymbol extends AbstractGateSymbol {
+@ComponentMeta(section = "Logic", name = "My AND Symbol", typeId = "MY_AND")
+public class MyAndSymbol extends AbstractGateSymbol {
 
     @Override
-    public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
-        gc.save();
-        // Hover/Select 상태에 따라 그림자 등을 기본 처리
-        prepareFill(gc, vn, isHovered, isSelected);
-
-        // 노드의 커스텀 속성을 가져와 렌더링에 반영 (선택 사항)
-        String color = "#888888";
-        if (vn.node instanceof MyNode) {
-            // color = ((MyNode) vn.node).getBgColor();
-        }
-
-        // 컴포넌트 본체 그리기
-        gc.setFill(Color.web(color));
-        gc.fillRect(0, 0, vn.width, vn.height);
-
-        gc.restore();
-    }
-
-    // 각 핀의 절대 좌표(Canvas 기준) 반환
-    @Override
-    public double getInPinX(VisualNode vn, int index) { return vn.x; }
-    
-    @Override
-    public double getInPinY(VisualNode vn, int index) { 
-        // 핀의 인덱스에 따라 Y축 위치 계산
-        return vn.y + 10 + (index * 20); 
+    public String getSvgPathData(VisualNode vn) {
+        return String.format(
+            "M 0 0 L %f 0 L %f %f L 0 %f Z",
+            vn.width, vn.width, vn.height, vn.height
+        );
     }
 
     @Override
-    public double getOutPinX(VisualNode vn, int index) { return vn.x + vn.width; }
-    
-    @Override
-    public double getOutPinY(VisualNode vn, int index) { return vn.y + vn.height / 2.0; }
+    public String getDefaultLabel() {
+        return "MY AND";
+    }
 
-    // 핀에 마우스를 올렸을 때 나타날 툴팁 텍스트
     @Override
-    public String getInPinName(int index) { return "Input " + index; }
-    
-    @Override
-    public String getOutPinName(int index) { return "Output " + index; }
+    public String getInPinName(int index) {
+        return index == 0 ? "A" : "B";
+    }
 
-    // 에디터 배치 시 크기 단위
     @Override
-    public int getUnitWidth(){ return 6; }
+    public String getOutPinName(int index) {
+        return "OUT";
+    }
+
     @Override
-    public int getUnitHeight(){ return 6; }
+    public int getUnitWidth() {
+        return 8;
+    }
+
+    @Override
+    public int getUnitHeight() {
+        return 6;
+    }
 }
 ```
 
----
+## 4. 속성 추가
 
-## 4. 커스텀 속성 추가 (Properties API)
-사용자가 시뮬레이터 우측 패널에서 컴포넌트의 설정(색상, 비트 수, 모드 등)을 실시간으로 변경하도록 만들 수 있습니다. **이 속성들은 파일 저장/불러오기 및 Undo/Redo 대상에 자동 포함**됩니다.
+컴포넌트 속성은 오른쪽 속성 패널에 표시됩니다. 속성 값은 프로젝트 저장/불러오기와 실행 취소/다시 실행에 포함되도록 `properties` Map에도 저장해야 합니다.
 
-`Node` 클래스 내부에서 다음 두 메서드를 오버라이드합니다.
+지원 타입:
 
-### A. 속성 정의 (`getComponentProperties`)
-사용자에게 노출할 `Property` 객체 리스트를 반환합니다.
+- `COLOR`
+- `BOOLEAN`
+- `INTEGER`
+- `STRING`
+- `CHOICE`
 
 ```java
-private String bgColor = "#336699";
-private String currentMode = "Fast";
+import com.logicgate.editor.model.Property;
+import java.util.List;
+
+private String color = "#336699";
+private boolean inverted = false;
 
 @Override
 public List<Property<?>> getComponentProperties() {
     List<Property<?>> props = super.getComponentProperties();
 
-    // 1. 색상 선택기 추가 (Property.Type.COLOR)
-    props.add(new Property<>("배경 색상", bgColor, Property.Type.COLOR, newVal -> {
-        this.bgColor = (String) newVal;
-        this.properties.put("bgColor", bgColor); // Map에 저장 (파일 저장/Undo용)
+    props.add(new Property<>("Color", color, Property.Type.COLOR, value -> {
+        color = (String) value;
+        properties.put("color", color);
     }));
 
-    // 2. 콤보박스 선택기 추가 (Property.Type.CHOICE)
-    props.add(new Property<>("동작 모드", currentMode, Property.Type.CHOICE,
-        new String[]{"Fast", "Slow", "Normal"}, newVal -> {
-            this.currentMode = (String) newVal;
-            this.properties.put("mode", currentMode);
-        }
-    ));
+    props.add(new Property<>("Inverted", inverted, Property.Type.BOOLEAN, value -> {
+        inverted = (Boolean) value;
+        properties.put("inverted", Boolean.toString(inverted));
+    }));
 
     return props;
 }
-```
 
-### B. 데이터 복구 (`applyProperties`)
-파일을 불러오거나 Undo/Redo 실행 시, 시뮬레이터가 `this.properties` Map의 데이터를 채운 뒤 이 메서드를 호출합니다. Map의 데이터를 필드에 반영하세요.
-
-```java
 @Override
 protected void applyProperties() {
-    if (properties.containsKey("bgColor")) {
-        this.bgColor = properties.get("bgColor");
+    if (properties.containsKey("color")) {
+        color = properties.get("color");
     }
-    if (properties.containsKey("mode")) {
-        this.currentMode = properties.get("mode");
+    if (properties.containsKey("inverted")) {
+        inverted = Boolean.parseBoolean(properties.get("inverted"));
     }
 }
 ```
 
----
+## 5. 도움말 문서 추가
 
-## 5. 도움말(Help) 파일 추가
-새로 만든 모드에 대한 설명서를 추가하려면 JAR 파일 내의 특정 경로에 마크다운(`.md`) 파일을 포함하면 됩니다. 시뮬레이터가 이 경로를 스캔하여 메뉴얼에 자동으로 추가합니다.
+모드 JAR 안에 마크다운 문서를 포함하면 앱의 도움말 창에서 자동으로 읽을 수 있습니다.
 
-1. `src/main/resources/META-INF/logicgate/help/` 디렉토리를 생성합니다.
-2. 해당 디렉토리 안에 마크다운 파일을 작성합니다. (예: `my-custom-gate.md`)
-3. 마크다운의 **가장 첫 번째 `# 제목` 헤딩**이 도움말 뷰어의 트리 제목(예: `Mod: 제목`)으로 사용됩니다.
+1. `src/main/resources/META-INF/logicgate/help/` 디렉터리를 만듭니다.
+2. 그 안에 `.md` 파일을 추가합니다.
+3. 문서의 첫 번째 `# 제목`이 도움말 항목 제목으로 사용됩니다.
 
-**예시 (`META-INF/logicgate/help/my-custom-gate.md`):**
+예시:
+
 ```markdown
-# My Custom Gate
+# My AND
 
-이 커스텀 게이트는 특별한 AND 연산을 수행합니다...
+My AND는 두 입력이 모두 HIGH일 때 출력이 HIGH가 되는 예제 컴포넌트입니다.
 ```
 
----
+## 6. Maven 프로젝트 구성
 
-## 6. 빌드 및 배포
-1. Maven 기반 프로젝트를 생성하고, 컴포넌트들을 작성합니다. `pom.xml` 구성은 `Logic-Gate-Mods`의 하위 모드 프로젝트(예: `Bus-Mod`)를 참조하세요.
-2. 프로젝트를 **JAR 파일**로 빌드합니다. (`mvn clean package`)
-3. 시뮬레이터를 실행하고 우측 상단의 **모드 관리자(Mod Manager)**를 엽니다.
-4. "Add Mod" 버튼을 통해 만들어진 JAR 파일을 불러옵니다.
-5. 재시작 혹은 트리를 확장하여 새 컴포넌트를 사용합니다!
+모드 프로젝트는 시뮬레이터 본체를 `provided` 의존성으로 참조합니다. 예제 모드들의 `pom.xml`을 복사해서 시작하는 것을 권장합니다.
 
----
+```xml
+<dependency>
+  <groupId>com.logicgate</groupId>
+  <artifactId>logicgate</artifactId>
+  <version>1.0.2</version>
+  <scope>provided</scope>
+</dependency>
 
-## ⚠️ 주의 사항
-- **기본 생성자**: 모드 로더가 Java Reflection을 사용해 컴포넌트를 생성하므로, `Node`와 `Symbol` 클래스 모두 **매개변수가 없는 기본 생성자(Default Constructor)**를 가져야 합니다.
-- **JavaFX Thread**: `Symbol`의 `draw` 메서드는 UI 스레드에서 실행됩니다. 하지만 `Node`의 `compute` 메서드는 백그라운드 시뮬레이션 스레드에서 초당 수십~수백 번 실행될 수 있으므로 UI 객체를 직접 조작해서는 안 됩니다.
+<dependency>
+  <groupId>org.openjfx</groupId>
+  <artifactId>javafx-controls</artifactId>
+  <version>21</version>
+  <scope>provided</scope>
+</dependency>
+```
+
+빌드:
+
+```bash
+mvn clean package
+```
+
+생성된 JAR 파일을 앱의 **Mod Manager**에서 추가하면 됩니다.
+
+## 7. 예제 모드
+
+이 저장소의 `Logic-Gate-Mods/` 아래에 예제 모드가 포함되어 있습니다.
+
+- `FullAdder-Mod`
+- `Bus-Mod`
+- `RAM-Mod`
+- `Seven-Segment-Mod`
+
+새 모드를 만들 때는 이 프로젝트들의 구조와 `pom.xml`을 참고하세요.
+
+## 주의 사항
+
+- Node와 Symbol 클래스 모두 기본 생성자가 필요합니다.
+- `compute()`는 시뮬레이션 스레드에서 반복 호출됩니다. JavaFX UI 객체를 직접 조작하지 마세요.
+- `typeId`는 고유해야 합니다. 다른 기본 컴포넌트나 모드와 충돌하지 않도록 접두사를 붙이는 것을 권장합니다.
+- 저장해야 하는 속성은 반드시 `properties` Map에도 반영하세요.
+- 신뢰할 수 없는 JAR 모드는 실행하지 마세요. 모드는 앱 내부에서 외부 코드를 로드합니다.
