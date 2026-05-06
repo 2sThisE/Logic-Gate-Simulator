@@ -127,28 +127,31 @@ public class ProjectManager {
         return copy;
     }
 
-    public void saveCurrentProject() {
-        if (context.projectRoot == null) return;
+    public boolean saveCurrentProject() {
+        if (context.projectRoot == null) return false;
 
         File lgsFile = new File(context.projectRoot, "circuit.lgs");
-        saveBinaryCircuit(lgsFile);
-        saveProjectConfig();
+        boolean saved = saveBinaryCircuit(lgsFile) && saveProjectConfig();
+        if (!saved) return false;
         System.out.println("프로젝트 전체 저장 완료: " + context.projectRoot.getAbsolutePath());
         context.setDirty(false);
+        return true;
     }
 
-    public void saveProjectConfig() {
-        if (context.projectRoot == null || context.projectConfig == null) return;
+    public boolean saveProjectConfig() {
+        if (context.projectRoot == null || context.projectConfig == null) return false;
         File prjFile = new File(context.projectRoot, "project.prj");
         try {
             Files.writeString(prjFile.toPath(), gson.toJson(context.projectConfig));
             System.out.println("프로젝트 설정 저장 완료: " + prjFile.getAbsolutePath());
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
-    private void saveBinaryCircuit(File file) {
+    private boolean saveBinaryCircuit(File file) {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             dos.writeInt(0x4C475321); // Magic Number
             dos.writeInt(8);          // Version 8 (선 고정 속성 추가)
@@ -187,8 +190,10 @@ public class ProjectManager {
                     dos.writeDouble(point.getY());
                 }
             }
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -364,7 +369,10 @@ public class ProjectManager {
                 String json = Files.readString(file.toPath());
                 ProjectData data = gson.fromJson(json, ProjectData.class);
                 if (!isValidProjectData(data)) {
-                    showError(bundle.getString("alert.import_fail.title"), bundle.getString("alert.import_fail.format"));
+                    notifyError(
+                        bundle.getString("notification.import_fail.title"),
+                        bundle.getString("notification.import_fail.format")
+                    );
                     return;
                 }
                 normalizeProjectData(data);
@@ -372,7 +380,10 @@ public class ProjectManager {
                 context.isPlacingImport = true;
                 context.placingRotation = 0;
             } catch (IOException | JsonSyntaxException e) {
-                showError(bundle.getString("alert.import_fail.title"), bundle.getString("alert.import_fail.read") + "\n" + e.getMessage());
+                notifyError(
+                    bundle.getString("notification.import_fail.title"),
+                    bundle.getString("notification.import_fail.read") + "\n" + e.getMessage()
+                );
             }
         }
     }
@@ -430,8 +441,10 @@ public class ProjectManager {
                     context.placingRotation = 0;
                 }
             } catch (JsonSyntaxException e) {
-                // JSON 파싱 실패 시 무시 (외부 텍스트 복사 등)
-                System.out.println("붙여넣기 데이터가 올바른 JSON 회로 형식이 아닙니다.");
+                notifyError(
+                    getNotificationText("notification.paste_fail.title", "Paste failed"),
+                    getNotificationText("notification.paste_fail.body", "Clipboard data is not a valid LogicGate circuit.")
+                );
             }
         }
     }
@@ -440,12 +453,18 @@ public class ProjectManager {
         return data != null && data.nodes != null;
     }
 
-    private void showError(String title, String content) {
-        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
+    private void notifyError(String title, String body) {
+        context.notify(EditorContext.NotificationType.ERROR, title, body);
+    }
+
+    private String getNotificationText(String key, String fallback) {
+        try {
+            return ResourceBundle
+                .getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault())
+                .getString(key);
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 
     private void normalizeProjectData(ProjectData data) {

@@ -7,11 +7,12 @@
 <?import java.net.URL?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.logicgate.ui.MainController">
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.logicgate.ui.MainController">
     <stylesheets>
         <URL value="@main.css" />
     </stylesheets>
-    <top>
+    <BorderPane>
+        <top>
         <HBox alignment="CENTER_LEFT" style="-fx-background-color: #202020;" onMousePressed="#clearFocusFromCanvas">
             <MenuBar fx:id="mainMenuBar" HBox.hgrow="ALWAYS" style="-fx-background-color: transparent;">
                 <Menu text="%menu.file">
@@ -48,8 +49,8 @@
                 </Button>
             </HBox>
         </HBox>
-    </top>
-    <center>
+        </top>
+        <center>
         <SplitPane dividerPositions="0.2, 0.8">
             <items>
                 <!-- 좌측 사이드바: 부품 상자 -->
@@ -88,8 +89,8 @@
                 </VBox>
             </items>
         </SplitPane>
-    </center>
-    <bottom>
+        </center>
+        <bottom>
         <VBox>
             <ListView fx:id="consoleListView" prefHeight="150" visible="false" managed="false" styleClass="console-list"/>
             <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="10">
@@ -102,5 +103,11 @@
                 <Label fx:id="versionLabel" text="" styleClass="status-label"/>
             </HBox>
         </VBox>
-    </bottom>
-</BorderPane>
+        </bottom>
+    </BorderPane>
+    <VBox fx:id="notificationPane" spacing="8" maxWidth="360" maxHeight="-Infinity" pickOnBounds="false" visible="false" managed="false" styleClass="notification-stack" StackPane.alignment="BOTTOM_RIGHT">
+        <padding>
+            <Insets top="0" right="16" bottom="34" left="0"/>
+        </padding>
+    </VBox>
+</StackPane>

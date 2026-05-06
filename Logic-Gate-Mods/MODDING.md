@@ -160,7 +160,60 @@ protected void applyProperties() {
 }
 ```
 
-## 5. 도움말 문서 추가
+## 5. 알림 표시
+
+모드는 `NotificationApi`를 사용해 에디터 우측 하단에 안내, 경고, 에러 알림을 표시할 수 있습니다. 짧은 상태 보고나 사용자가 알아야 하는 문제를 알릴 때 사용하세요.
+
+```java
+import com.logicgate.editor.mod.NotificationApi;
+
+NotificationApi.info("출력 완료", "16비트 컴퓨터가 값을 출력했습니다.");
+NotificationApi.warning("입력 범위 초과", "입력 값이 16비트 범위를 벗어났습니다.");
+NotificationApi.error("실행 오류", "명령어를 해석할 수 없습니다.");
+```
+
+타입을 직접 지정할 수도 있습니다.
+
+```java
+NotificationApi.show(
+    NotificationApi.Type.WARNING,
+    "상태 확인 필요",
+    "일부 입력 핀이 연결되지 않았습니다."
+);
+```
+
+알림 제목과 본문은 모드가 문자열로 전달합니다. 다국어 지원이 필요하면 모드 JAR 안에 자체 `ResourceBundle`을 넣고 현재 `Locale`에 맞는 문자열을 꺼내서 전달하세요.
+
+```java
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+ResourceBundle bundle = ResourceBundle.getBundle("com.example.my_mod.strings", Locale.getDefault());
+
+NotificationApi.warning(
+    bundle.getString("warning.title"),
+    bundle.getString("warning.body")
+);
+```
+
+`compute()`는 매우 자주 호출되므로 알림을 매번 띄우면 안 됩니다. 같은 상태에서 한 번만 알림을 띄우도록 모드 내부에서 플래그나 마지막 상태 값을 관리하세요.
+
+```java
+private boolean warnedMissingInput = false;
+
+@Override
+public void compute() {
+    boolean missingInput = (in & 1) == 0;
+    if (missingInput && !warnedMissingInput) {
+        NotificationApi.warning("입력 누락", "IN0 핀이 LOW 상태입니다.");
+        warnedMissingInput = true;
+    } else if (!missingInput) {
+        warnedMissingInput = false;
+    }
+}
+```
+
+## 6. 도움말 문서 추가
 
 모드 JAR 안에 마크다운 문서를 포함하면 앱의 도움말 창에서 자동으로 읽을 수 있습니다.
 
@@ -176,7 +229,7 @@ protected void applyProperties() {
 My AND는 두 입력이 모두 HIGH일 때 출력이 HIGH가 되는 예제 컴포넌트입니다.
 ```
 
-## 6. Maven 프로젝트 구성
+## 7. Maven 프로젝트 구성
 
 모드 프로젝트는 시뮬레이터 본체를 `provided` 의존성으로 참조합니다. 예제 모드들의 `pom.xml`을 복사해서 시작하는 것을 권장합니다.
 
@@ -204,7 +257,7 @@ mvn clean package
 
 생성된 JAR 파일을 앱의 **Mod Manager**에서 추가하면 됩니다.
 
-## 7. 예제 모드
+## 8. 예제 모드
 
 이 저장소의 `Logic-Gate-Mods/` 아래에 예제 모드가 포함되어 있습니다.
 
@@ -219,6 +272,8 @@ mvn clean package
 
 - Node와 Symbol 클래스 모두 기본 생성자가 필요합니다.
 - `compute()`는 시뮬레이션 스레드에서 반복 호출됩니다. JavaFX UI 객체를 직접 조작하지 마세요.
+- `compute()`에서 알림을 사용할 때는 같은 상태에서 반복 표시되지 않도록 중복 방지 로직을 넣으세요.
+- 알림의 다국어 처리는 모드 내부의 `ResourceBundle`에서 처리한 뒤 문자열로 전달하세요.
 - `typeId`는 고유해야 합니다. 다른 기본 컴포넌트나 모드와 충돌하지 않도록 접두사를 붙이는 것을 권장합니다.
 - 저장해야 하는 속성은 반드시 `properties` Map에도 반영하세요.
 - 신뢰할 수 없는 JAR 모드는 실행하지 마세요. 모드는 앱 내부에서 외부 코드를 로드합니다.
