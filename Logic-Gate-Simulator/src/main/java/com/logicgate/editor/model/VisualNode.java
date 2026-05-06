@@ -16,6 +16,7 @@ public class VisualNode {
     public double rotation = 0;
     public String label;
     public boolean showLabel = false;
+    public boolean locked = false;
     public String group = null;
 
     private double dragStartX, dragStartY;
@@ -48,6 +49,11 @@ public class VisualNode {
 
         props.add(new Property<>("라벨 표시", showLabel, Property.Type.BOOLEAN, newVal -> {
             this.showLabel = (Boolean) newVal;
+            context.setDirty(true);
+        }));
+
+        props.add(new Property<>("고정", locked, Property.Type.BOOLEAN, newVal -> {
+            this.locked = (Boolean) newVal;
             context.setDirty(true);
         }));
 
@@ -105,7 +111,11 @@ public class VisualNode {
                         for (com.logicgate.editor.model.VisualWire vw : context.visualWires) {
                             if ((vw.from == this && vw.outPin >= newCount) ||
                                 (vw.to == this && vw.inPin >= newCount)) {
-                                System.err.println("연결된 선이 있는 단자는 제거할 수 없습니다! 먼저 선을 지워주세요.");
+                                context.notify(
+                                    com.logicgate.editor.state.EditorContext.NotificationType.WARNING,
+                                    getNotificationText("notification.joint_pin_blocked.title", "단자 수 변경 불가"),
+                                    getNotificationText("notification.joint_pin_blocked.body", "연결된 선이 있는 단자는 제거할 수 없습니다. 먼저 해당 단자에 연결된 선을 지워주세요.")
+                                );
                                 return;
                             }
                         }
@@ -118,6 +128,16 @@ public class VisualNode {
         }
 
         return props;
+    }
+
+    private String getNotificationText(String key, String fallback) {
+        try {
+            return java.util.ResourceBundle
+                .getBundle("com.logicgate.ui.strings", java.util.Locale.getDefault())
+                .getString(key);
+        } catch (Exception e) {
+            return fallback;
+        }
     }
 
     public void setDragStart(double x, double y) {

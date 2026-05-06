@@ -71,7 +71,7 @@ public class CanvasRenderer {
             drawWire(gc, wire);
         }
         for (VisualWire wire : context.visualWires) {
-            if (isConnectedToHoveredPin(wire) && wire != context.selectedWire) {
+            if (isConnectedToHoveredPin(wire) && !context.selectedWires.contains(wire)) {
                 drawWireHighlight(gc, wire);
             }
         }
@@ -154,7 +154,7 @@ public class CanvasRenderer {
 
     private void drawWire(GraphicsContext gc, VisualWire wire) {
         boolean isHigh = (wire.from.node.getOut() & (1 << wire.outPin)) != 0;
-        boolean isSelected = (wire == context.selectedWire);
+        boolean isSelected = context.selectedWires.contains(wire) || wire == context.selectedWire;
 
         boolean showState = context.projectConfig == null || context.projectConfig.showWireState;
         String highColor = context.projectConfig != null ? context.projectConfig.wireHighColor : "#FF3366";
@@ -180,7 +180,7 @@ public class CanvasRenderer {
         traceWirePath(gc, wire, lastX, lastY, endX, endY);
         gc.stroke();
 
-        if (isSelected && context.wireBendEditMode) {
+        if (wire == context.selectedWire && context.wireBendEditMode && !wire.locked) {
             drawBendPointHandles(gc, wire);
         }
     }

@@ -160,7 +160,60 @@ protected void applyProperties() {
 }
 ```
 
-## 5. Adding Help Documents
+## 5. Showing Notifications
+
+Mods can use `NotificationApi` to show info, warning, and error notifications in the editor's bottom-right corner. Use notifications for short status updates or issues the user should notice.
+
+```java
+import com.logicgate.editor.mod.NotificationApi;
+
+NotificationApi.info("Output complete", "The 16-bit computer wrote a value.");
+NotificationApi.warning("Input out of range", "The input value is outside the 16-bit range.");
+NotificationApi.error("Execution error", "The instruction could not be decoded.");
+```
+
+You can also pass the type explicitly.
+
+```java
+NotificationApi.show(
+    NotificationApi.Type.WARNING,
+    "Check required",
+    "Some input pins are not connected."
+);
+```
+
+The title and body are passed as plain strings. If your mod needs localization, include your own `ResourceBundle` in the mod JAR and pass strings for the current `Locale`.
+
+```java
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+ResourceBundle bundle = ResourceBundle.getBundle("com.example.my_mod.strings", Locale.getDefault());
+
+NotificationApi.warning(
+    bundle.getString("warning.title"),
+    bundle.getString("warning.body")
+);
+```
+
+`compute()` is called very frequently, so do not show a notification every time it runs. Track a flag or the last state inside your mod so the same condition only notifies once.
+
+```java
+private boolean warnedMissingInput = false;
+
+@Override
+public void compute() {
+    boolean missingInput = (in & 1) == 0;
+    if (missingInput && !warnedMissingInput) {
+        NotificationApi.warning("Missing input", "IN0 is LOW.");
+        warnedMissingInput = true;
+    } else if (!missingInput) {
+        warnedMissingInput = false;
+    }
+}
+```
+
+## 6. Adding Help Documents
 
 If your mod JAR includes Markdown files in the expected location, the app can load them into the Help window.
 
@@ -176,7 +229,7 @@ Example:
 My AND is an example component whose output is HIGH when both inputs are HIGH.
 ```
 
-## 6. Maven Project Setup
+## 7. Maven Project Setup
 
 A mod project should depend on the simulator core with `provided` scope. Starting from one of the example mod `pom.xml` files is recommended.
 
@@ -204,7 +257,7 @@ mvn clean package
 
 Then load the generated JAR file from the app's **Mod Manager**.
 
-## 7. Example Mods
+## 8. Example Mods
 
 Example mods are included under `Logic-Gate-Mods/`.
 
@@ -219,6 +272,8 @@ Use their structure and `pom.xml` files as references when creating a new mod.
 
 - Node and Symbol classes both need no-argument constructors.
 - `compute()` is called repeatedly from the simulation thread. Do not directly manipulate JavaFX UI objects there.
+- If you use notifications from `compute()`, add deduplication logic so the same state does not show repeated notifications.
+- Notification localization should be handled inside your mod with a `ResourceBundle`, then passed as strings.
 - `typeId` must be unique. Use a prefix to avoid collisions with built-in components or other mods.
 - Values that need persistence must also be written to the `properties` map.
 - Do not run untrusted JAR mods. Mods load external code into the app.

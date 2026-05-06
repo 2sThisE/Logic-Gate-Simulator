@@ -11,6 +11,7 @@ import com.logicgate.editor.interaction.WiringManager;
 import com.logicgate.editor.io.ProjectManager;
 import com.logicgate.editor.mod.ModComponentInfo;
 import com.logicgate.editor.mod.ModLoader;
+import com.logicgate.editor.mod.NotificationApi;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.rendering.CanvasRenderer;
 import com.logicgate.editor.state.EditorContext;
@@ -22,6 +23,7 @@ import com.logicgate.ui.main.ComponentSearchController;
 import com.logicgate.ui.main.ComponentTreeController;
 import com.logicgate.ui.main.ConsoleLogController;
 import com.logicgate.ui.main.EditorContextMenuController;
+import com.logicgate.ui.main.NotificationController;
 import com.logicgate.ui.main.PropertyPaneController;
 
 import javafx.animation.AnimationTimer;
@@ -53,6 +55,7 @@ public class MainController {
     @FXML private ListView<ComponentSearchController.SearchResult> searchResultsListView;
     @FXML private VBox leftSidebar;
     @FXML private VBox rightSidebar;
+    @FXML private VBox notificationPane;
     @FXML private MenuBar mainMenuBar;
     @FXML private Button btnPlayPause;
     @FXML private Button btnReset;
@@ -75,6 +78,7 @@ public class MainController {
     private PropertyPaneController propertyPaneController;
     private EditorContextMenuController contextMenuController;
     private ConsoleLogController consoleLogController;
+    private NotificationController notificationController;
     private Runnable restartCallback;
 
     private ResourceBundle bundle() {
@@ -121,6 +125,7 @@ public class MainController {
         setupSimulationButtons();
         setupVersionLabel();
         consoleLogController.setup();
+        setupNotificationApi();
     }
 
     private void setupVersionLabel() {
@@ -141,11 +146,30 @@ public class MainController {
         propertyPaneController = new PropertyPaneController(context, propertyPane);
         contextMenuController = new EditorContextMenuController(context, simulationCanvas, propertyPaneController);
         consoleLogController = new ConsoleLogController(consoleListView, errorButton);
+        notificationController = new NotificationController(notificationPane);
 
         componentTreeController.setup();
         propertyPaneController.setup();
         contextMenuController.setup();
         componentSearchController.setup();
+    }
+
+    public void showNotification(NotificationController.Type type, String title, String body) {
+        if (notificationController != null) {
+            notificationController.show(type, title, body);
+        }
+    }
+
+    private void setupNotificationApi() {
+        NotificationApi.setHandler((type, title, body) -> showNotification(
+            switch (type) {
+                case INFO -> NotificationController.Type.INFO;
+                case WARNING -> NotificationController.Type.WARNING;
+                case ERROR -> NotificationController.Type.ERROR;
+            },
+            title,
+            body
+        ));
     }
 
     private void setupCanvas() {
@@ -201,6 +225,15 @@ public class MainController {
     private void setupEditorCallbacks() {
         context.onCopyRequested = projectManager::copyToClipboard;
         context.onPasteRequested = projectManager::pasteFromClipboard;
+        context.onNotificationRequested = (type, title, body) -> showNotification(
+            switch (type) {
+                case INFO -> NotificationController.Type.INFO;
+                case WARNING -> NotificationController.Type.WARNING;
+                case ERROR -> NotificationController.Type.ERROR;
+            },
+            title,
+            body
+        );
     }
 
     private void startRenderLoop() {
@@ -235,6 +268,7 @@ public class MainController {
         context.visualWires.clear();
         context.setSelectedNode(null);
         context.selectedWire = null;
+        context.selectedWires.clear();
         context.historyManager.clear();
 
         if (isNewProject) {
@@ -357,7 +391,12 @@ public class MainController {
 
     @FXML
     public void saveProject() {
-        projectManager.saveCurrentProject();
+        boolean saved = projectManager.saveCurrentProject();
+        showNotification(
+            saved ? NotificationController.Type.INFO : NotificationController.Type.ERROR,
+            bundle().getString(saved ? "notification.save.success" : "notification.save.failure"),
+            null
+        );
     }
 
     @FXML
@@ -480,6 +519,7 @@ public class MainController {
         context.selectedNodes.clear();
         context.setSelectedNode(null);
         context.selectedWire = null;
+        context.selectedWires.clear();
         context.setDirty(true);
     }
 
@@ -549,6 +589,7 @@ public class MainController {
 
         context.setSelectedNode(newNode);
         context.selectedWire = null;
+        context.selectedWires.clear();
         context.setDirty(true);
     }
 
@@ -626,10 +667,10 @@ public class MainController {
         if (warnings.isEmpty()) return;
 
         ResourceBundle bundle = bundle();
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(bundle.getString("alert.load_warn.title"));
-        alert.setHeaderText(bundle.getString("alert.load_warn.header"));
-        alert.setContentText(String.join("\n", warnings));
-        alert.showAndWait();
+        showNotification(
+            NotificationController.Type.ERROR,
+            bundle.getString("notification.load_warn.title"),
+            bundle.getString("notification.load_warn.body") + "\n" + String.join("\n", warnings)
+        );
     }
 }

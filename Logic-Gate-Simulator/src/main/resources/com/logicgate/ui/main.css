@@ -137,3 +137,83 @@
 
 .sim-btn-reset {
 }
+
+.notification-stack {
+    -fx-alignment: bottom-right;
+}
+
+.notification-card {
+    -fx-background-color: #252526;
+    -fx-border-color: #3c3c3c;
+    -fx-border-width: 1px;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-padding: 10 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 12, 0, 0, 4);
+    -fx-cursor: hand;
+    -fx-min-width: 320;
+    -fx-max-width: 360;
+}
+
+.notification-card:hover {
+    -fx-background-color: #2d2d2d;
+}
+
+.notification-info {
+    -fx-border-color: #3794ff;
+}
+
+.notification-warning {
+    -fx-border-color: #cca700;
+}
+
+.notification-error {
+    -fx-border-color: #f14c4c;
+}
+
+.notification-type {
+    -fx-padding: 0 2 0 0;
+}
+
+.notification-icon {
+    -fx-icon-color: #cccccc;
+}
+
+.notification-info .notification-icon {
+    -fx-icon-color: #3794ff;
+}
+
+.notification-warning .notification-icon {
+    -fx-icon-color: #cca700;
+}
+
+.notification-error .notification-icon {
+    -fx-icon-color: #f14c4c;
+}
+
+.notification-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-text-overrun: ellipsis;
+    -fx-wrap-text: false;
+}
+
+.notification-body {
+    -fx-text-fill: #d4d4d4;
+    -fx-font-size: 12px;
+    -fx-line-spacing: 2px;
+}
+
+.notification-close {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 12px;
+    -fx-padding: 0 4;
+    -fx-cursor: hand;
+}
+
+.notification-close:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-text-fill: #ffffff;
+}

@@ -1,6 +1,7 @@
 package com.logicgate.ui.main;
 
 import com.logicgate.editor.model.VisualNode;
+import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.state.EditorContext;
 
 import javafx.scene.control.CheckBox;
@@ -33,6 +34,7 @@ public class PropertyPaneController {
             switch(rawName) {
                 case "라벨": return bundle.getString("property.label");
                 case "라벨 표시": return bundle.getString("property.show_label");
+                case "고정": return bundle.getString("property.locked");
                 case "그룹 이름": return bundle.getString("property.group_name");
                 case "단자 수 (2~8)": return bundle.getString("property.pin_count");
                 case "작동 방식": return bundle.getString("property.mode");
@@ -48,9 +50,10 @@ public class PropertyPaneController {
     public void update() {
         propertyPane.getChildren().clear();
         VisualNode selected = context.getSelectedNode();
+        VisualWire selectedWire = context.selectedWire;
         ResourceBundle bundle = ResourceBundle.getBundle("com.logicgate.ui.strings", Locale.getDefault());
 
-        if (selected == null) {
+        if (selected == null && selectedWire == null) {
             propertyPane.setDisable(true);
             Label placeholder = new Label(bundle.getString("property.no_selection"));
             placeholder.setStyle("-fx-text-fill: #888888; -fx-font-style: italic;");
@@ -60,7 +63,10 @@ public class PropertyPaneController {
 
         propertyPane.setDisable(false);
 
-        for (com.logicgate.editor.model.Property<?> prop : selected.getProperties(context)) {
+        java.util.List<com.logicgate.editor.model.Property<?>> properties =
+            selected != null ? selected.getProperties(context) : selectedWire.getProperties(context);
+
+        for (com.logicgate.editor.model.Property<?> prop : properties) {
             VBox row = new VBox(5);
             Label nameLabel = new Label(getLocalizedPropertyName(prop.getName(), bundle));
             nameLabel.getStyleClass().add("property-label");

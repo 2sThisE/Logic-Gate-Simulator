@@ -60,6 +60,7 @@ public class EditorContextMenuController {
 
         boolean hasUngrouped = false;
         boolean hasGrouped = false;
+        boolean allLocked = !context.selectedNodes.isEmpty();
 
         for (VisualNode vn : context.selectedNodes) {
             if (vn.group == null) {
@@ -67,7 +68,13 @@ public class EditorContextMenuController {
             } else {
                 hasGrouped = true;
             }
+            allLocked &= vn.locked;
         }
+
+        boolean shouldUnlock = allLocked;
+        MenuItem lockItem = menuItem(shouldUnlock ? "context.unlock" : "context.lock");
+        contextMenu.getItems().add(lockItem);
+        lockItem.setOnAction(e -> setSelectedNodesLocked(!shouldUnlock));
 
         if (hasUngrouped) {
             contextMenu.getItems().add(groupItem);
@@ -81,8 +88,31 @@ public class EditorContextMenuController {
         deleteItem.setOnAction(e -> deleteSelectedNodes());
     }
 
+    private void setSelectedNodesLocked(boolean locked) {
+        if (context.selectedNodes.isEmpty()) return;
+        context.historyManager.saveState();
+        for (VisualNode vn : context.selectedNodes) {
+            vn.locked = locked;
+        }
+        context.setDirty(true);
+        propertyPaneController.update();
+    }
+
     private void addWireSelectionItems(MenuItem deleteItem) {
-        if (context.wireBendEditMode && context.selectedWireBendIndex >= 0) {
+        if (context.selectedWire != null && context.selectedWires.isEmpty()) {
+            context.selectedWires.add(context.selectedWire);
+        }
+
+        boolean allLocked = !context.selectedWires.isEmpty();
+        for (VisualWire wire : context.selectedWires) {
+            allLocked &= wire.locked;
+        }
+        boolean shouldUnlock = allLocked;
+        MenuItem lockItem = menuItem(shouldUnlock ? "context.unlock" : "context.lock");
+        contextMenu.getItems().add(lockItem);
+        lockItem.setOnAction(e -> setSelectedWiresLocked(!shouldUnlock));
+
+        if (context.wireBendEditMode && context.selectedWireBendIndex >= 0 && !context.selectedWire.locked) {
             MenuItem deleteBendItem = menuItem("context.bend.delete");
             contextMenu.getItems().add(deleteBendItem);
             deleteBendItem.setOnAction(e -> deleteSelectedWireBend());
@@ -93,31 +123,30 @@ public class EditorContextMenuController {
         MenuItem curvedItem = menuItem("context.curved");
         MenuItem resetRouteItem = menuItem("context.reset_route");
 
-        contextMenu.getItems().addAll(addBendItem, orthogonalItem, curvedItem);
-        if (!context.selectedWire.bendPoints.isEmpty()) {
-            contextMenu.getItems().add(resetRouteItem);
+        if (!context.selectedWire.locked) {
+            contextMenu.getItems().addAll(addBendItem, orthogonalItem, curvedItem);
+            if (!context.selectedWire.bendPoints.isEmpty()) {
+                contextMenu.getItems().add(resetRouteItem);
+            }
+
+            addBendItem.setOnAction(e -> addBendAtContextMenuPosition());
+            orthogonalItem.setOnAction(e -> setSelectedWireRouteMode(VisualWire.RouteMode.ORTHOGONAL));
+            curvedItem.setOnAction(e -> setSelectedWireRouteMode(VisualWire.RouteMode.CURVED));
+            resetRouteItem.setOnAction(e -> resetSelectedWireRoute());
         }
 
-        addBendItem.setOnAction(e -> addBendAtContextMenuPosition());
-        orthogonalItem.setOnAction(e -> setSelectedWireRouteMode(VisualWire.RouteMode.ORTHOGONAL));
-        curvedItem.setOnAction(e -> setSelectedWireRouteMode(VisualWire.RouteMode.CURVED));
-        resetRouteItem.setOnAction(e -> resetSelectedWireRoute());
-
         contextMenu.getItems().add(deleteItem);
-        deleteItem.setOnAction(e -> {
-            context.historyManager.saveState();
-            context.getCircuit().disconnectSpecific(
-                context.selectedWire.from.node,
-                context.selectedWire.outPin,
-                context.selectedWire.to.node,
-                context.selectedWire.inPin
-            );
-            context.visualWires.remove(context.selectedWire);
-            context.selectedWire = null;
-            context.selectedWireBendIndex = -1;
-            context.wireBendEditMode = false;
-            context.setDirty(true);
-        });
+        deleteItem.setOnAction(e -> deleteSelectedWires());
+    }
+
+    private void setSelectedWiresLocked(boolean locked) {
+        if (context.selectedWires.isEmpty()) return;
+        context.historyManager.saveState();
+        for (VisualWire wire : context.selectedWires) {
+            wire.locked = locked;
+        }
+        context.setDirty(true);
+        propertyPaneController.update();
     }
 
     private MenuItem menuItem(String key) {
@@ -129,7 +158,7 @@ public class EditorContextMenuController {
     }
 
     private void addBendAtContextMenuPosition() {
-        if (context.selectedWire == null) return;
+        if (context.selectedWire == null || context.selectedWire.locked) return;
         context.historyManager.saveState();
 
         VisualWire wire = context.selectedWire;
@@ -151,7 +180,7 @@ public class EditorContextMenuController {
     }
 
     private void deleteSelectedWireBend() {
-        if (context.selectedWire == null || context.selectedWireBendIndex < 0) return;
+        if (context.selectedWire == null || context.selectedWire.locked || context.selectedWireBendIndex < 0) return;
         context.historyManager.saveState();
         if (context.selectedWireBendIndex < context.selectedWire.bendPoints.size()) {
             context.selectedWire.bendPoints.remove(context.selectedWireBendIndex);
@@ -161,7 +190,7 @@ public class EditorContextMenuController {
     }
 
     private void setSelectedWireRouteMode(VisualWire.RouteMode routeMode) {
-        if (context.selectedWire == null) return;
+        if (context.selectedWire == null || context.selectedWire.locked) return;
         context.historyManager.saveState();
         context.selectedWire.routeMode = routeMode;
         if (routeMode == VisualWire.RouteMode.ORTHOGONAL) {
@@ -171,7 +200,7 @@ public class EditorContextMenuController {
     }
 
     private void resetSelectedWireRoute() {
-        if (context.selectedWire == null) return;
+        if (context.selectedWire == null || context.selectedWire.locked) return;
         context.historyManager.saveState();
         context.selectedWire.bendPoints.clear();
         context.selectedWireBendIndex = -1;
@@ -312,12 +341,34 @@ public class EditorContextMenuController {
         context.setSelectedNode(null);
     }
 
+    private void deleteSelectedWires() {
+        if (context.selectedWires.isEmpty() && context.selectedWire == null) return;
+        context.historyManager.saveState();
+
+        java.util.List<VisualWire> wiresToDelete = context.selectedWires.isEmpty()
+            ? java.util.List.of(context.selectedWire)
+            : new ArrayList<>(context.selectedWires);
+
+        for (VisualWire wire : wiresToDelete) {
+            context.getCircuit().disconnectSpecific(wire.from.node, wire.outPin, wire.to.node, wire.inPin);
+            context.visualWires.remove(wire);
+        }
+
+        context.selectedWires.clear();
+        context.selectedWire = null;
+        context.selectedWireBendIndex = -1;
+        context.wireBendEditMode = false;
+        context.setDirty(true);
+        propertyPaneController.update();
+    }
+
     private void removeNode(VisualNode vn) {
         context.getCircuit().removeNode(vn.node);
         context.visualNodes.remove(vn);
         context.visualWires.removeIf(w -> {
             boolean related = w.from == vn || w.to == vn;
             if (related && w == context.selectedWire) context.selectedWire = null;
+            if (related) context.selectedWires.remove(w);
             return related;
         });
         context.setDirty(true);

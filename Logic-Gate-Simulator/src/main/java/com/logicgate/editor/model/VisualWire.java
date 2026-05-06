@@ -3,6 +3,7 @@ package com.logicgate.editor.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.logicgate.editor.state.EditorContext;
 import javafx.geometry.Point2D;
 
 public class VisualWire {
@@ -16,6 +17,7 @@ public class VisualWire {
     public VisualNode to;
     public int inPin;
     public RouteMode routeMode;
+    public boolean locked = false;
     public List<Point2D> bendPoints = new ArrayList<>();
 
     public VisualWire(VisualNode from, int outPin, VisualNode to, int inPin) {
@@ -28,8 +30,25 @@ public class VisualWire {
     public VisualWire copyFor(VisualNode copiedFrom, VisualNode copiedTo) {
         VisualWire copy = new VisualWire(copiedFrom, outPin, copiedTo, inPin);
         copy.routeMode = routeMode;
+        copy.locked = locked;
         copy.bendPoints = new ArrayList<>(bendPoints);
         return copy;
+    }
+
+    public List<Property<?>> getProperties(EditorContext context) {
+        List<Property<?>> props = new ArrayList<>();
+        props.add(new Property<>("고정", locked, Property.Type.BOOLEAN, newVal -> {
+            boolean newLocked = (Boolean) newVal;
+            if (context.selectedWires.isEmpty()) {
+                this.locked = newLocked;
+            } else {
+                for (VisualWire wire : context.selectedWires) {
+                    wire.locked = newLocked;
+                }
+            }
+            context.setDirty(true);
+        }));
+        return props;
     }
 
     public RouteMode getEffectiveRouteMode(String projectWireStyle) {

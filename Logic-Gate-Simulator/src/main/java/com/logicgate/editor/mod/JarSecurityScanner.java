@@ -15,6 +15,7 @@ public class JarSecurityScanner {
     private static final String[] WHITELIST = {
         "com/logicgate/gates/Node",
         "com/logicgate/editor/mod/ComponentMeta",
+        "com/logicgate/editor/mod/NotificationApi",
         "com/logicgate/editor/rendering/symbol/AbstractGateSymbol",
         "com/logicgate/editor/model/VisualNode",
         "java/lang/",

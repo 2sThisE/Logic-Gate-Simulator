@@ -7,6 +7,7 @@ public class WireData {
     public int fromIdx, outPin;
     public int toIdx, inPin;
     public String routeMode;
+    public boolean locked;
     public List<PointData> bendPoints = new ArrayList<>();
 
     public WireData(int fromIdx, int outPin, int toIdx, int inPin) {

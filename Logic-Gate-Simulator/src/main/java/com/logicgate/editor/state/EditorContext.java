@@ -40,6 +40,7 @@ public class EditorContext {
     private VisualNode selectedNode = null;
     public final List<VisualNode> selectedNodes = new ArrayList<>();
     public VisualWire selectedWire = null;
+    public final List<VisualWire> selectedWires = new ArrayList<>();
     public boolean wireBendEditMode = false;
     public Runnable onSelectionChanged;
 
@@ -60,6 +61,7 @@ public class EditorContext {
     // Dirty state
     public Runnable onDirtyChanged;
     public Runnable onSaveRequested;
+    public NotificationHandler onNotificationRequested;
     private boolean isDirty = false;
 
     public boolean isDirty() { return isDirty; }
@@ -109,6 +111,23 @@ public class EditorContext {
     public EditorContext(Circuit circuit) {
         this.circuit = circuit;
         this.historyManager = new HistoryManager(this);
+    }
+
+    public void notify(NotificationType type, String title, String body) {
+        if (onNotificationRequested != null) {
+            onNotificationRequested.show(type, title, body);
+        }
+    }
+
+    public enum NotificationType {
+        INFO,
+        WARNING,
+        ERROR
+    }
+
+    @FunctionalInterface
+    public interface NotificationHandler {
+        void show(NotificationType type, String title, String body);
     }
 
     public Circuit getCircuit() { return circuit; }
