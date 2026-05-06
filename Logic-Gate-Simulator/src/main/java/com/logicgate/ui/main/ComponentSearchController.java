@@ -123,6 +123,7 @@ public class ComponentSearchController {
             }
         }
         context.selectedWire = null;
+        context.selectedWires.clear();
     }
 
     private void centerCameraOnNode(VisualNode vn) {

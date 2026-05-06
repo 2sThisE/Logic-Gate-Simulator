@@ -151,7 +151,7 @@ public class ProjectManager {
     private void saveBinaryCircuit(File file) {
         try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
             dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(6);          // Version 6 (Wire route/bend points 추가)
+            dos.writeInt(8);          // Version 8 (선 고정 속성 추가)
 
             dos.writeInt(context.visualNodes.size());
             for (VisualNode vn : context.visualNodes) {
@@ -162,6 +162,7 @@ public class ProjectManager {
                 dos.writeUTF(vn.label != null ? vn.label : "");
                 dos.writeBoolean(vn.showLabel);
                 dos.writeUTF(vn.group != null ? vn.group : "");
+                dos.writeBoolean(vn.locked);
 
                 Map<String, String> properties = vn.node.getProperties();
                 dos.writeInt(properties.size());
@@ -177,6 +178,7 @@ public class ProjectManager {
                 dos.writeInt(vw.outPin);
                 dos.writeInt(context.visualNodes.indexOf(vw.to));
                 dos.writeInt(vw.inPin);
+                dos.writeBoolean(vw.locked);
 
                 dos.writeUTF(vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name());
                 dos.writeInt(vw.bendPoints.size());
@@ -212,6 +214,10 @@ public class ProjectManager {
                     group = dis.readUTF();
                     if (group.isEmpty()) group = null;
                 }
+                boolean locked = false;
+                if (version >= 7) {
+                    locked = dis.readBoolean();
+                }
 
                 Map<String, String> properties = new HashMap<>();
                 if (version >= 5) {
@@ -231,6 +237,7 @@ public class ProjectManager {
                     context.getCircuit().addNode(logicNode);
                     VisualNode vn = new VisualNode(logicNode, x, y, label);
                     vn.showLabel = showLabel;
+                    vn.locked = locked;
                     vn.rotation = rotation;
                     vn.group = group;
                     context.visualNodes.add(vn);
@@ -245,6 +252,10 @@ public class ProjectManager {
                 int outPin = dis.readInt();
                 int toIdx = dis.readInt();
                 int inPin = dis.readInt();
+                boolean wireLocked = false;
+                if (version >= 8) {
+                    wireLocked = dis.readBoolean();
+                }
                 VisualWire.RouteMode routeMode = null;
                 java.util.List<Point2D> bendPoints = new java.util.ArrayList<>();
 
@@ -281,6 +292,7 @@ public class ProjectManager {
                     } else {
                         vw.setRouteModeFromProjectStyle(context.projectConfig != null ? context.projectConfig.wireStyle : null);
                     }
+                    vw.locked = wireLocked;
                     vw.bendPoints.addAll(bendPoints);
 
                     context.visualWires.add(vw);
@@ -317,7 +329,7 @@ public class ProjectManager {
                 for (VisualNode vn : context.visualNodes) {
                     NodeData nd = new NodeData(
                         vn.node.getTypeId(),
-                        vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.group
+                        vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.locked, vn.group
                     );
                     nd.properties.putAll(vn.node.getProperties());
                     data.nodes.add(nd);
@@ -383,7 +395,7 @@ public class ProjectManager {
         for (VisualNode vn : copiedNodes) {
             NodeData nd = new NodeData(
                 vn.node.getTypeId(),
-                vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.group
+                vn.x - cx, vn.y - cy, vn.rotation, vn.label, vn.showLabel, vn.locked, vn.group
             );
             nd.properties.putAll(vn.node.getProperties());
             data.nodes.add(nd);
@@ -454,6 +466,7 @@ public class ProjectManager {
 
     private void copyWireRouteToData(VisualWire wire, WireData data, double offsetX, double offsetY, double rotationDegrees) {
         data.routeMode = wire.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name();
+        data.locked = wire.locked;
         double rad = Math.toRadians(rotationDegrees);
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);

@@ -42,6 +42,7 @@ public class WiringManager {
                 if (w.to == node && w.inPin == pinIndex) {
                     context.getCircuit().disconnectSpecific(w.from.node, w.outPin, w.to.node, w.inPin);
                     if (w == context.selectedWire) context.selectedWire = null;
+                    context.selectedWires.remove(w);
                     it.remove();
                     context.setDirty(true);
                 }
@@ -68,6 +69,9 @@ public class WiringManager {
             if (removed && w == context.selectedWire) {
                 context.selectedWire = null;
             }
+            if (removed) {
+                context.selectedWires.remove(w);
+            }
             return removed;
         });
 
@@ -77,6 +81,8 @@ public class WiringManager {
         context.visualWires.add(newWire);
 
         context.selectedWire = newWire;
+        context.selectedWires.clear();
+        context.selectedWires.add(newWire);
         context.setSelectedNode(null);
         context.setDirty(true);
         historySavedForCurrentWiring = false;

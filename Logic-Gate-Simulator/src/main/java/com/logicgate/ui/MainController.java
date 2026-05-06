@@ -235,6 +235,7 @@ public class MainController {
         context.visualWires.clear();
         context.setSelectedNode(null);
         context.selectedWire = null;
+        context.selectedWires.clear();
         context.historyManager.clear();
 
         if (isNewProject) {
@@ -480,6 +481,7 @@ public class MainController {
         context.selectedNodes.clear();
         context.setSelectedNode(null);
         context.selectedWire = null;
+        context.selectedWires.clear();
         context.setDirty(true);
     }
 
@@ -549,6 +551,7 @@ public class MainController {
 
         context.setSelectedNode(newNode);
         context.selectedWire = null;
+        context.selectedWires.clear();
         context.setDirty(true);
     }
 

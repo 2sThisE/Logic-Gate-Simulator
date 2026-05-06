@@ -1,6 +1,7 @@
 package com.logicgate.editor.interaction;
 
 import com.logicgate.editor.model.VisualNode;
+import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.state.EditorContext;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -28,6 +29,7 @@ public class KeyboardInteractionHandler {
                 context.isPanning = false;
                 context.setSelectedNode(null);
                 context.selectedWire = null;
+                context.selectedWires.clear();
                 context.selectedWireBendIndex = -1;
                 context.wireBendEditMode = false;
                 context.isPlacingImport = false;
@@ -56,11 +58,23 @@ public class KeyboardInteractionHandler {
                     }
                     context.selectedWireBendIndex = -1;
                     context.setDirty(true);
+                } else if (!context.selectedWires.isEmpty()) {
+                    context.historyManager.saveState();
+                    for (VisualWire wire : new java.util.ArrayList<>(context.selectedWires)) {
+                        context.getCircuit().disconnectSpecific(wire.from.node, wire.outPin, wire.to.node, wire.inPin);
+                        context.visualWires.remove(wire);
+                    }
+                    context.selectedWires.clear();
+                    context.selectedWire = null;
+                    context.selectedWireBendIndex = -1;
+                    context.wireBendEditMode = false;
+                    context.setDirty(true);
                 } else if (context.selectedWire != null) {
                     context.historyManager.saveState();
                     context.getCircuit().disconnectSpecific(context.selectedWire.from.node, context.selectedWire.outPin, context.selectedWire.to.node, context.selectedWire.inPin);
                     context.visualWires.remove(context.selectedWire);
                     context.selectedWire = null;
+                    context.selectedWires.clear();
                     context.selectedWireBendIndex = -1;
                     context.wireBendEditMode = false;
                     context.setDirty(true);
@@ -83,6 +97,7 @@ public class KeyboardInteractionHandler {
                         context.setSelectedNode(context.selectedNodes.get(context.selectedNodes.size() - 1));
                     }
                     context.selectedWire = null;
+                    context.selectedWires.clear();
                     context.selectedWireBendIndex = -1;
                     context.wireBendEditMode = false;
                 }
@@ -97,6 +112,7 @@ public class KeyboardInteractionHandler {
                     context.selectedNodes.clear();
                     context.setSelectedNode(null);
                     context.selectedWire = null;
+                    context.selectedWires.clear();
                     context.selectedWireBendIndex = -1;
                     context.wireBendEditMode = false;
 
@@ -121,12 +137,17 @@ public class KeyboardInteractionHandler {
     }
 
     private void rotateSelection(double angle) {
+        if (context.selectedNodes.stream().noneMatch(vn -> !vn.locked)) {
+            return;
+        }
+
         context.historyManager.saveState();
 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
 
         for (VisualNode vn : context.selectedNodes) {
+            if (vn.locked) continue;
             minX = Math.min(minX, vn.x);
             minY = Math.min(minY, vn.y);
             maxX = Math.max(maxX, vn.x + vn.width);
@@ -141,6 +162,7 @@ public class KeyboardInteractionHandler {
         double sin = Math.sin(rad);
 
         for (VisualNode vn : context.selectedNodes) {
+            if (vn.locked) continue;
             double nodeCx = vn.x + vn.width / 2;
             double nodeCy = vn.y + vn.height / 2;
 
@@ -192,6 +214,7 @@ public class KeyboardInteractionHandler {
         context.visualWires.removeIf(w -> {
             boolean related = w.from == vn || w.to == vn;
             if (related && w == context.selectedWire) context.selectedWire = null;
+            if (related) context.selectedWires.remove(w);
             return related;
         });
         context.setDirty(true);

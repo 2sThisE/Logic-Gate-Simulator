@@ -16,6 +16,7 @@ public class VisualNode {
     public double rotation = 0;
     public String label;
     public boolean showLabel = false;
+    public boolean locked = false;
     public String group = null;
 
     private double dragStartX, dragStartY;
@@ -48,6 +49,11 @@ public class VisualNode {
 
         props.add(new Property<>("라벨 표시", showLabel, Property.Type.BOOLEAN, newVal -> {
             this.showLabel = (Boolean) newVal;
+            context.setDirty(true);
+        }));
+
+        props.add(new Property<>("고정", locked, Property.Type.BOOLEAN, newVal -> {
+            this.locked = (Boolean) newVal;
             context.setDirty(true);
         }));
 

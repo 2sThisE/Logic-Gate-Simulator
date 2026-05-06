@@ -40,6 +40,7 @@ public class EditorContext {
     private VisualNode selectedNode = null;
     public final List<VisualNode> selectedNodes = new ArrayList<>();
     public VisualWire selectedWire = null;
+    public final List<VisualWire> selectedWires = new ArrayList<>();
     public boolean wireBendEditMode = false;
     public Runnable onSelectionChanged;
 

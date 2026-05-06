@@ -74,7 +74,7 @@ public class HistoryManager {
 
             NodeData nd = new NodeData(
                 vn.node.getTypeId(),
-                vn.x, vn.y, vn.rotation, vn.label, vn.showLabel, vn.group
+                vn.x, vn.y, vn.rotation, vn.label, vn.showLabel, vn.locked, vn.group
             );
             if (vn.node.getProperties() != null) {
                 nd.properties.putAll(vn.node.getProperties());
@@ -95,6 +95,7 @@ public class HistoryManager {
                 vw.inPin
             );
             wd.routeMode = vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name();
+            wd.locked = vw.locked;
             if (vw.bendPoints != null) {
                 for (Point2D point : vw.bendPoints) {
                     if (point != null) {
@@ -135,6 +136,7 @@ public class HistoryManager {
                 restoredCircuit.addNode(logicNode);
                 VisualNode vn = new VisualNode(logicNode, nd.x, nd.y, nd.label);
                 vn.showLabel = nd.showLabel;
+                vn.locked = nd.locked;
                 vn.rotation = nd.rotation;
                 vn.group = nd.group;
                 restoredNodes.add(vn);
@@ -168,6 +170,7 @@ public class HistoryManager {
             context.setSelectedNode(null);
             context.selectedNodes.clear();
             context.selectedWire = null;
+            context.selectedWires.clear();
             context.selectedWireBendIndex = -1;
             context.wireBendEditMode = false;
             context.setDirty(true);
@@ -196,6 +199,7 @@ public class HistoryManager {
         } else {
             wire.setRouteModeFromProjectStyle(context.projectConfig != null ? context.projectConfig.wireStyle : null);
         }
+        wire.locked = data.locked;
         if (data.bendPoints != null) {
             for (WireData.PointData point : data.bendPoints) {
                 if (point == null) continue;
