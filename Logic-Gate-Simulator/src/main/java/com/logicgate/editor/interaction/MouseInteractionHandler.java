@@ -206,6 +206,12 @@ public class MouseInteractionHandler {
                 return;
             }
 
+            VisualWire selectedWireUnderPointer = getSelectedWireAt(context.worldMouseX, context.worldMouseY);
+            if (selectedWireUnderPointer != null) {
+                handleWirePress(selectedWireUnderPointer, event);
+                return;
+            }
+
             if (context.hoveredNode != null) {
                 if (context.hoveredOutPin != -1) {
                     wiringManager.startWiring(context.hoveredNode, context.hoveredOutPin, true);
@@ -275,40 +281,7 @@ public class MouseInteractionHandler {
 
             VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
             if (clickedWire != null) {
-                if (event.isShiftDown()) {
-                    toggleWireSelection(clickedWire);
-                    context.setSelectedNode(null);
-                    context.selectedNodes.clear();
-                    context.selectedWireBendIndex = -1;
-                    context.wireBendEditMode = false;
-                    return;
-                }
-
-                boolean wasSelected = context.selectedWire == clickedWire;
-                selectSingleWire(clickedWire);
-                context.selectedWireBendIndex = -1;
-                context.setSelectedNode(null);
-                context.selectedNodes.clear();
-                if (event.getClickCount() == 2) {
-                    clickedWire.routeMode = clickedWire.getEffectiveRouteMode(
-                        context.projectConfig != null ? context.projectConfig.wireStyle : null
-                    );
-                    if (wasSelected && !clickedWire.locked) {
-                        if (clickedWire.routeMode == VisualWire.RouteMode.ORTHOGONAL) {
-                            ensureExplicitOrthogonalBends(clickedWire);
-                        }
-                        context.wireBendEditMode = true;
-                    }
-                } else {
-                    if (!wasSelected) {
-                        context.wireBendEditMode = false;
-                    }
-                    WireSegmentHit segmentHit = getOrthogonalWireSegmentAt(clickedWire, context.worldMouseX, context.worldMouseY);
-                    if (segmentHit != null && !clickedWire.locked) {
-                        context.historyManager.saveState();
-                        startDraggingOrthogonalSegment(clickedWire, segmentHit);
-                    }
-                }
+                handleWirePress(clickedWire, event);
                 return;
             }
 
@@ -333,6 +306,12 @@ public class MouseInteractionHandler {
             }
 
             if (event.getButton() == MouseButton.SECONDARY) {
+                VisualWire selectedWireUnderPointer = getSelectedWireAt(context.worldMouseX, context.worldMouseY);
+                if (selectedWireUnderPointer != null) {
+                    handleWireContextMenu(selectedWireUnderPointer, event);
+                    return;
+                }
+
                 if (context.hoveredNode != null) {
                     if (!context.selectedNodes.contains(context.hoveredNode)) {
                         context.selectedNodes.clear();
@@ -351,24 +330,7 @@ public class MouseInteractionHandler {
                 } else {
                     VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
                     if (clickedWire != null) {
-                        boolean wasSelected = context.selectedWire == clickedWire;
-                        if (!context.selectedWires.contains(clickedWire)) {
-                            selectSingleWire(clickedWire);
-                        } else {
-                            context.selectedWire = clickedWire;
-                            notifySelectionChanged();
-                        }
-                        context.selectedWireBendIndex = -1;
-                        if (!wasSelected) {
-                            context.wireBendEditMode = false;
-                        }
-                        context.setSelectedNode(null);
-                        context.selectedNodes.clear();
-                        if (context.onContextMenuRequested != null) {
-                            context.contextMenuWorldX = context.worldMouseX;
-                            context.contextMenuWorldY = context.worldMouseY;
-                            context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
-                        }
+                        handleWireContextMenu(clickedWire, event);
                         return;
                     }
                 }
@@ -562,6 +524,64 @@ public class MouseInteractionHandler {
         updateHoverState();
     }
 
+    private void handleWireContextMenu(VisualWire clickedWire, MouseEvent event) {
+        boolean wasSelected = context.selectedWire == clickedWire;
+        if (!context.selectedWires.contains(clickedWire)) {
+            selectSingleWire(clickedWire);
+        } else {
+            context.selectedWire = clickedWire;
+            notifySelectionChanged();
+        }
+        context.selectedWireBendIndex = -1;
+        if (!wasSelected) {
+            context.wireBendEditMode = false;
+        }
+        context.setSelectedNode(null);
+        context.selectedNodes.clear();
+        if (context.onContextMenuRequested != null) {
+            context.contextMenuWorldX = context.worldMouseX;
+            context.contextMenuWorldY = context.worldMouseY;
+            context.onContextMenuRequested.accept(event.getScreenX(), event.getScreenY());
+        }
+    }
+
+    private void handleWirePress(VisualWire clickedWire, MouseEvent event) {
+        if (event.isShiftDown()) {
+            toggleWireSelection(clickedWire);
+            context.setSelectedNode(null);
+            context.selectedNodes.clear();
+            context.selectedWireBendIndex = -1;
+            context.wireBendEditMode = false;
+            return;
+        }
+
+        boolean wasSelected = context.selectedWire == clickedWire;
+        selectSingleWire(clickedWire);
+        context.selectedWireBendIndex = -1;
+        context.setSelectedNode(null);
+        context.selectedNodes.clear();
+        if (event.getClickCount() == 2) {
+            clickedWire.routeMode = clickedWire.getEffectiveRouteMode(
+                context.projectConfig != null ? context.projectConfig.wireStyle : null
+            );
+            if (wasSelected && !clickedWire.locked) {
+                if (clickedWire.routeMode == VisualWire.RouteMode.ORTHOGONAL) {
+                    ensureExplicitOrthogonalBends(clickedWire);
+                }
+                context.wireBendEditMode = true;
+            }
+        } else {
+            if (!wasSelected) {
+                context.wireBendEditMode = false;
+            }
+            WireSegmentHit segmentHit = getOrthogonalWireSegmentAt(clickedWire, context.worldMouseX, context.worldMouseY);
+            if (segmentHit != null && !clickedWire.locked) {
+                context.historyManager.saveState();
+                startDraggingOrthogonalSegment(clickedWire, segmentHit);
+            }
+        }
+    }
+
     private void updateHoverState() {
         if (context.isPlacingImport) {
             context.hoveredNode = null;
@@ -717,8 +737,22 @@ public class MouseInteractionHandler {
         if (context.selectedWire != null && distanceToWire(x, y, context.selectedWire) < threshold) {
             return context.selectedWire;
         }
+        for (VisualWire wire : context.selectedWires) {
+            if (wire != context.selectedWire && distanceToWire(x, y, wire) < threshold) return wire;
+        }
         for (VisualWire wire : context.visualWires) {
             if (distanceToWire(x, y, wire) < threshold) return wire;
+        }
+        return null;
+    }
+
+    private VisualWire getSelectedWireAt(double x, double y) {
+        double threshold = 3 / context.zoom;
+        if (context.selectedWire != null && distanceToWire(x, y, context.selectedWire) < threshold) {
+            return context.selectedWire;
+        }
+        for (VisualWire wire : context.selectedWires) {
+            if (wire != context.selectedWire && distanceToWire(x, y, wire) < threshold) return wire;
         }
         return null;
     }
