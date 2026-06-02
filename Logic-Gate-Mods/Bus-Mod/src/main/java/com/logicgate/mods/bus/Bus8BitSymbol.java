@@ -24,13 +24,11 @@ public class Bus8BitSymbol extends AbstractGateSymbol {
     public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
         gc.save();
         prepareFill(gc, vn, isHovered, isSelected);
-        
-        // 버스 배경 (어두운 회색 바)
+
         gc.setFill(Color.web("#222222"));
         gc.fillRoundRect(0, 0, vn.width, vn.height, 5, 5);
         gc.strokeRoundRect(0, 0, vn.width, vn.height, 5, 5);
 
-        // 버스 내부 장식 (금색 라인들 - 고속도로 느낌)
         gc.setStroke(Color.web("#FFD700", 0.5));
         gc.setLineWidth(1);
         for (int i = 0; i < 8; i++) {
@@ -38,7 +36,6 @@ public class Bus8BitSymbol extends AbstractGateSymbol {
             gc.strokeLine(5, y, vn.width - 5, y);
         }
 
-        // 라벨
         gc.setFill(Color.WHITE);
         gc.setFont(new Font(10));
         gc.fillText("PORT A", 5, 15);
@@ -55,10 +52,9 @@ public class Bus8BitSymbol extends AbstractGateSymbol {
 
     @Override
     public double getInPinY(VisualNode vn, int index) {
-        // 인덱스에 따라 포트별로 분산 배치 (총 24개)
-        if (index < 8) return vn.y + 20 + (index * 15); // Port A
-        if (index < 16) return vn.y + vn.height * 0.4 + 10 + ((index - 8) * 15); // Port B
-        return vn.y + vn.height * 0.7 + 10 + ((index - 16) * 15); // Port C
+        if (index < 8) return vn.y + 20 + (index * 15);
+        if (index < 16) return vn.y + vn.height * 0.4 + 10 + ((index - 8) * 15);
+        return vn.y + vn.height * 0.7 + 10 + ((index - 16) * 15);
     }
 
     @Override
@@ -68,7 +64,7 @@ public class Bus8BitSymbol extends AbstractGateSymbol {
 
     @Override
     public double getOutPinY(VisualNode vn, int index) {
-        return vn.y + vn.height * 0.3 + (index * 20); // 중앙 우측에 출력 8개
+        return vn.y + vn.height * 0.3 + (index * 20);
     }
 
     @Override
@@ -85,6 +81,7 @@ public class Bus8BitSymbol extends AbstractGateSymbol {
 
     @Override
     public int getUnitWidth(){return 10;}
+
     @Override
     public int getUnitHeight(){return 45;}
 }

@@ -15,6 +15,10 @@ import javafx.geometry.Point2D;
 import javafx.scene.paint.Color;
 
 public class CanvasRenderer {
+    private static final double BEND_HANDLE_SIZE_PX = 10.0;
+    private static final double BEND_HANDLE_STROKE_PX = 2.0;
+    private static final double SELECTED_BEND_RING_PADDING_PX = 3.0;
+
     private final Canvas canvas;
     private final EditorContext context;
     private final WiringManager wiringManager;
@@ -281,8 +285,9 @@ public class CanvasRenderer {
         gc.save();
         gc.setFill(Color.web("#1E1E1E"));
         gc.setStroke(Color.web("#00FFFF"));
-        gc.setLineWidth(2 / context.zoom);
-        double size = 8 / context.zoom;
+        gc.setLineWidth(screenToWorld(BEND_HANDLE_STROKE_PX));
+        double size = screenToWorld(BEND_HANDLE_SIZE_PX);
+        double selectedPadding = screenToWorld(SELECTED_BEND_RING_PADDING_PX);
         for (int i = 0; i < wire.bendPoints.size(); i++) {
             Point2D point = wire.bendPoints.get(i);
             double x = point.getX() - size / 2;
@@ -291,7 +296,7 @@ public class CanvasRenderer {
             gc.strokeOval(x, y, size, size);
             if (i == context.selectedWireBendIndex) {
                 gc.setStroke(Color.web("#FFD700"));
-                gc.strokeOval(x - 3 / context.zoom, y - 3 / context.zoom, size + 6 / context.zoom, size + 6 / context.zoom);
+                gc.strokeOval(x - selectedPadding, y - selectedPadding, size + selectedPadding * 2, size + selectedPadding * 2);
                 gc.setStroke(Color.web("#00FFFF"));
             }
         }
@@ -400,5 +405,9 @@ public class CanvasRenderer {
             }
         }
         gc.restore();
+    }
+
+    private double screenToWorld(double pixels) {
+        return pixels / Math.max(context.zoom, 0.0001);
     }
 }

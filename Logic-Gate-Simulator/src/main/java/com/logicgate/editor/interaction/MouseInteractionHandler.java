@@ -14,11 +14,19 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.geometry.Point2D;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MouseInteractionHandler {
+    private static final double WIRE_HIT_RADIUS_PX = 6.0;
+    private static final double SELECTED_WIRE_HIT_RADIUS_PX = 8.0;
+    private static final double WIRE_BEND_HIT_RADIUS_PX = 12.0;
+
     private final EditorContext context;
     private final WiringManager wiringManager;
+    private final Map<VisualWire, List<Point2D>> nodeDragWireBendStarts = new IdentityHashMap<>();
 
     public MouseInteractionHandler(EditorContext context, WiringManager wiringManager) {
         this.context = context;
@@ -206,6 +214,18 @@ public class MouseInteractionHandler {
                 return;
             }
 
+            WireBendHit bendHit = getWireBendAt(context.worldMouseX, context.worldMouseY);
+            if (bendHit != null) {
+                context.historyManager.saveState();
+                selectSingleWire(bendHit.wire);
+                context.selectedWireBendIndex = bendHit.index;
+                context.setSelectedNode(null);
+                context.selectedNodes.clear();
+                context.draggingWire = bendHit.wire;
+                context.draggingWireBendIndex = bendHit.index;
+                return;
+            }
+
             VisualWire selectedWireUnderPointer = getSelectedWireAt(context.worldMouseX, context.worldMouseY);
             if (selectedWireUnderPointer != null) {
                 handleWirePress(selectedWireUnderPointer, event);
@@ -263,20 +283,9 @@ public class MouseInteractionHandler {
                     for (VisualNode vn : context.selectedNodes) {
                         vn.setDragStart(vn.x, vn.y);
                     }
+                    captureNodeDragWireBendStarts();
                     return;
                 }
-            }
-
-            WireBendHit bendHit = getWireBendAt(context.worldMouseX, context.worldMouseY);
-            if (bendHit != null) {
-                context.historyManager.saveState();
-                selectSingleWire(bendHit.wire);
-                context.selectedWireBendIndex = bendHit.index;
-                context.setSelectedNode(null);
-                context.selectedNodes.clear();
-                context.draggingWire = bendHit.wire;
-                context.draggingWireBendIndex = bendHit.index;
-                return;
             }
 
             VisualWire clickedWire = getWireAt(context.worldMouseX, context.worldMouseY);
@@ -430,6 +439,7 @@ public class MouseInteractionHandler {
                 vn.x = vn.getDragStartX() + dx;
                 vn.y = vn.getDragStartY() + dy;
             }
+            moveNodeDragWireBends(dx, dy);
         } else if (context.draggingWire != null && context.draggingWireBendIndex >= 0) {
             if (context.draggingWire.locked) {
                 return;
@@ -520,8 +530,35 @@ public class MouseInteractionHandler {
         context.draggingWire = null;
         context.draggingWireBendIndex = -1;
         context.draggingWireSegmentIndex = -1;
+        nodeDragWireBendStarts.clear();
         context.isPanning = false;
         updateHoverState();
+    }
+
+    private void captureNodeDragWireBendStarts() {
+        nodeDragWireBendStarts.clear();
+        for (VisualWire wire : context.visualWires) {
+            if (wire.locked || wire.bendPoints == null || wire.bendPoints.isEmpty()) continue;
+            if (isNodeMovingWithDrag(wire.from) && isNodeMovingWithDrag(wire.to)) {
+                nodeDragWireBendStarts.put(wire, new ArrayList<>(wire.bendPoints));
+            }
+        }
+    }
+
+    private void moveNodeDragWireBends(double dx, double dy) {
+        for (Map.Entry<VisualWire, List<Point2D>> entry : nodeDragWireBendStarts.entrySet()) {
+            VisualWire wire = entry.getKey();
+            if (wire.locked) continue;
+
+            wire.bendPoints.clear();
+            for (Point2D point : entry.getValue()) {
+                wire.bendPoints.add(new Point2D(point.getX() + dx, point.getY() + dy));
+            }
+        }
+    }
+
+    private boolean isNodeMovingWithDrag(VisualNode node) {
+        return node != null && !node.locked && context.selectedNodes.contains(node);
     }
 
     private void handleWireContextMenu(VisualWire clickedWire, MouseEvent event) {
@@ -733,12 +770,13 @@ public class MouseInteractionHandler {
     }
 
     private VisualWire getWireAt(double x, double y) {
-        double threshold = 3 / context.zoom;
-        if (context.selectedWire != null && distanceToWire(x, y, context.selectedWire) < threshold) {
+        double selectedThreshold = screenToWorld(SELECTED_WIRE_HIT_RADIUS_PX);
+        double threshold = screenToWorld(WIRE_HIT_RADIUS_PX);
+        if (context.selectedWire != null && distanceToWire(x, y, context.selectedWire) < selectedThreshold) {
             return context.selectedWire;
         }
         for (VisualWire wire : context.selectedWires) {
-            if (wire != context.selectedWire && distanceToWire(x, y, wire) < threshold) return wire;
+            if (wire != context.selectedWire && distanceToWire(x, y, wire) < selectedThreshold) return wire;
         }
         for (VisualWire wire : context.visualWires) {
             if (distanceToWire(x, y, wire) < threshold) return wire;
@@ -747,7 +785,7 @@ public class MouseInteractionHandler {
     }
 
     private VisualWire getSelectedWireAt(double x, double y) {
-        double threshold = 3 / context.zoom;
+        double threshold = screenToWorld(SELECTED_WIRE_HIT_RADIUS_PX);
         if (context.selectedWire != null && distanceToWire(x, y, context.selectedWire) < threshold) {
             return context.selectedWire;
         }
@@ -762,7 +800,7 @@ public class MouseInteractionHandler {
             return null;
         }
 
-        double threshold = 9 / context.zoom;
+        double threshold = screenToWorld(WIRE_BEND_HIT_RADIUS_PX);
         for (VisualWire wire : context.visualWires) {
             if (wire.locked) continue;
             for (int i = 0; i < wire.bendPoints.size(); i++) {
@@ -781,7 +819,7 @@ public class MouseInteractionHandler {
             return null;
         }
 
-        double threshold = 3 / context.zoom;
+        double threshold = screenToWorld(WIRE_HIT_RADIUS_PX);
         List<Point2D> points = buildWireHitPath(wire);
         double minDistance = Double.MAX_VALUE;
         WireSegmentHit best = null;
@@ -1069,5 +1107,9 @@ public class MouseInteractionHandler {
         double projX = x1 + t * (x2 - x1);
         double projY = y1 + t * (y2 - y1);
         return Math.hypot(px - projX, py - projY);
+    }
+
+    private double screenToWorld(double pixels) {
+        return pixels / Math.max(context.zoom, 0.0001);
     }
 }

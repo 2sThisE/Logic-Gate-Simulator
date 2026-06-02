@@ -1,7 +1,9 @@
 package com.logicgate.mods.memory;
 
 import com.logicgate.editor.mod.ComponentMeta;
+import com.logicgate.editor.model.Property;
 import com.logicgate.gates.Node;
+import java.util.List;
 
 @ComponentMeta(
     name = "256x8 RAM (8-bit Addressable)",
@@ -11,30 +13,55 @@ import com.logicgate.gates.Node;
 public class Ram8BitNode extends Node {
     private final int[] memory = new int[256];
     private boolean lastWE = false;
+    private String hexData = "";
 
     public Ram8BitNode() {
-        super(18, 8); // 8-bit Addr (0-7), 8-bit Data In (8-15), WE (16), OE (17) / 8-bit Data Out (0-7)
+        super(18, 8);
         this.typeId = "RAM_256X8";
     }
 
     @Override
     public void compute() {
-        int addr = in & 0xFF;           // A0-A7
-        int dataIn = (in >> 8) & 0xFF;  // D0-D7
-        boolean we = (in & (1 << 16)) != 0; // Write Enable
-        boolean oe = (in & (1 << 17)) != 0; // Output Enable (Active High)
+        int addr = in & 0xFF;
+        int dataIn = (in >> 8) & 0xFF;
+        boolean we = (in & (1 << 16)) != 0;
+        boolean oe = (in & (1 << 17)) != 0;
 
-        // Positive Edge Triggered Write
         if (we && !lastWE) {
             memory[addr] = dataIn;
         }
         lastWE = we;
+        out = oe ? (memory[addr] & 0xFF) : 0;
+    }
 
-        // Output logic
-        if (oe) {
-            out = memory[addr] & 0xFF;
-        } else {
-            out = 0; // High-Z 대신 0 (OR 버스용)
+    @Override
+    public List<Property<?>> getComponentProperties() {
+        List<Property<?>> props = super.getComponentProperties();
+        props.add(new Property<>("Hex Data (Space separated)", hexData, Property.Type.STRING, value -> {
+            hexData = (String) value;
+            properties.put("hexData", hexData);
+            loadHexData();
+        }));
+        return props;
+    }
+
+    @Override
+    protected void applyProperties() {
+        if (properties.containsKey("hexData")) {
+            hexData = properties.get("hexData");
+            loadHexData();
+        }
+    }
+
+    private void loadHexData() {
+        if (hexData == null || hexData.isEmpty()) return;
+        String[] parts = hexData.split("\\s+");
+        for (int i = 0; i < Math.min(parts.length, 256); i++) {
+            try {
+                memory[i] = Integer.parseInt(parts[i], 16) & 0xFF;
+            } catch (NumberFormatException e) {
+                // Ignore invalid hex
+            }
         }
     }
 }
