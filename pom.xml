@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.logicgate</groupId>
+  <artifactId>logicgate-parent</artifactId>
+  <version>1.1.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Logic Gate Simulator</name>
+
+  <modules>
+    <module>Logic-Gate-API</module>
+    <module>Logic-Gate-Simulator</module>
+    <module>Logic-Gate-Mods/Bus-Mod</module>
+    <module>Logic-Gate-Mods/Computer-Mod</module>
+    <module>Logic-Gate-Mods/FullAdder-Mod</module>
+    <module>Logic-Gate-Mods/RAM-Mod</module>
+    <module>Logic-Gate-Mods/Seven-Segment-Mod</module>
+  </modules>
+</project>

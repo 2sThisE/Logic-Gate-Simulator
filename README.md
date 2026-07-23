@@ -33,6 +33,7 @@ Logic Gate Simulator는 Java와 JavaFX로 만든 디지털 논리 회로 시뮬�
 
 ## 프로젝트 구조
 
+- `Logic-Gate-API/`: 본체와 모드가 공유하는 Java 21 모드 API입니다.
 - `Logic-Gate-Simulator/`: 시뮬레이터 본체입니다. JavaFX UI, 회로 시뮬레이션, 저장/불러오기, 기본 컴포넌트를 포함합니다.
 - `Logic-Gate-Mods/`: 예제 및 공식 모드 모음입니다.
   - `Bus-Mod/`: 8비트 버스 통합기와 트라이스테이트 버퍼를 제공합니다.
@@ -50,14 +51,14 @@ Logic Gate Simulator는 Java와 JavaFX로 만든 디지털 논리 회로 시뮬�
 ### 빌드
 
 ```bash
-cd Logic-Gate-Simulator
-mvn clean package
+mvn clean package -pl Logic-Gate-Simulator -am
 ```
 
 ### 실행
 
 ```bash
-mvn javafx:run
+mvn install -pl Logic-Gate-API -DskipTests
+mvn -f Logic-Gate-Simulator/pom.xml javafx:run
 ```
 
 또는 IDE에서 `com.logicgate.ui.MainApp` 클래스를 실행할 수 있습니다.

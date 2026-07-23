@@ -231,13 +231,25 @@ My AND is an example component whose output is HIGH when both inputs are HIGH.
 
 ## 7. Maven Project Setup
 
-A mod project should depend on the simulator core with `provided` scope. Starting from one of the example mod `pom.xml` files is recommended.
+A mod project should depend on the separately packaged Mod API with `provided` scope. The app supplies API classes at runtime, so do not bundle them in the mod JAR. Starting from one of the example mod `pom.xml` files is recommended.
+
+```xml
+<dependency>
+  <groupId>com.logicgate</groupId>
+  <artifactId>logicgate-api</artifactId>
+  <version>1.1.1-SNAPSHOT</version>
+  <scope>provided</scope>
+</dependency>
+```
+
+The custom Symbol API still depends on the simulator's `VisualNode`. Mods that provide custom symbols must temporarily add the following compatibility dependency in addition to the API:
+The mod API and simulator rendering classes are both built for Java 21, so all mods must use JDK 21.
 
 ```xml
 <dependency>
   <groupId>com.logicgate</groupId>
   <artifactId>logicgate</artifactId>
-  <version>1.0.2</version>
+  <version>1.1.1-SNAPSHOT</version>
   <scope>provided</scope>
 </dependency>
 
@@ -247,6 +259,18 @@ A mod project should depend on the simulator core with `provided` scope. Startin
   <version>21</version>
   <scope>provided</scope>
 </dependency>
+```
+
+For a logic-only component, install just the API into your local Maven repository from the repository root:
+
+```bash
+mvn install -pl Logic-Gate-API
+```
+
+If the mod also defines a custom JavaFX symbol, install the simulator too because it is currently a temporary compatibility dependency:
+
+```bash
+mvn install -pl Logic-Gate-Simulator -am -DskipTests
 ```
 
 Build:

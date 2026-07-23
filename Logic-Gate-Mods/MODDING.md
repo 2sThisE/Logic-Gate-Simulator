@@ -231,13 +231,25 @@ My AND는 두 입력이 모두 HIGH일 때 출력이 HIGH가 되는 예제 컴�
 
 ## 7. Maven 프로젝트 구성
 
-모드 프로젝트는 시뮬레이터 본체를 `provided` 의존성으로 참조합니다. 예제 모드들의 `pom.xml`을 복사해서 시작하는 것을 권장합니다.
+모드 프로젝트는 별도로 분리된 Mod API를 `provided` 의존성으로 참조합니다. API 클래스는 앱이 런타임에 제공하므로 모드 JAR에 포함하지 마세요. 예제 모드들의 `pom.xml`을 복사해서 시작하는 것을 권장합니다.
+
+```xml
+<dependency>
+  <groupId>com.logicgate</groupId>
+  <artifactId>logicgate-api</artifactId>
+  <version>1.1.1-SNAPSHOT</version>
+  <scope>provided</scope>
+</dependency>
+```
+
+현재 커스텀 Symbol API는 아직 본체의 `VisualNode`에 의존합니다. 커스텀 Symbol을 제공하는 모드는 API와 함께 아래 호환 의존성도 임시로 추가해야 합니다.
+모드 API와 본체 렌더링 클래스는 모두 Java 21로 빌드되므로 모든 모드는 JDK 21을 사용해야 합니다.
 
 ```xml
 <dependency>
   <groupId>com.logicgate</groupId>
   <artifactId>logicgate</artifactId>
-  <version>1.0.2</version>
+  <version>1.1.1-SNAPSHOT</version>
   <scope>provided</scope>
 </dependency>
 
@@ -247,6 +259,18 @@ My AND는 두 입력이 모두 HIGH일 때 출력이 HIGH가 되는 예제 컴�
   <version>21</version>
   <scope>provided</scope>
 </dependency>
+```
+
+로직 컴포넌트만 만드는 경우, 이 저장소의 루트 디렉터리에서 API만 로컬 Maven 저장소에 설치하면 됩니다.
+
+```bash
+mvn install -pl Logic-Gate-API
+```
+
+사용자 정의 JavaFX 심볼도 만드는 경우에는 현재 임시 호환 의존성인 본체까지 함께 설치합니다.
+
+```bash
+mvn install -pl Logic-Gate-Simulator -am -DskipTests
 ```
 
 빌드:

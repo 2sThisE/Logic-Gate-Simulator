@@ -10,12 +10,18 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
+    <maven.compiler.release>21</maven.compiler.release>
     <javafx.version>21</javafx.version>
   </properties>
 
   <dependencies>
+    <!-- Stable contracts shared with external mods -->
+    <dependency>
+      <groupId>com.logicgate</groupId>
+      <artifactId>logicgate-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
     <!-- JUnit for testing -->
     <dependency>
       <groupId>junit</groupId>

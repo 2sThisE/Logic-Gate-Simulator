@@ -33,6 +33,7 @@ The current release is not code-signed. Windows SmartScreen, Microsoft Defender,
 
 ## Repository Layout
 
+- `Logic-Gate-API/`: Java 21 mod contracts shared by the app and mods.
 - `Logic-Gate-Simulator/`: Main simulator application, including the JavaFX UI, simulation engine, persistence, and built-in components.
 - `Logic-Gate-Mods/`: Example and official mods.
   - `Bus-Mod/`: Adds an 8-bit bus integrator and tri-state buffer.
@@ -50,14 +51,14 @@ The current release is not code-signed. Windows SmartScreen, Microsoft Defender,
 ### Build
 
 ```bash
-cd Logic-Gate-Simulator
-mvn clean package
+mvn clean package -pl Logic-Gate-Simulator -am
 ```
 
 ### Run
 
 ```bash
-mvn javafx:run
+mvn install -pl Logic-Gate-API -DskipTests
+mvn -f Logic-Gate-Simulator/pom.xml javafx:run
 ```
 
 You can also run `com.logicgate.ui.MainApp` from your IDE.

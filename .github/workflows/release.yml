@@ -37,8 +37,7 @@ jobs:
           cache: 'maven'
 
       - name: Build Fat JAR
-        working-directory: ./Logic-Gate-Simulator
-        run: mvn clean package -DskipTests
+        run: mvn clean package -pl Logic-Gate-Simulator -am -DskipTests
 
       - name: Include Legal Notices
         shell: bash
