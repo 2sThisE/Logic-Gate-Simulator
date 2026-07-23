@@ -1,20 +1,32 @@
 package com.logicgate;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.Node;
 
 /**
  * 대규모 논리 회로를 외부에서 관리하는 회로 매니저 클래스입니다.
  * 노드의 생성, 배치(추가), 선 연결, 그리고 전체 회로의 시뮬레이션(Tick)을 담당합니다.
  */
 public class Circuit {
+    private static final class Connection {
+        private final Node target;
+        private final int targetPin;
+
+        private Connection(Node target, int targetPin) {
+            this.target = target;
+            this.targetPin = targetPin;
+        }
+    }
+
     // JavaFX UI(메인 스레드)와 시뮬레이션 엔진(백그라운드 스레드) 간의 충돌 방지용 동기화 컬렉션
     private List<Node> nodes = new CopyOnWriteArrayList<>();
-    private Map<Node, Map<Node, Integer>> incomingGraph = new ConcurrentHashMap<>();
+    private Map<Node, Map<Integer, List<Connection>>> outgoingGraph = new HashMap<>();
 
     // 시뮬레이션 스레드 제어 플래그
     private volatile boolean isRunning = false;
@@ -25,28 +37,35 @@ public class Circuit {
     public synchronized void addNode(Node node) {
         if (!nodes.contains(node)) {
             nodes.add(node);
-            incomingGraph.put(node, new ConcurrentHashMap<>());
+            outgoingGraph.put(node, new HashMap<>());
         }
     }
 
     public synchronized void removeNode(Node node) {
         if (!nodes.contains(node)) return;
 
-        for (int i = 0; i < node.getOutputSize(); i++) {
-            for (Node targetNode : node.getTargetNodes(i)) {
-                removeIncomingConnection(targetNode, node);
-            }
-            node.disconnectNextNode(i);
-        }
-
-        Map<Node, Integer> prevNodes = incomingGraph.get(node);
-        if (prevNodes != null) {
-            for (Node prevNode : prevNodes.keySet()) {
-                prevNode.disconnectTarget(node);
+        Map<Integer, List<Connection>> outgoing = outgoingGraph.remove(node);
+        if (outgoing != null) {
+            for (List<Connection> connections : outgoing.values()) {
+                for (Connection connection : connections) {
+                    clearInput(connection);
+                }
             }
         }
 
-        incomingGraph.remove(node);
+        for (Map<Integer, List<Connection>> connectionsByPin : outgoingGraph.values()) {
+            Iterator<Map.Entry<Integer, List<Connection>>> pinIterator =
+                connectionsByPin.entrySet().iterator();
+            while (pinIterator.hasNext()) {
+                List<Connection> connections = pinIterator.next().getValue();
+                connections.removeIf(connection -> connection.target == node);
+                if (connections.isEmpty()) {
+                    pinIterator.remove();
+                }
+            }
+        }
+
+        node.setInput(0);
         nodes.remove(node);
     }
 
@@ -56,35 +75,54 @@ public class Circuit {
             inPin < 0 || inPin >= toNode.getInputSize()) {
             return;
         }
-        fromNode.addNode(toNode, outPin, inPin);
-
-        Map<Node, Integer> incoming = incomingGraph.get(toNode);
-        if (incoming != null) {
-            incoming.merge(fromNode, 1, Integer::sum);
-        }
+        outgoingGraph
+            .computeIfAbsent(fromNode, ignored -> new HashMap<>())
+            .computeIfAbsent(outPin, ignored -> new ArrayList<>())
+            .add(new Connection(toNode, inPin));
     }
 
     public synchronized void disconnect(Node fromNode, int outPin) {
-        for (Node targetNode : fromNode.getTargetNodes(outPin)) {
-            removeIncomingConnection(targetNode, fromNode);
-        }
+        Map<Integer, List<Connection>> connectionsByPin = outgoingGraph.get(fromNode);
+        if (connectionsByPin == null) return;
 
-        fromNode.disconnectNextNode(outPin);
+        List<Connection> removed = connectionsByPin.remove(outPin);
+        if (removed == null) return;
+
+        for (Connection connection : removed) {
+            clearInput(connection);
+        }
     }
 
     public synchronized void disconnectSpecific(Node fromNode, int outPin, Node toNode, int inPin) {
-        if (fromNode.disconnectSpecificNode(outPin, toNode, inPin)) {
-            removeIncomingConnection(toNode, fromNode);
+        Map<Integer, List<Connection>> connectionsByPin = outgoingGraph.get(fromNode);
+        if (connectionsByPin == null) return;
+
+        List<Connection> connections = connectionsByPin.get(outPin);
+        if (connections == null) return;
+
+        Iterator<Connection> iterator = connections.iterator();
+        while (iterator.hasNext()) {
+            Connection connection = iterator.next();
+            if (connection.target == toNode && connection.targetPin == inPin) {
+                iterator.remove();
+                clearInput(connection);
+                break;
+            }
+        }
+        if (connections.isEmpty()) {
+            connectionsByPin.remove(outPin);
         }
     }
 
     public synchronized void tick() {
+        pruneInvalidConnections();
+
         for (Node node : nodes) {
             node.compute();
         }
 
         for (Node node : nodes) {
-            node.transmit();
+            transmit(node);
         }
     }
 
@@ -143,7 +181,7 @@ public class Circuit {
             removeNode(node);
         }
         nodes.clear();
-        incomingGraph.clear();
+        outgoingGraph.clear();
     }
 
     public synchronized void replaceContentsFrom(Circuit replacement) {
@@ -151,15 +189,84 @@ public class Circuit {
 
         clear();
         nodes.addAll(replacement.nodes);
-        for (Map.Entry<Node, Map<Node, Integer>> entry : replacement.incomingGraph.entrySet()) {
-            incomingGraph.put(entry.getKey(), new ConcurrentHashMap<>(entry.getValue()));
+        for (Map.Entry<Node, Map<Integer, List<Connection>>> nodeEntry :
+            replacement.outgoingGraph.entrySet()) {
+            Map<Integer, List<Connection>> connectionsByPin = new HashMap<>();
+            for (Map.Entry<Integer, List<Connection>> pinEntry : nodeEntry.getValue().entrySet()) {
+                connectionsByPin.put(pinEntry.getKey(), new ArrayList<>(pinEntry.getValue()));
+            }
+            outgoingGraph.put(nodeEntry.getKey(), connectionsByPin);
         }
     }
 
-    private void removeIncomingConnection(Node targetNode, Node fromNode) {
-        Map<Node, Integer> incoming = incomingGraph.get(targetNode);
-        if (incoming == null) return;
+    public synchronized List<Node> getTargetNodes(Node fromNode, int outPin) {
+        Map<Integer, List<Connection>> connectionsByPin = outgoingGraph.get(fromNode);
+        if (connectionsByPin == null) return List.of();
 
-        incoming.computeIfPresent(fromNode, (node, count) -> count > 1 ? count - 1 : null);
+        List<Connection> connections = connectionsByPin.get(outPin);
+        if (connections == null) return List.of();
+
+        List<Node> targets = new ArrayList<>(connections.size());
+        for (Connection connection : connections) {
+            targets.add(connection.target);
+        }
+        return List.copyOf(targets);
+    }
+
+    private void transmit(Node source) {
+        Map<Integer, List<Connection>> connectionsByPin = outgoingGraph.get(source);
+        if (connectionsByPin == null) return;
+
+        int output = source.getOut();
+        for (int outPin = 0; outPin < source.getOutputSize(); outPin++) {
+            List<Connection> connections = connectionsByPin.get(outPin);
+            if (connections == null) continue;
+
+            boolean high = (output & (1 << outPin)) != 0;
+            for (Connection connection : connections) {
+                int input = connection.target.getIn();
+                int mask = 1 << connection.targetPin;
+                connection.target.setInput(high ? input | mask : input & ~mask);
+            }
+        }
+    }
+
+    private void pruneInvalidConnections() {
+        for (Map.Entry<Node, Map<Integer, List<Connection>>> nodeEntry :
+            outgoingGraph.entrySet()) {
+            Node source = nodeEntry.getKey();
+            Iterator<Map.Entry<Integer, List<Connection>>> pinIterator =
+                nodeEntry.getValue().entrySet().iterator();
+
+            while (pinIterator.hasNext()) {
+                Map.Entry<Integer, List<Connection>> pinEntry = pinIterator.next();
+                List<Connection> connections = pinEntry.getValue();
+
+                if (pinEntry.getKey() < 0 || pinEntry.getKey() >= source.getOutputSize()) {
+                    connections.forEach(this::clearInput);
+                    pinIterator.remove();
+                    continue;
+                }
+
+                Iterator<Connection> connectionIterator = connections.iterator();
+                while (connectionIterator.hasNext()) {
+                    Connection connection = connectionIterator.next();
+                    if (connection.targetPin < 0 ||
+                        connection.targetPin >= connection.target.getInputSize()) {
+                        clearInput(connection);
+                        connectionIterator.remove();
+                    }
+                }
+
+                if (connections.isEmpty()) {
+                    pinIterator.remove();
+                }
+            }
+        }
+    }
+
+    private void clearInput(Connection connection) {
+        int mask = 1 << connection.targetPin;
+        connection.target.setInput(connection.target.getIn() & ~mask);
     }
 }

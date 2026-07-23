@@ -1,12 +1,12 @@
 package com.logicgate.editor.model;
 
-import com.logicgate.editor.rendering.symbol.GateSymbol;
+import com.logicgate.api.component.Node;
+import com.logicgate.api.component.Property;
+import com.logicgate.api.rendering.GateSymbol;
+import com.logicgate.api.rendering.SymbolContext;
 import com.logicgate.editor.rendering.symbol.SymbolRegistry;
-import com.logicgate.gates.Node;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
 
-public class VisualNode {
+public class VisualNode implements SymbolContext {
     public Node node;
     public double x, y;
     public double width = 80, height = 50;
@@ -209,78 +209,43 @@ public class VisualNode {
         return getRotatedY(symbol.getOutPinX(this, index) - x, symbol.getOutPinY(this, index) - y);
     }
 
-    public void draw(GraphicsContext gc, boolean isHovered, boolean isSelected, int hoveredInPin, int hoveredOutPin, VisualWire selectedWire, boolean isConnectionInvalid) {
-        boolean isBodyHovered = isHovered && hoveredInPin == -1 && hoveredOutPin == -1;
+    @Override
+    public Node node() {
+        return node;
+    }
 
-        gc.save();
-        gc.translate(x + width / 2, y + height / 2);
-        gc.rotate(rotation);
-        gc.translate(-width / 2, -height / 2);
+    @Override
+    public double x() {
+        return x;
+    }
 
-        GateSymbol symbol = SymbolRegistry.getSymbol(node.getTypeId());
-        if (symbol != null) {
-            symbol.draw(gc, this, isBodyHovered, isSelected);
-        } else {
-            gc.setFill(Color.web("#4A90E2", 0.8));
-            gc.fillRect(0, 0, width, height);
-            gc.setStroke(isSelected ? Color.web("#00FFFF") : (isBodyHovered ? Color.web("#FFD700") : Color.WHITE));
-            gc.setLineWidth(isSelected || isBodyHovered ? 4 : 2);
-            gc.strokeRect(0, 0, width, height);
-        }
+    @Override
+    public double y() {
+        return y;
+    }
 
-        if (showLabel && label != null && !label.isEmpty()) {
-            gc.save();
-            double lx, ly;
-            if (symbol != null) {
-                lx = symbol.getLabelX(this);
-                ly = symbol.getLabelY(this);
-            } else {
-                lx = width * 0.3;
-                ly = height + 15;
-            }
-            gc.translate(lx, ly);
-            gc.rotate(-rotation);
-            gc.setFill(Color.WHITE);
-            gc.setFont(javafx.scene.text.Font.font("Arial", 12));
-            gc.fillText(label, 0, 0);
-            gc.restore();
-        }
-        gc.restore();
+    @Override
+    public double width() {
+        return width;
+    }
 
-        for (int i = 0; i < node.getInputSize(); i++) {
-            boolean isPinHovered = isHovered && hoveredInPin == i;
-            boolean isPinSelected = (selectedWire != null && selectedWire.to == this && selectedWire.inPin == i);
+    @Override
+    public double height() {
+        return height;
+    }
 
-            if (isPinHovered && isConnectionInvalid) {
-                gc.setFill(Color.RED);
-            } else if (isPinSelected) {
-                gc.setFill(Color.web("#00FFFF"));
-            } else if (isPinHovered) {
-                gc.setFill(Color.web("#FFD700"));
-            } else {
-                gc.setFill(Color.web("#AAAAAA"));
-            }
+    @Override
+    public double rotation() {
+        return rotation;
+    }
 
-            double radius = (isPinHovered || isPinSelected) ? 6 : 4;
-            gc.fillOval(getInPinX(i) - radius, getInPinY(i) - radius, radius * 2, radius * 2);
-        }
+    @Override
+    public String label() {
+        return label;
+    }
 
-        for (int i = 0; i < node.getOutputSize(); i++) {
-            boolean isPinHovered = isHovered && hoveredOutPin == i;
-            boolean isPinSelected = (selectedWire != null && selectedWire.from == this && selectedWire.outPin == i);
-
-            if (isPinHovered && isConnectionInvalid) {
-                gc.setFill(Color.RED);
-            } else if (isPinSelected) {
-                gc.setFill(Color.web("#00FFFF"));
-            } else if (isPinHovered) {
-                gc.setFill(Color.web("#FFD700"));
-            } else {
-                gc.setFill(Color.web("#AAAAAA"));
-            }
-
-            double radius = (isPinHovered || isPinSelected) ? 6 : 4;
-            gc.fillOval(getOutPinX(i) - radius, getOutPinY(i) - radius, radius * 2, radius * 2);
-        }
+    @Override
+    public boolean showLabel() {
+        return showLabel;
     }
 }

@@ -1,12 +1,12 @@
 package com.logicgate.mods.memory;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.rendering.AbstractGateSymbol;
 
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
+import com.logicgate.api.rendering.DrawingContext;
+
+
 
 @ComponentMeta(
     name = "256x8 RAM (8-bit Addressable)",
@@ -16,53 +16,53 @@ import javafx.scene.text.Font;
 public class Ram8BitSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
-        return String.format("M 0 0 H %f V %f H 0 Z", vn.width, vn.height);
+    public String getSvgPathData(SymbolContext vn) {
+        return String.format("M 0 0 H %f V %f H 0 Z", vn.width(), vn.height());
     }
 
     @Override
-    public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
+    public void draw(DrawingContext gc, SymbolContext vn, boolean isHovered, boolean isSelected) {
         gc.save();
         prepareFill(gc, vn, isHovered, isSelected);
         
         // 칩 배경
-        gc.setFill(Color.web("#2B2B2B"));
-        gc.fillRoundRect(0, 0, vn.width, vn.height, 5, 5);
-        gc.strokeRoundRect(0, 0, vn.width, vn.height, 5, 5);
+        gc.setFill("#2B2B2B");
+        gc.fillRoundRect(0, 0, vn.width(), vn.height(), 5, 5);
+        gc.strokeRoundRect(0, 0, vn.width(), vn.height(), 5, 5);
 
         // 칩 내부 텍스트
-        gc.setFill(Color.WHITE);
-        gc.setFont(new Font("Consolas", 14));
-        gc.fillText("RAM 256x8", vn.width * 0.2, vn.height * 0.15);
+        gc.setFill("#FFFFFF");
+        gc.setFont("Consolas", 14);
+        gc.fillText("RAM 256x8", vn.width() * 0.2, vn.height() * 0.15);
         
         // 데이터 표시 (주소 0번지 값 살짝 보여주기)
-        gc.setFont(new Font("Consolas", 10));
-        gc.fillText("ADDR: " + (vn.node.getIn() & 0xFF), 10, vn.height * 0.4);
-        gc.fillText("DOUT: " + (vn.node.getOut() & 0xFF), 10, vn.height * 0.55);
+        gc.setFont("Consolas", 10);
+        gc.fillText("ADDR: " + (vn.node().getIn() & 0xFF), 10, vn.height() * 0.4);
+        gc.fillText("DOUT: " + (vn.node().getOut() & 0xFF), 10, vn.height() * 0.55);
 
         gc.restore();
     }
 
     @Override
-    public double getInPinX(VisualNode vn, int index) {
-        if (index < 16) return vn.x; // Addr, DataIn (왼쪽)
-        return vn.x + (vn.width / 3.0) * (index - 15); // WE, OE (하단)
+    public double getInPinX(SymbolContext vn, int index) {
+        if (index < 16) return vn.x(); // Addr, DataIn (왼쪽)
+        return vn.x() + (vn.width() / 3.0) * (index - 15); // WE, OE (하단)
     }
 
     @Override
-    public double getInPinY(VisualNode vn, int index) {
-        if (index < 16) return vn.y + 30 + (index * 15); // Addr, DataIn
-        return vn.y + vn.height; // WE, OE
+    public double getInPinY(SymbolContext vn, int index) {
+        if (index < 16) return vn.y() + 30 + (index * 15); // Addr, DataIn
+        return vn.y() + vn.height(); // WE, OE
     }
 
     @Override
-    public double getOutPinX(VisualNode vn, int index) {
-        return vn.x + vn.width; // Q0-Q7 (오른쪽)
+    public double getOutPinX(SymbolContext vn, int index) {
+        return vn.x() + vn.width(); // Q0-Q7 (오른쪽)
     }
 
     @Override
-    public double getOutPinY(VisualNode vn, int index) {
-        return vn.y + 50 + (index * 20); // Q0-Q7
+    public double getOutPinY(SymbolContext vn, int index) {
+        return vn.y() + 50 + (index * 20); // Q0-Q7
     }
 
     @Override

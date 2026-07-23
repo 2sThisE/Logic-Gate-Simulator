@@ -1,5 +1,7 @@
 package com.logicgate.editor.model;
 
+import com.logicgate.api.component.Property;
+
 import java.util.ArrayList;
 import java.util.List;
 

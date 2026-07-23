@@ -8,7 +8,7 @@ import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.gates.And;
 import com.logicgate.gates.InputPin;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.Node;
 import com.logicgate.gates.OutputPin;
 import java.lang.reflect.Field;
 import java.util.List;

@@ -12,7 +12,7 @@
   <name>Logic Gate Simulator</name>
 
   <modules>
-    <module>Logic-Gate-API</module>
+    <module>Logic-Gate-Mod-API</module>
     <module>Logic-Gate-Simulator</module>
     <module>Logic-Gate-Mods/Bus-Mod</module>
     <module>Logic-Gate-Mods/Computer-Mod</module>

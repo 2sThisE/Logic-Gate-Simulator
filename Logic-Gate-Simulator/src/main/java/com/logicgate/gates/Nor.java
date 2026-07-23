@@ -1,5 +1,7 @@
 package com.logicgate.gates;
 
+import com.logicgate.api.component.Node;
+
 public class Nor extends Node {
 
     public Nor() {

@@ -1,7 +1,8 @@
 package com.logicgate.editor.utils;
 
+import com.logicgate.api.component.Node;
 import com.logicgate.gates.*;
-import com.logicgate.editor.mod.ComponentMeta;
+import com.logicgate.api.component.ComponentMeta;
 import java.util.HashMap;
 import java.util.Map;
 

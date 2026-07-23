@@ -1,4 +1,4 @@
-package com.logicgate.editor.mod;
+package com.logicgate.api.component;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

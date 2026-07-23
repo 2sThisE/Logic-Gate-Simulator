@@ -1,5 +1,7 @@
 package com.logicgate.gates;
 
+import com.logicgate.api.component.Node;
+
 public class Xnor extends Node {
     public Xnor(){
         super(2,1);

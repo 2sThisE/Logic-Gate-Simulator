@@ -1,8 +1,10 @@
 package com.logicgate.gates;
 
+import com.logicgate.api.component.Node;
+
 import java.util.List;
 
-import com.logicgate.editor.model.Property;
+import com.logicgate.api.component.Property;
 
 // 십자형 분기점(Joint) 노드: 4개의 입출력 포트를 가지며 어느 쪽으로든 신호 전파 가능
 public class Joint extends Node {
@@ -29,21 +31,7 @@ public class Joint extends Node {
     }
 
     private void rebuildPins() {
-        // 기존 연결들을 유지하려고 시도하지만, 범위 밖으로 나가는 핀들은 정리됨
-        Connection[] oldConns = this.nextNodes;
-        this.nextNodes = new Connection[pinCount];
-        System.arraycopy(oldConns, 0, this.nextNodes, 0, Math.min(oldConns.length, pinCount));
-
-        // Node 클래스의 inputSize, outputSize는 final이 아니므로 직접 수정 (주의!)
-        try {
-            java.lang.reflect.Field inField = Node.class.getDeclaredField("inputSize");
-            inField.setAccessible(true);
-            inField.set(this, pinCount);
-
-            java.lang.reflect.Field outField = Node.class.getDeclaredField("outputSize");
-            outField.setAccessible(true);
-            outField.set(this, pinCount);
-        } catch (Exception e) { e.printStackTrace(); }
+        resizePins(pinCount, pinCount);
     }
 
     @Override

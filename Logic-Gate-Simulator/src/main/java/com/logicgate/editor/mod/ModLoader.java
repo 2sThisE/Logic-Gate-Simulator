@@ -1,7 +1,8 @@
 package com.logicgate.editor.mod;
 
-import com.logicgate.gates.Node;
-import com.logicgate.editor.rendering.symbol.GateSymbol;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Node;
+import com.logicgate.api.rendering.GateSymbol;
 import com.logicgate.editor.rendering.symbol.SymbolRegistry;
 import com.logicgate.editor.utils.NodeFactory;
 

@@ -102,7 +102,7 @@ public class OptionsController {
         showGridCheck.setSelected(config.showGrid);
         snapToGridCheck.setSelected(config.snapToGrid);
 
-        int unitSize = (int) com.logicgate.editor.rendering.symbol.GateSymbol.UNIT_SIZE;
+        int unitSize = (int) com.logicgate.api.rendering.GateSymbol.UNIT_SIZE;
         int currentUnits = config.gridSize / unitSize;
         gridSizeSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, currentUnits, 1));
 
@@ -172,7 +172,7 @@ public class OptionsController {
             config.showGrid = showGridCheck.isSelected();
             config.snapToGrid = snapToGridCheck.isSelected();
 
-            int unitSize = (int) com.logicgate.editor.rendering.symbol.GateSymbol.UNIT_SIZE;
+            int unitSize = (int) com.logicgate.api.rendering.GateSymbol.UNIT_SIZE;
             config.gridSize = gridSizeSpinner.getValue() * unitSize;
 
             config.showAlignmentGuides = showAlignGuidesCheck.isSelected();

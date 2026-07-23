@@ -1,7 +1,7 @@
 package com.logicgate.mods.computer;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Node;
 
 @ComponentMeta(name = "SAP-1 Instruction Register", section = "SAP-1 Computer", typeId = "IR_8BIT")
 public class InstructionRegisterNode extends Node {

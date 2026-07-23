@@ -261,7 +261,7 @@ public class ProjectManager {
                     }
                 }
 
-                com.logicgate.gates.Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(type);
+                com.logicgate.api.component.Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(type);
                 if (logicNode != null) {
                     logicNode.setProperties(properties);
                     loadedCircuit.addNode(logicNode);

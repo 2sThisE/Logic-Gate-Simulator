@@ -1,5 +1,7 @@
 package com.logicgate.editor.rendering.symbol;
 
+import com.logicgate.api.rendering.GateSymbol;
+
 import java.util.HashMap;
 import java.util.Map;
 

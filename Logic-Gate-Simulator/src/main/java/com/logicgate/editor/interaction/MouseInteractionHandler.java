@@ -4,11 +4,11 @@ import com.logicgate.editor.io.NodeData;
 import com.logicgate.editor.io.WireData;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
-import com.logicgate.editor.rendering.symbol.GateSymbol;
+import com.logicgate.api.rendering.GateSymbol;
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.editor.utils.NodeFactory;
 import com.logicgate.gates.InputPin;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.Node;
 
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -675,7 +675,7 @@ public class MouseInteractionHandler {
             }
 
             if (foundPin) {
-                com.logicgate.editor.rendering.symbol.GateSymbol symbol = com.logicgate.editor.rendering.symbol.SymbolRegistry.getSymbol(context.hoveredNode.node.getTypeId());
+                com.logicgate.api.rendering.GateSymbol symbol = com.logicgate.editor.rendering.symbol.SymbolRegistry.getSymbol(context.hoveredNode.node.getTypeId());
                 if (symbol != null) {
                     if (context.hoveredOutPin != -1) {
                         context.hoveredPinName = symbol.getOutPinName(context.hoveredOutPin);

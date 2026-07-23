@@ -1,11 +1,11 @@
 package com.logicgate.mods.display;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.rendering.AbstractGateSymbol;
 
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
+import com.logicgate.api.rendering.DrawingContext;
+
 
 @ComponentMeta(
     name = "7-Segment Display",
@@ -15,20 +15,20 @@ import javafx.scene.paint.Color;
 public class SevenSegmentSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext vn) {
         return String.format("M 0 5 Q 0 0 5 0 H %f Q %f 0 %f 5 V %f Q %f %f %f %f H 5 Q 0 %f 0 %f Z", 
-            vn.width - 5, vn.width, vn.width, vn.height - 5, vn.width, vn.height, vn.width - 5, vn.height, vn.height, vn.height - 5);
+            vn.width() - 5, vn.width(), vn.width(), vn.height() - 5, vn.width(), vn.height(), vn.width() - 5, vn.height(), vn.height(), vn.height() - 5);
     }
 
     @Override
-    public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
+    public void draw(DrawingContext gc, SymbolContext vn, boolean isHovered, boolean isSelected) {
         gc.save();
         prepareFill(gc, vn, isHovered, isSelected);
         
         // 디스플레이 배경
-        gc.setFill(Color.web("#3c3c3c"));
-        gc.fillRoundRect(0, 0, vn.width, vn.height, 8, 8);
-        gc.strokeRoundRect(0, 0, vn.width, vn.height, 8, 8);
+        gc.setFill("#3c3c3c");
+        gc.fillRoundRect(0, 0, vn.width(), vn.height(), 8, 8);
+        gc.strokeRoundRect(0, 0, vn.width(), vn.height(), 8, 8);
         
         drawExtra(gc, vn);
         
@@ -37,13 +37,13 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
 
 
     @Override
-    protected void drawExtra(GraphicsContext gc, VisualNode vn) {
-        int in = vn.node.getIn();
-        Color onColor = Color.web("#FF2222");
-        Color offColor = Color.web("#696969");
+    protected void drawExtra(DrawingContext gc, SymbolContext vn) {
+        int in = vn.node().getIn();
+        String onColor = "#FF2222";
+        String offColor = "#696969";
 
-        double w = vn.width;
-        double h = vn.height;
+        double w = vn.width();
+        double h = vn.height();
         double hM = w * 0.22;
         double vM = h * 0.18;
         double th = w * 0.1;
@@ -71,7 +71,7 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
         gc.fillOval(w - hM + 2, h - vM - th, th, th);
     }
 
-    private void drawSeg(GraphicsContext gc, double x, double y, double w, double h, Color color) {
+    private void drawSeg(DrawingContext gc, double x, double y, double w, double h, String color) {
         gc.setFill(color);
         gc.fillRoundRect(x, y, w, h, 2, 2);
     }
@@ -79,27 +79,27 @@ public class SevenSegmentSymbol extends AbstractGateSymbol {
     // --- 핀 배치 오버라이드 (상단/하단 배치) ---
 
     @Override
-    public double getInPinX(VisualNode vn, int index) {
-        double w = vn.width;
+    public double getInPinX(SymbolContext vn, int index) {
+        double w = vn.width();
         return switch (index) {
-            case 6 -> vn.x + w * 0.15; // G
-            case 5 -> vn.x + w * 0.35; // F
-            case 0 -> vn.x + w * 0.65; // A
-            case 1 -> vn.x + w * 0.85; // B
-            case 4 -> vn.x + w * 0.15; // E
-            case 3 -> vn.x + w * 0.35; // D
-            case 2 -> vn.x + w * 0.65; // C
-            case 7 -> vn.x + w * 0.85; // DP
-            default -> vn.x;
+            case 6 -> vn.x() + w * 0.15; // G
+            case 5 -> vn.x() + w * 0.35; // F
+            case 0 -> vn.x() + w * 0.65; // A
+            case 1 -> vn.x() + w * 0.85; // B
+            case 4 -> vn.x() + w * 0.15; // E
+            case 3 -> vn.x() + w * 0.35; // D
+            case 2 -> vn.x() + w * 0.65; // C
+            case 7 -> vn.x() + w * 0.85; // DP
+            default -> vn.x();
         };
     }
 
     @Override
-    public double getInPinY(VisualNode vn, int index) {
+    public double getInPinY(SymbolContext vn, int index) {
         // 상단 핀들 (0, 1, 5, 6)
-        if (index == 0 || index == 1 || index == 5 || index == 6) return vn.y;
+        if (index == 0 || index == 1 || index == 5 || index == 6) return vn.y();
         // 하단 핀들 (2, 3, 4, 7)
-        return vn.y + vn.height;
+        return vn.y() + vn.height();
     }
 
     @Override

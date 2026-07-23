@@ -1,4 +1,4 @@
-package com.logicgate.editor.model;
+package com.logicgate.api.component;
 
 import java.util.function.Consumer;
 

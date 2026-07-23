@@ -1,58 +1,58 @@
 package com.logicgate.mods.computer;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.rendering.AbstractGateSymbol;
+import com.logicgate.api.rendering.DrawingContext;
+
+
 
 @ComponentMeta(name = "8-bit ALU (Adder/Subtractor)", section = "Computer", typeId = "ALU_8BIT")
 public class ALUSymbol extends AbstractGateSymbol {
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext vn) {
         return String.format("M 0 0 L %f 40 V %f L 0 %f L 0 %f L 40 %f L 0 0", 
-            vn.width, vn.height - 40, vn.height, vn.height * 0.6, vn.height * 0.5, vn.height * 0.4);
+            vn.width(), vn.height() - 40, vn.height(), vn.height() * 0.6, vn.height() * 0.5, vn.height() * 0.4);
     }
     
     @Override
-    public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
+    public void draw(DrawingContext gc, SymbolContext vn, boolean isHovered, boolean isSelected) {
         gc.save();
         prepareFill(gc, vn, isHovered, isSelected);
-        double[] xPoints = {0, vn.width, vn.width, 0, 40, 0};
-        double[] yPoints = {0, 40, vn.height - 40, vn.height, vn.height / 2.0, 0};
+        double[] xPoints = {0, vn.width(), vn.width(), 0, 40, 0};
+        double[] yPoints = {0, 40, vn.height() - 40, vn.height(), vn.height() / 2.0, 0};
         gc.fillPolygon(xPoints, yPoints, 6);
         gc.strokePolygon(xPoints, yPoints, 6);
 
-        gc.setFill(Color.WHITE);
-        gc.setFont(new Font("System Bold", 14));
-        gc.fillText("ALU", vn.width * 0.45, vn.height / 2.0 + 5);
+        gc.setFill("#FFFFFF");
+        gc.setFont("System Bold", 14);
+        gc.fillText("ALU", vn.width() * 0.45, vn.height() / 2.0 + 5);
 
-        gc.setFont(new Font(9));
+        gc.setFont("System", 9);
         for(int i=0; i<8; i++) gc.fillText("A"+i, 5, 25 + i*15);
-        for(int i=0; i<8; i++) gc.fillText("B"+i, 5, vn.height - 135 + i*15);
-        gc.fillText("SUB", 45, vn.height / 2.0 - 10);
-        gc.fillText("EN", 45, vn.height / 2.0 + 10);
+        for(int i=0; i<8; i++) gc.fillText("B"+i, 5, vn.height() - 135 + i*15);
+        gc.fillText("SUB", 45, vn.height() / 2.0 - 10);
+        gc.fillText("EN", 45, vn.height() / 2.0 + 10);
 
-        for(int i=0; i<8; i++) gc.fillText("Q"+i, vn.width - 25, vn.height * 0.3 + i*15);
-        gc.fillText("ZERO", vn.width - 35, 35);
-        gc.fillText("CARRY", vn.width - 40, vn.height - 35);
+        for(int i=0; i<8; i++) gc.fillText("Q"+i, vn.width() - 25, vn.height() * 0.3 + i*15);
+        gc.fillText("ZERO", vn.width() - 35, 35);
+        gc.fillText("CARRY", vn.width() - 40, vn.height() - 35);
         gc.restore();
     }
 
     @Override
-    public double getInPinY(VisualNode vn, int index) {
-        if (index < 8) return vn.y + 20 + (index * 15);
-        if (index < 16) return vn.y + vn.height - 140 + ((index - 8) * 15);
-        if (index == 16) return vn.y + vn.height * 0.5 - 15;
-        return vn.y + vn.height * 0.5 + 15;
+    public double getInPinY(SymbolContext vn, int index) {
+        if (index < 8) return vn.y() + 20 + (index * 15);
+        if (index < 16) return vn.y() + vn.height() - 140 + ((index - 8) * 15);
+        if (index == 16) return vn.y() + vn.height() * 0.5 - 15;
+        return vn.y() + vn.height() * 0.5 + 15;
     }
 
     @Override
-    public double getOutPinY(VisualNode vn, int index) {
-        if (index < 8) return vn.y + vn.height * 0.3 + (index * 15);
-        if (index == 8) return vn.y + 40;
-        return vn.y + vn.height - 40;
+    public double getOutPinY(SymbolContext vn, int index) {
+        if (index < 8) return vn.y() + vn.height() * 0.3 + (index * 15);
+        if (index == 8) return vn.y() + 40;
+        return vn.y() + vn.height() - 40;
     }
 
     @Override

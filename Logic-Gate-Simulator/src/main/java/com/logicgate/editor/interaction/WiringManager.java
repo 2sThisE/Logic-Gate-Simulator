@@ -2,7 +2,7 @@ package com.logicgate.editor.interaction;
 
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
-import com.logicgate.editor.rendering.symbol.GateSymbol;
+import com.logicgate.api.rendering.GateSymbol;
 import com.logicgate.editor.rendering.symbol.SymbolRegistry;
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.gates.Joint;

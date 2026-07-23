@@ -1,12 +1,12 @@
 package com.logicgate.mods.bus;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.rendering.AbstractGateSymbol;
 
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
+import com.logicgate.api.rendering.DrawingContext;
+
+
 
 @ComponentMeta(
     name = "8-bit 3-Port Bus Aggregator",
@@ -16,55 +16,55 @@ import javafx.scene.text.Font;
 public class Bus8BitSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
-        return String.format("M 0 0 H %f V %f H 0 Z", vn.width, vn.height);
+    public String getSvgPathData(SymbolContext vn) {
+        return String.format("M 0 0 H %f V %f H 0 Z", vn.width(), vn.height());
     }
 
     @Override
-    public void draw(GraphicsContext gc, VisualNode vn, boolean isHovered, boolean isSelected) {
+    public void draw(DrawingContext gc, SymbolContext vn, boolean isHovered, boolean isSelected) {
         gc.save();
         prepareFill(gc, vn, isHovered, isSelected);
 
-        gc.setFill(Color.web("#222222"));
-        gc.fillRoundRect(0, 0, vn.width, vn.height, 5, 5);
-        gc.strokeRoundRect(0, 0, vn.width, vn.height, 5, 5);
+        gc.setFill("#222222");
+        gc.fillRoundRect(0, 0, vn.width(), vn.height(), 5, 5);
+        gc.strokeRoundRect(0, 0, vn.width(), vn.height(), 5, 5);
 
-        gc.setStroke(Color.web("#FFD700", 0.5));
+        gc.setStroke("#FFD700", 0.5);
         gc.setLineWidth(1);
         for (int i = 0; i < 8; i++) {
-            double y = (vn.height / 33.0) * (i + 1) * 3 + 10;
-            gc.strokeLine(5, y, vn.width - 5, y);
+            double y = (vn.height() / 33.0) * (i + 1) * 3 + 10;
+            gc.strokeLine(5, y, vn.width() - 5, y);
         }
 
-        gc.setFill(Color.WHITE);
-        gc.setFont(new Font(10));
+        gc.setFill("#FFFFFF");
+        gc.setFont("System", 10);
         gc.fillText("PORT A", 5, 15);
-        gc.fillText("PORT B", 5, vn.height * 0.4);
-        gc.fillText("PORT C", 5, vn.height * 0.7);
+        gc.fillText("PORT B", 5, vn.height() * 0.4);
+        gc.fillText("PORT C", 5, vn.height() * 0.7);
 
         gc.restore();
     }
 
     @Override
-    public double getInPinX(VisualNode vn, int index) {
-        return vn.x;
+    public double getInPinX(SymbolContext vn, int index) {
+        return vn.x();
     }
 
     @Override
-    public double getInPinY(VisualNode vn, int index) {
-        if (index < 8) return vn.y + 20 + (index * 15);
-        if (index < 16) return vn.y + vn.height * 0.4 + 10 + ((index - 8) * 15);
-        return vn.y + vn.height * 0.7 + 10 + ((index - 16) * 15);
+    public double getInPinY(SymbolContext vn, int index) {
+        if (index < 8) return vn.y() + 20 + (index * 15);
+        if (index < 16) return vn.y() + vn.height() * 0.4 + 10 + ((index - 8) * 15);
+        return vn.y() + vn.height() * 0.7 + 10 + ((index - 16) * 15);
     }
 
     @Override
-    public double getOutPinX(VisualNode vn, int index) {
-        return vn.x + vn.width;
+    public double getOutPinX(SymbolContext vn, int index) {
+        return vn.x() + vn.width();
     }
 
     @Override
-    public double getOutPinY(VisualNode vn, int index) {
-        return vn.y + vn.height * 0.3 + (index * 20);
+    public double getOutPinY(SymbolContext vn, int index) {
+        return vn.y() + vn.height() * 0.3 + (index * 20);
     }
 
     @Override

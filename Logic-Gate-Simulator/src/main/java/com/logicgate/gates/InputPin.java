@@ -1,7 +1,9 @@
 package com.logicgate.gates;
 
+import com.logicgate.api.component.Node;
+
 import java.util.List;
-import com.logicgate.editor.model.Property;
+import com.logicgate.api.component.Property;
 
 // 사용자가 강제로 0 또는 1을 설정할 수 있는 스위치 노드
 public class InputPin extends Node {

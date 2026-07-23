@@ -1,4 +1,4 @@
-package com.logicgate.editor.mod;
+package com.logicgate.api.notification;
 
 /**
  * Mods can use this API to show editor notifications without depending on UI classes.

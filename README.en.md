@@ -33,7 +33,7 @@ The current release is not code-signed. Windows SmartScreen, Microsoft Defender,
 
 ## Repository Layout
 
-- `Logic-Gate-API/`: Java 21 mod contracts shared by the app and mods.
+- `Logic-Gate-Mod-API/`: JavaFX-independent Java 21 mod contracts shared by the app and mods.
 - `Logic-Gate-Simulator/`: Main simulator application, including the JavaFX UI, simulation engine, persistence, and built-in components.
 - `Logic-Gate-Mods/`: Example and official mods.
   - `Bus-Mod/`: Adds an 8-bit bus integrator and tri-state buffer.
@@ -57,7 +57,7 @@ mvn clean package -pl Logic-Gate-Simulator -am
 ### Run
 
 ```bash
-mvn install -pl Logic-Gate-API -DskipTests
+mvn install -pl Logic-Gate-Mod-API -DskipTests
 mvn -f Logic-Gate-Simulator/pom.xml javafx:run
 ```
 
@@ -70,7 +70,7 @@ Mods extend the simulator with custom components. A mod can define custom logic,
 Basic flow:
 
 1. Create a Maven project.
-2. Implement a component class extending `com.logicgate.gates.Node`.
+2. Implement a component class extending `com.logicgate.api.component.Node`.
 3. Define component metadata with `@ComponentMeta`.
 4. Add a symbol based on `AbstractGateSymbol` if needed.
 5. Build the mod as a JAR and load it in the app.

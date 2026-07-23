@@ -1,14 +1,16 @@
 package com.logicgate.editor.rendering.symbol;
 
-import com.logicgate.editor.model.VisualNode;
-import javafx.scene.canvas.GraphicsContext;
+import com.logicgate.api.rendering.AbstractGateSymbol;
+import com.logicgate.api.rendering.DrawingContext;
+import com.logicgate.api.rendering.SymbolContext;
+
 
 public class NandSymbol extends AbstractGateSymbol {
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext vn) {
         double bubbleR = 5.0; // 버블(원)의 반지름
-        double bodyWidth = vn.width - (bubbleR * 2); // 버블 공간만큼 몸통 너비 축소
-        double r = vn.height / 2;
+        double bodyWidth = vn.width() - (bubbleR * 2); // 버블 공간만큼 몸통 너비 축소
+        double r = vn.height() / 2;
 
         // 1. 몸통 그리기 (AND 모양이지만 끝이 bodyWidth에서 끝남)
         // 2. 이어서 버블(원)까지 하나의 경로로 포함 (선택사항)
@@ -16,11 +18,11 @@ public class NandSymbol extends AbstractGateSymbol {
         
         return String.format("M 0 0 L %f 0 Q %f 0 %f %f Q %f %f %f %f L 0 %f Z", 
             bodyWidth - r, bodyWidth, bodyWidth, r, 
-            bodyWidth, vn.height, bodyWidth - r, vn.height, vn.height);
+            bodyWidth, vn.height(), bodyWidth - r, vn.height(), vn.height());
     }
 
     @Override
-    protected void drawExtra(GraphicsContext gc, VisualNode vn) {
+    protected void drawExtra(DrawingContext gc, SymbolContext vn) {
         drawBubble(gc, vn);
     }
 }

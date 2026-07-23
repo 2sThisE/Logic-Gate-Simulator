@@ -31,7 +31,7 @@ public class FullAdderSymbol extends AbstractGateSymbol {
 
 A Node contains the actual circuit simulation logic.
 
-- Extend `com.logicgate.gates.Node`.
+- Extend `com.logicgate.api.component.Node`.
 - Provide a no-argument constructor.
 - Call `super(inputSize, outputSize)` in the constructor.
 - Read input bits from `in` and write output bits to `out` in `compute()`.
@@ -40,8 +40,8 @@ A Node contains the actual circuit simulation logic.
 ```java
 package com.example.logicgate.mods;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Node;
 
 @ComponentMeta(section = "Logic", name = "My AND", typeId = "MY_AND")
 public class MyAndNode extends Node {
@@ -63,26 +63,27 @@ public class MyAndNode extends Node {
 
 A Symbol defines the component shape, size, pin positions, and tooltip names.
 
-- Extend `com.logicgate.editor.rendering.symbol.AbstractGateSymbol`.
+- Extend `com.logicgate.api.rendering.AbstractGateSymbol`.
 - Add `@ComponentMeta` with the same `typeId` as the Node.
 - Return an SVG path string from `getSvgPathData()`.
+- Use `DrawingContext` commands instead of JavaFX when custom drawing is needed.
 - If the default pin placement is enough, you do not need to override `getInPinX/Y` or `getOutPinX/Y`.
 
 ```java
 package com.example.logicgate.mods;
 
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.AbstractGateSymbol;
 
 @ComponentMeta(section = "Logic", name = "My AND Symbol", typeId = "MY_AND")
 public class MyAndSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext context) {
         return String.format(
             "M 0 0 L %f 0 L %f %f L 0 %f Z",
-            vn.width, vn.width, vn.height, vn.height
+            context.width(), context.width(), context.height(), context.height()
         );
     }
 
@@ -126,7 +127,7 @@ Supported types:
 - `CHOICE`
 
 ```java
-import com.logicgate.editor.model.Property;
+import com.logicgate.api.component.Property;
 import java.util.List;
 
 private String color = "#336699";
@@ -165,7 +166,7 @@ protected void applyProperties() {
 Mods can use `NotificationApi` to show info, warning, and error notifications in the editor's bottom-right corner. Use notifications for short status updates or issues the user should notice.
 
 ```java
-import com.logicgate.editor.mod.NotificationApi;
+import com.logicgate.api.notification.NotificationApi;
 
 NotificationApi.info("Output complete", "The 16-bit computer wrote a value.");
 NotificationApi.warning("Input out of range", "The input value is outside the 16-bit range.");
@@ -236,41 +237,18 @@ A mod project should depend on the separately packaged Mod API with `provided` s
 ```xml
 <dependency>
   <groupId>com.logicgate</groupId>
-  <artifactId>logicgate-api</artifactId>
+  <artifactId>logicgate-mod-api</artifactId>
   <version>1.1.1-SNAPSHOT</version>
   <scope>provided</scope>
 </dependency>
 ```
 
-The custom Symbol API still depends on the simulator's `VisualNode`. Mods that provide custom symbols must temporarily add the following compatibility dependency in addition to the API:
-The mod API and simulator rendering classes are both built for Java 21, so all mods must use JDK 21.
+Both the logic and rendering contracts are independent of JavaFX and the simulator. Custom symbols use the same single API dependency, and all mods must use JDK 21.
 
-```xml
-<dependency>
-  <groupId>com.logicgate</groupId>
-  <artifactId>logicgate</artifactId>
-  <version>1.1.1-SNAPSHOT</version>
-  <scope>provided</scope>
-</dependency>
-
-<dependency>
-  <groupId>org.openjfx</groupId>
-  <artifactId>javafx-controls</artifactId>
-  <version>21</version>
-  <scope>provided</scope>
-</dependency>
-```
-
-For a logic-only component, install just the API into your local Maven repository from the repository root:
+Install the API into your local Maven repository from the repository root:
 
 ```bash
-mvn install -pl Logic-Gate-API
-```
-
-If the mod also defines a custom JavaFX symbol, install the simulator too because it is currently a temporary compatibility dependency:
-
-```bash
-mvn install -pl Logic-Gate-Simulator -am -DskipTests
+mvn install -pl Logic-Gate-Mod-API
 ```
 
 Build:
@@ -295,7 +273,8 @@ Use their structure and `pom.xml` files as references when creating a new mod.
 ## Notes
 
 - Node and Symbol classes both need no-argument constructors.
-- `compute()` is called repeatedly from the simulation thread. Do not directly manipulate JavaFX UI objects there.
+- `compute()` is called repeatedly from the simulation thread. Do not directly manipulate UI objects there.
+- Use only `DrawingContext` and `SymbolContext` in symbols instead of JavaFX classes.
 - If you use notifications from `compute()`, add deduplication logic so the same state does not show repeated notifications.
 - Notification localization should be handled inside your mod with a `ResourceBundle`, then passed as strings.
 - `typeId` must be unique. Use a prefix to avoid collisions with built-in components or other mods.

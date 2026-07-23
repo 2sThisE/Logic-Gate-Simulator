@@ -31,7 +31,7 @@ public class FullAdderSymbol extends AbstractGateSymbol {
 
 Node는 실제 회로 시뮬레이션 로직을 담당합니다.
 
-- `com.logicgate.gates.Node`를 상속합니다.
+- `com.logicgate.api.component.Node`를 상속합니다.
 - 매개변수가 없는 기본 생성자가 필요합니다.
 - 생성자에서 `super(inputSize, outputSize)`로 입력/출력 핀 개수를 지정합니다.
 - `compute()`에서 입력 비트 `in`을 읽고 출력 비트 `out`을 설정합니다.
@@ -40,8 +40,8 @@ Node는 실제 회로 시뮬레이션 로직을 담당합니다.
 ```java
 package com.example.logicgate.mods;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Node;
 
 @ComponentMeta(section = "Logic", name = "My AND", typeId = "MY_AND")
 public class MyAndNode extends Node {
@@ -63,26 +63,27 @@ public class MyAndNode extends Node {
 
 Symbol은 컴포넌트의 모양, 크기, 핀 위치, 툴팁 이름을 정의합니다.
 
-- `com.logicgate.editor.rendering.symbol.AbstractGateSymbol`을 상속합니다.
+- `com.logicgate.api.rendering.AbstractGateSymbol`을 상속합니다.
 - Node와 같은 `typeId`를 가진 `@ComponentMeta`를 붙입니다.
 - `getSvgPathData()`에서 컴포넌트 외형을 SVG path 문자열로 반환합니다.
+- 추가 그리기가 필요하면 JavaFX 대신 `DrawingContext` 명령을 사용합니다.
 - 기본 핀 위치 계산이 충분하면 `getInPinX/Y`, `getOutPinX/Y`는 생략할 수 있습니다.
 
 ```java
 package com.example.logicgate.mods;
 
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.AbstractGateSymbol;
 
 @ComponentMeta(section = "Logic", name = "My AND Symbol", typeId = "MY_AND")
 public class MyAndSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext context) {
         return String.format(
             "M 0 0 L %f 0 L %f %f L 0 %f Z",
-            vn.width, vn.width, vn.height, vn.height
+            context.width(), context.width(), context.height(), context.height()
         );
     }
 
@@ -126,7 +127,7 @@ public class MyAndSymbol extends AbstractGateSymbol {
 - `CHOICE`
 
 ```java
-import com.logicgate.editor.model.Property;
+import com.logicgate.api.component.Property;
 import java.util.List;
 
 private String color = "#336699";
@@ -165,7 +166,7 @@ protected void applyProperties() {
 모드는 `NotificationApi`를 사용해 에디터 우측 하단에 안내, 경고, 에러 알림을 표시할 수 있습니다. 짧은 상태 보고나 사용자가 알아야 하는 문제를 알릴 때 사용하세요.
 
 ```java
-import com.logicgate.editor.mod.NotificationApi;
+import com.logicgate.api.notification.NotificationApi;
 
 NotificationApi.info("출력 완료", "16비트 컴퓨터가 값을 출력했습니다.");
 NotificationApi.warning("입력 범위 초과", "입력 값이 16비트 범위를 벗어났습니다.");
@@ -236,41 +237,18 @@ My AND는 두 입력이 모두 HIGH일 때 출력이 HIGH가 되는 예제 컴�
 ```xml
 <dependency>
   <groupId>com.logicgate</groupId>
-  <artifactId>logicgate-api</artifactId>
+  <artifactId>logicgate-mod-api</artifactId>
   <version>1.1.1-SNAPSHOT</version>
   <scope>provided</scope>
 </dependency>
 ```
 
-현재 커스텀 Symbol API는 아직 본체의 `VisualNode`에 의존합니다. 커스텀 Symbol을 제공하는 모드는 API와 함께 아래 호환 의존성도 임시로 추가해야 합니다.
-모드 API와 본체 렌더링 클래스는 모두 Java 21로 빌드되므로 모든 모드는 JDK 21을 사용해야 합니다.
+논리와 렌더링 계약 모두 JavaFX와 본체에 의존하지 않습니다. 커스텀 Symbol도 위 API 하나만 사용하며, 모든 모드는 JDK 21을 사용해야 합니다.
 
-```xml
-<dependency>
-  <groupId>com.logicgate</groupId>
-  <artifactId>logicgate</artifactId>
-  <version>1.1.1-SNAPSHOT</version>
-  <scope>provided</scope>
-</dependency>
-
-<dependency>
-  <groupId>org.openjfx</groupId>
-  <artifactId>javafx-controls</artifactId>
-  <version>21</version>
-  <scope>provided</scope>
-</dependency>
-```
-
-로직 컴포넌트만 만드는 경우, 이 저장소의 루트 디렉터리에서 API만 로컬 Maven 저장소에 설치하면 됩니다.
+이 저장소의 루트 디렉터리에서 API를 로컬 Maven 저장소에 설치하려면 다음을 실행합니다.
 
 ```bash
-mvn install -pl Logic-Gate-API
-```
-
-사용자 정의 JavaFX 심볼도 만드는 경우에는 현재 임시 호환 의존성인 본체까지 함께 설치합니다.
-
-```bash
-mvn install -pl Logic-Gate-Simulator -am -DskipTests
+mvn install -pl Logic-Gate-Mod-API
 ```
 
 빌드:
@@ -295,7 +273,8 @@ mvn clean package
 ## 주의 사항
 
 - Node와 Symbol 클래스 모두 기본 생성자가 필요합니다.
-- `compute()`는 시뮬레이션 스레드에서 반복 호출됩니다. JavaFX UI 객체를 직접 조작하지 마세요.
+- `compute()`는 시뮬레이션 스레드에서 반복 호출됩니다. UI 객체를 직접 조작하지 마세요.
+- Symbol에서는 JavaFX 클래스 대신 `DrawingContext`와 `SymbolContext`만 사용하세요.
 - `compute()`에서 알림을 사용할 때는 같은 상태에서 반복 표시되지 않도록 중복 방지 로직을 넣으세요.
 - 알림의 다국어 처리는 모드 내부의 `ResourceBundle`에서 처리한 뒤 문자열로 전달하세요.
 - `typeId`는 고유해야 합니다. 다른 기본 컴포넌트나 모드와 충돌하지 않도록 접두사를 붙이는 것을 권장합니다.

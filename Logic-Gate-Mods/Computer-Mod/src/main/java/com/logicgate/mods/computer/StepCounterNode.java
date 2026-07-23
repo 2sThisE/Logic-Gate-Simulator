@@ -1,7 +1,7 @@
 package com.logicgate.mods.computer;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Node;
 
 @ComponentMeta(name = "4-bit Step Counter", section = "SAP-1 Computer", typeId = "STEP_COUNTER")
 public class StepCounterNode extends Node {

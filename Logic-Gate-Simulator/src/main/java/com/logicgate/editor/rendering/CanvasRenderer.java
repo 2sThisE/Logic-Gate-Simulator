@@ -3,11 +3,11 @@ package com.logicgate.editor.rendering;
 import com.logicgate.editor.interaction.WiringManager;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
-import com.logicgate.editor.rendering.symbol.GateSymbol;
+import com.logicgate.api.component.Node;
+import com.logicgate.api.rendering.GateSymbol;
 import com.logicgate.editor.rendering.symbol.SymbolRegistry;
 import com.logicgate.editor.state.EditorContext;
 import com.logicgate.editor.utils.NodeFactory;
-import com.logicgate.gates.Node;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -22,6 +22,7 @@ public class CanvasRenderer {
     private final Canvas canvas;
     private final EditorContext context;
     private final WiringManager wiringManager;
+    private final NodeRenderer nodeRenderer = new NodeRenderer();
 
     public CanvasRenderer(Canvas canvas, EditorContext context, WiringManager wiringManager) {
         this.canvas = canvas;
@@ -103,7 +104,16 @@ public class CanvasRenderer {
                 }
             }
 
-            vn.draw(gc, isHovered, isSelected, hi, ho, context.selectedWire, isInvalid);
+            nodeRenderer.draw(
+                gc,
+                vn,
+                isHovered,
+                isSelected,
+                hi,
+                ho,
+                context.selectedWire,
+                isInvalid
+            );
         }
 
         if (context.isWiring && context.wiringNode != null) {
@@ -372,7 +382,7 @@ public class CanvasRenderer {
             gc.translate(-width / 2, -height / 2);
 
             VisualNode dummy = new VisualNode(node, 0, 0, "");
-            symbol.draw(gc, dummy, false, false);
+            symbol.draw(new JavaFxDrawingContext(gc), dummy, false, false);
             gc.restore();
         }
     }
@@ -400,7 +410,7 @@ public class CanvasRenderer {
                 gc.translate(-w / 2, -h / 2);
 
                 VisualNode d = new VisualNode(NodeFactory.createNodeByType(nd.type), 0, 0, "");
-                s.draw(gc, d, false, false);
+                s.draw(new JavaFxDrawingContext(gc), d, false, false);
                 gc.restore();
             }
         }

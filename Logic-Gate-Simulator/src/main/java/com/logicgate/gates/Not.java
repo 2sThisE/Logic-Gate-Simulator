@@ -1,5 +1,7 @@
 package com.logicgate.gates;
 
+import com.logicgate.api.component.Node;
+
 public class Not extends Node{
     public Not(){
         super(1, 1);

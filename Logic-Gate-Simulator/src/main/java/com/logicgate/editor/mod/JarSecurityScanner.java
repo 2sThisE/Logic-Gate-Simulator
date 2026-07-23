@@ -11,19 +11,13 @@ import java.util.jar.JarFile;
 
 public class JarSecurityScanner {
 
-    // Allow only the simulator API and a small set of Java/JavaFX classes for mods.
+    // Allow only the public mod API and a small set of Java classes for mods.
     private static final String[] WHITELIST = {
-        "com/logicgate/gates/Node",
-        "com/logicgate/editor/mod/ComponentMeta",
-        "com/logicgate/editor/mod/NotificationApi",
-        "com/logicgate/editor/rendering/symbol/AbstractGateSymbol",
-        "com/logicgate/editor/model/VisualNode",
+        "com/logicgate/api/",
         "java/lang/",
         "java/util/",
         "java/io/PrintStream", // 디버깅용 System.out 허용
-        "java/io/Serializable",
-        "javafx/scene/canvas/GraphicsContext",
-        "javafx/scene/paint/Color"
+        "java/io/Serializable"
     };
 
     /**

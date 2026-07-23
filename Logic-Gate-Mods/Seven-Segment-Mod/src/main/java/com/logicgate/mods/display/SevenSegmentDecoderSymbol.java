@@ -1,11 +1,11 @@
 package com.logicgate.mods.display;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.rendering.AbstractGateSymbol;
 
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
+import com.logicgate.api.rendering.DrawingContext;
+
 
 @ComponentMeta(
     name = "7-Segment Decoder",
@@ -15,45 +15,45 @@ import javafx.scene.paint.Color;
 public class SevenSegmentDecoderSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext vn) {
         return String.format("M 0 5 Q 0 0 5 0 H %f Q %f 0 %f 5 V %f Q %f %f %f %f H 5 Q 0 %f 0 %f Z", 
-            vn.width - 5, vn.width, vn.width, vn.height - 5, vn.width, vn.height, vn.width - 5, vn.height, vn.height, vn.height - 5);
+            vn.width() - 5, vn.width(), vn.width(), vn.height() - 5, vn.width(), vn.height(), vn.width() - 5, vn.height(), vn.height(), vn.height() - 5);
     }
 
     @Override
-    protected void drawExtra(GraphicsContext gc, VisualNode vn) {
-        gc.setFill(Color.WHITE);
-        gc.setFont(javafx.scene.text.Font.font("Consolas", 10));
-        gc.fillText("BCD to 7SEG", 10, vn.height / 2 + 5);
+    protected void drawExtra(DrawingContext gc, SymbolContext vn) {
+        gc.setFill("#FFFFFF");
+        gc.setFont("Consolas", 10);
+        gc.fillText("BCD to 7SEG", 10, vn.height() / 2 + 5);
         
         // 입력 핀 라벨 (D, C, B, A)
-        gc.setFont(javafx.scene.text.Font.font("Consolas", 8));
-        gc.fillText("D", 5, getInPinY(vn, 3) - vn.y + 3);
-        gc.fillText("C", 5, getInPinY(vn, 2) - vn.y + 3);
-        gc.fillText("B", 5, getInPinY(vn, 1) - vn.y + 3);
-        gc.fillText("A", 5, getInPinY(vn, 0) - vn.y + 3);
+        gc.setFont("Consolas", 8);
+        gc.fillText("D", 5, getInPinY(vn, 3) - vn.y() + 3);
+        gc.fillText("C", 5, getInPinY(vn, 2) - vn.y() + 3);
+        gc.fillText("B", 5, getInPinY(vn, 1) - vn.y() + 3);
+        gc.fillText("A", 5, getInPinY(vn, 0) - vn.y() + 3);
 
         // 출력 핀 라벨 (a-g)
         String[] segLabels = {"a", "b", "c", "d", "e", "f", "g"};
         for (int i = 0; i < 7; i++) {
-            gc.fillText(segLabels[i], vn.width - 12, getOutPinY(vn, i) - vn.y + 3);
+            gc.fillText(segLabels[i], vn.width() - 12, getOutPinY(vn, i) - vn.y() + 3);
         }
     }
 
     @Override
-    public double getInPinX(VisualNode vn, int index) { return vn.x; }
+    public double getInPinX(SymbolContext vn, int index) { return vn.x(); }
 
     @Override
-    public double getInPinY(VisualNode vn, int index) {
-        return vn.y + (vn.height / 5.0) * (index + 1);
+    public double getInPinY(SymbolContext vn, int index) {
+        return vn.y() + (vn.height() / 5.0) * (index + 1);
     }
 
     @Override
-    public double getOutPinX(VisualNode vn, int index) { return vn.x + vn.width; }
+    public double getOutPinX(SymbolContext vn, int index) { return vn.x() + vn.width(); }
 
     @Override
-    public double getOutPinY(VisualNode vn, int index) {
-        return vn.y + (vn.height / 8.0) * (index + 1);
+    public double getOutPinY(SymbolContext vn, int index) {
+        return vn.y() + (vn.height() / 8.0) * (index + 1);
     }
 
     @Override

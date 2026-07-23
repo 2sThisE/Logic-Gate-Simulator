@@ -1,40 +1,40 @@
 package com.logicgate.mods.arithmetic;
 
-import com.logicgate.editor.rendering.symbol.AbstractGateSymbol;
-import com.logicgate.editor.model.VisualNode;
-import com.logicgate.editor.mod.ComponentMeta;
+import com.logicgate.api.rendering.AbstractGateSymbol;
+import com.logicgate.api.rendering.SymbolContext;
+import com.logicgate.api.component.ComponentMeta;
 
 
 @ComponentMeta(section = "Arithmetic", name = "Full Adder Symbol", typeId = "FULL_ADDER")
 public class FullAdderSymbol extends AbstractGateSymbol {
 
     @Override
-    public String getSvgPathData(VisualNode vn) {
+    public String getSvgPathData(SymbolContext vn) {
         // 정사각형 칩 모양
         return String.format("M 0 0 L %f 0 L %f %f L 0 %f Z", 
-            vn.width, vn.width, vn.height, vn.height);
+            vn.width(), vn.width(), vn.height(), vn.height());
     }
 
     @Override
-    public double getInPinX(VisualNode vn, int index) {
-        return vn.x; // 왼쪽 변
+    public double getInPinX(SymbolContext vn, int index) {
+        return vn.x(); // 왼쪽 변
     }
 
     @Override
-    public double getInPinY(VisualNode vn, int index) {
+    public double getInPinY(SymbolContext vn, int index) {
         // 3개의 입력 (A, B, Cin)을 세로로 균등 배치
-        return vn.y + (vn.height / 4.0) * (index + 1);
+        return vn.y() + (vn.height() / 4.0) * (index + 1);
     }
 
     @Override
-    public double getOutPinX(VisualNode vn, int index) {
-        return vn.x + vn.width; // 오른쪽 변
+    public double getOutPinX(SymbolContext vn, int index) {
+        return vn.x() + vn.width(); // 오른쪽 변
     }
 
     @Override
-    public double getOutPinY(VisualNode vn, int index) {
+    public double getOutPinY(SymbolContext vn, int index) {
         // 2개의 출력 (Sum, Cout)을 세로로 균등 배치
-        return vn.y + (vn.height / 3.0) * (index + 1);
+        return vn.y() + (vn.height() / 3.0) * (index + 1);
     }
 
     @Override

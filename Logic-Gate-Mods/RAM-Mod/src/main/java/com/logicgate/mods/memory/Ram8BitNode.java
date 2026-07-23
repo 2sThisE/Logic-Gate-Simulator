@@ -1,8 +1,8 @@
 package com.logicgate.mods.memory;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.editor.model.Property;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Property;
+import com.logicgate.api.component.Node;
 import java.util.List;
 
 @ComponentMeta(

@@ -1,7 +1,7 @@
 package com.logicgate.mods.computer;
 
-import com.logicgate.editor.mod.ComponentMeta;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.ComponentMeta;
+import com.logicgate.api.component.Node;
 
 @ComponentMeta(name = "8-bit Debug Probe", section = "SAP-1 Debug", typeId = "SAP1_PROBE_8BIT")
 public class Probe8BitNode extends Node {

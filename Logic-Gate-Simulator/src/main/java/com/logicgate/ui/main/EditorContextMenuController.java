@@ -286,7 +286,7 @@ public class EditorContextMenuController {
     }
 
     private double snapToGrid(double value) {
-        double gridSize = com.logicgate.editor.rendering.symbol.GateSymbol.UNIT_SIZE;
+        double gridSize = com.logicgate.api.rendering.GateSymbol.UNIT_SIZE;
         return Math.round(value / gridSize) * gridSize;
     }
 

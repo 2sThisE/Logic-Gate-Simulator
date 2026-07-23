@@ -7,7 +7,7 @@ import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.utils.NodeFactory;
 import com.logicgate.Circuit;
-import com.logicgate.gates.Node;
+import com.logicgate.api.component.Node;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
