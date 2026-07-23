@@ -22,6 +22,7 @@ public class ComponentTreeController {
         this.componentTreeView = componentTreeView;
     }
 
+    @SuppressWarnings("unchecked")
     public void setup() {
         TreeItem<String> root = new TreeItem<>("Root");
 

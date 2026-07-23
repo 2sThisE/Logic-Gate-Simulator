@@ -132,10 +132,6 @@ public class EditorContext {
 
     public Circuit getCircuit() { return circuit; }
 
-    void replaceCircuit(Circuit circuit) {
-        this.circuit = circuit;
-    }
-
     public VisualNode getSelectedNode() { return selectedNode; }
 
     public void setSelectedNode(VisualNode node) {

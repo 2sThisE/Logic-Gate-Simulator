@@ -14,17 +14,18 @@ import com.logicgate.gates.Node;
 public class Circuit {
     // JavaFX UI(메인 스레드)와 시뮬레이션 엔진(백그라운드 스레드) 간의 충돌 방지용 동기화 컬렉션
     private List<Node> nodes = new CopyOnWriteArrayList<>();
-    private Map<Node, List<Node>> incomingGraph = new ConcurrentHashMap<>();
+    private Map<Node, Map<Node, Integer>> incomingGraph = new ConcurrentHashMap<>();
 
     // 시뮬레이션 스레드 제어 플래그
     private volatile boolean isRunning = false;
     private Thread simulationThread;
-    private int tickDelayMs = 16; // 기본 약 60Hz (16ms)
+    private volatile int tickDelayMs = 16; // 기본 약 60Hz (16ms)
+    private volatile long simulationGeneration = 0;
 
     public synchronized void addNode(Node node) {
         if (!nodes.contains(node)) {
             nodes.add(node);
-            incomingGraph.put(node, new CopyOnWriteArrayList<>());
+            incomingGraph.put(node, new ConcurrentHashMap<>());
         }
     }
 
@@ -32,16 +33,15 @@ public class Circuit {
         if (!nodes.contains(node)) return;
 
         for (int i = 0; i < node.getOutputSize(); i++) {
-            Node targetNode = node.getTargetNode(i);
-            if (targetNode != null) {
-                incomingGraph.get(targetNode).remove(node);
+            for (Node targetNode : node.getTargetNodes(i)) {
+                removeIncomingConnection(targetNode, node);
             }
             node.disconnectNextNode(i);
         }
 
-        List<Node> prevNodes = incomingGraph.get(node);
+        Map<Node, Integer> prevNodes = incomingGraph.get(node);
         if (prevNodes != null) {
-            for (Node prevNode : prevNodes) {
+            for (Node prevNode : prevNodes.keySet()) {
                 prevNode.disconnectTarget(node);
             }
         }
@@ -51,28 +51,31 @@ public class Circuit {
     }
 
     public synchronized void connect(Node fromNode, int outPin, Node toNode, int inPin) {
+        if (fromNode == null || toNode == null ||
+            outPin < 0 || outPin >= fromNode.getOutputSize() ||
+            inPin < 0 || inPin >= toNode.getInputSize()) {
+            return;
+        }
         fromNode.addNode(toNode, outPin, inPin);
 
-        if (incomingGraph.containsKey(toNode) && !incomingGraph.get(toNode).contains(fromNode)) {
-            incomingGraph.get(toNode).add(fromNode);
+        Map<Node, Integer> incoming = incomingGraph.get(toNode);
+        if (incoming != null) {
+            incoming.merge(fromNode, 1, Integer::sum);
         }
     }
 
     public synchronized void disconnect(Node fromNode, int outPin) {
-        Node targetNode = fromNode.getTargetNode(outPin);
-
-        if (targetNode != null && incomingGraph.containsKey(targetNode)) {
-            incomingGraph.get(targetNode).remove(fromNode);
+        for (Node targetNode : fromNode.getTargetNodes(outPin)) {
+            removeIncomingConnection(targetNode, fromNode);
         }
 
         fromNode.disconnectNextNode(outPin);
     }
 
     public synchronized void disconnectSpecific(Node fromNode, int outPin, Node toNode, int inPin) {
-        if (incomingGraph.containsKey(toNode)) {
-            incomingGraph.get(toNode).remove(fromNode);
+        if (fromNode.disconnectSpecificNode(outPin, toNode, inPin)) {
+            removeIncomingConnection(toNode, fromNode);
         }
-        fromNode.disconnectSpecificNode(outPin, toNode, inPin);
     }
 
     public synchronized void tick() {
@@ -85,26 +88,37 @@ public class Circuit {
         }
     }
 
-    public void startSimulation() {
+    public synchronized void startSimulation() {
         if (isRunning) return;
         isRunning = true;
-        simulationThread = new Thread(() -> {
-            while (isRunning) {
-                tick();
-                try {
-                    Thread.sleep(tickDelayMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+        long generation = ++simulationGeneration;
+        Thread startedThread = new Thread(() -> {
+            try {
+                while (isRunning && simulationGeneration == generation) {
+                    tick();
+                    try {
+                        Thread.sleep(tickDelayMs);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            } finally {
+                synchronized (Circuit.this) {
+                    if (simulationThread == Thread.currentThread()) {
+                        simulationThread = null;
+                    }
                 }
             }
-        });
-        simulationThread.setDaemon(true); // 프로그램 종료 시 스레드도 함께 종료
-        simulationThread.start();
+        }, "logic-gate-simulation");
+        simulationThread = startedThread;
+        startedThread.setDaemon(true); // 프로그램 종료 시 스레드도 함께 종료
+        startedThread.start();
     }
 
-    public void stopSimulation() {
+    public synchronized void stopSimulation() {
         isRunning = false;
+        simulationGeneration++;
         if (simulationThread != null) {
             simulationThread.interrupt();
         }
@@ -116,7 +130,7 @@ public class Circuit {
 
     public void setTickFrequencyHz(double hz) {
         if (hz <= 0) hz = 1.0;
-        this.tickDelayMs = (int) (1000.0 / hz);
+        this.tickDelayMs = Math.max(1, (int) (1000.0 / hz));
     }
     public synchronized void resetState() {
         for (Node node : nodes) {
@@ -130,5 +144,22 @@ public class Circuit {
         }
         nodes.clear();
         incomingGraph.clear();
+    }
+
+    public synchronized void replaceContentsFrom(Circuit replacement) {
+        if (replacement == null || replacement == this) return;
+
+        clear();
+        nodes.addAll(replacement.nodes);
+        for (Map.Entry<Node, Map<Node, Integer>> entry : replacement.incomingGraph.entrySet()) {
+            incomingGraph.put(entry.getKey(), new ConcurrentHashMap<>(entry.getValue()));
+        }
+    }
+
+    private void removeIncomingConnection(Node targetNode, Node fromNode) {
+        Map<Node, Integer> incoming = incomingGraph.get(targetNode);
+        if (incoming == null) return;
+
+        incoming.computeIfPresent(fromNode, (node, count) -> count > 1 ? count - 1 : null);
     }
 }

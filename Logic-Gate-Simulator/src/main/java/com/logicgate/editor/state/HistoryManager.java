@@ -161,7 +161,7 @@ public class HistoryManager {
                 restoredCircuit.tick();
             }
 
-            context.replaceCircuit(restoredCircuit);
+            context.getCircuit().replaceContentsFrom(restoredCircuit);
             context.visualNodes.clear();
             context.visualNodes.addAll(restoredNodes);
             context.visualWires.clear();

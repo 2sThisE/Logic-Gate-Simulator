@@ -25,6 +25,7 @@ public class HistoryManagerTest {
     @Test
     public void undoAndRedoRestoreNodesAndWires() {
         EditorContext context = new EditorContext(new Circuit());
+        Circuit originalCircuit = context.getCircuit();
         VisualNode input = addNode(context, new InputPin(), 10, 20, "Input");
         input.locked = true;
         context.historyManager.saveState();
@@ -37,12 +38,14 @@ public class HistoryManagerTest {
         assertEquals(0, context.visualWires.size());
         assertEquals("Input", context.visualNodes.get(0).label);
         assertTrue(context.visualNodes.get(0).locked);
+        assertSame(originalCircuit, context.getCircuit());
 
         context.historyManager.redo();
         assertEquals(2, context.visualNodes.size());
         assertEquals(1, context.visualWires.size());
         assertSame(context.visualNodes.get(0), context.visualWires.get(0).from);
         assertSame(context.visualNodes.get(1), context.visualWires.get(0).to);
+        assertSame(originalCircuit, context.getCircuit());
     }
 
     @Test

@@ -2,10 +2,7 @@ package com.logicgate.editor.model;
 
 import com.logicgate.editor.rendering.symbol.GateSymbol;
 import com.logicgate.editor.rendering.symbol.SymbolRegistry;
-import com.logicgate.gates.InputPin;
-import com.logicgate.gates.Joint;
 import com.logicgate.gates.Node;
-import com.logicgate.gates.OutputPin;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 

@@ -1,14 +1,21 @@
 package com.logicgate.gates;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.logicgate.editor.model.Property;
+
 public abstract class Node {
-    protected int in;           // 32비트 입력 상태
-    protected int out;          // 32비트 출력 상태
+    protected volatile int in;  // JavaFX/시뮬레이션 스레드가 공유하는 32비트 입력 상태
+    protected volatile int out; // JavaFX/시뮬레이션 스레드가 공유하는 32비트 출력 상태
     protected int inputSize;    // 사용할 입력 핀 개수
     protected int outputSize;   // 사용할 출력 핀 개수
 
     protected String typeId;
 
-    protected java.util.Map<String, String> properties = new java.util.HashMap<>();
+    protected Map<String, String> properties = new HashMap<>();
 
     protected Connection[] nextNodes;
 
@@ -36,15 +43,15 @@ public abstract class Node {
 
     public abstract void compute();
 
-    public java.util.List<com.logicgate.editor.model.Property<?>> getComponentProperties() {
-        return new java.util.ArrayList<>();
+    public List<Property<?>> getComponentProperties() {
+        return new ArrayList<>();
     }
 
-    public java.util.Map<String, String> getProperties() {
+    public Map<String, String> getProperties() {
         return properties;
     }
 
-    public void setProperties(java.util.Map<String, String> props) {
+    public void setProperties(Map<String, String> props) {
         if (props != null) {
             this.properties.putAll(props);
             applyProperties();
@@ -80,8 +87,8 @@ public abstract class Node {
         }
     }
 
-    public void disconnectSpecificNode(int location, Node targetNode, int targetPin) {
-        if (location < 0 || location >= outputSize) return;
+    public boolean disconnectSpecificNode(int location, Node targetNode, int targetPin) {
+        if (location < 0 || location >= outputSize) return false;
 
         Connection prev = null;
         Connection curr = nextNodes[location];
@@ -91,11 +98,12 @@ public abstract class Node {
 
                 if (prev == null) nextNodes[location] = curr.next;
                 else prev.next = curr.next;
-                return;
+                return true;
             }
             prev = curr;
             curr = curr.next;
         }
+        return false;
     }
 
     public void disconnectNextNode(int location) {
@@ -128,6 +136,18 @@ public abstract class Node {
     public Node getTargetNode(int location) {
         if (location < 0 || location >= outputSize || nextNodes[location] == null) return null;
         return nextNodes[location].target;
+    }
+
+    public java.util.List<Node> getTargetNodes(int location) {
+        java.util.List<Node> targets = new java.util.ArrayList<>();
+        if (location < 0 || location >= outputSize) return targets;
+
+        Connection current = nextNodes[location];
+        while (current != null) {
+            targets.add(current.target);
+            current = current.next;
+        }
+        return targets;
     }
 
     public void setInput(int in) { this.in = in; }

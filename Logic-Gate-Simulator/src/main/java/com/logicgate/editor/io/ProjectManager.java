@@ -3,6 +3,7 @@ package com.logicgate.editor.io;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.logicgate.Circuit;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.model.VisualWire;
 import com.logicgate.editor.state.EditorContext;
@@ -11,7 +12,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -115,7 +119,10 @@ public class ProjectManager {
         loadWarnings.clear();
         File lgsFile = new File(context.projectRoot, "circuit.lgs");
         if (lgsFile.exists() && lgsFile.length() > 0) {
-            loadBinaryCircuit(lgsFile);
+            if (!loadBinaryCircuit(lgsFile)) {
+                loadWarnings.add("회로 파일을 읽지 못해 기존 회로를 유지했습니다.");
+                return;
+            }
         }
         context.historyManager.clear();
         context.setDirty(false);
@@ -142,7 +149,7 @@ public class ProjectManager {
         if (context.projectRoot == null || context.projectConfig == null) return false;
         File prjFile = new File(context.projectRoot, "project.prj");
         try {
-            Files.writeString(prjFile.toPath(), gson.toJson(context.projectConfig));
+            writeStringAtomically(prjFile.toPath(), gson.toJson(context.projectConfig));
             System.out.println("프로젝트 설정 저장 완료: " + prjFile.getAbsolutePath());
             return true;
         } catch (IOException e) {
@@ -152,61 +159,79 @@ public class ProjectManager {
     }
 
     private boolean saveBinaryCircuit(File file) {
-        try (java.io.DataOutputStream dos = new java.io.DataOutputStream(new java.io.FileOutputStream(file))) {
-            dos.writeInt(0x4C475321); // Magic Number
-            dos.writeInt(8);          // Version 8 (선 고정 속성 추가)
+        Path target = file.toPath();
+        Path parent = target.toAbsolutePath().getParent();
+        Path temporary = null;
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            temporary = Files.createTempFile(parent, file.getName(), ".tmp");
+            try (java.io.DataOutputStream dos = new java.io.DataOutputStream(Files.newOutputStream(temporary))) {
+                dos.writeInt(0x4C475321); // Magic Number
+                dos.writeInt(8);          // Version 8 (선 고정 속성 추가)
 
-            dos.writeInt(context.visualNodes.size());
-            for (VisualNode vn : context.visualNodes) {
-                dos.writeUTF(vn.node.getTypeId());
-                dos.writeDouble(vn.x);
-                dos.writeDouble(vn.y);
-                dos.writeDouble(vn.rotation);
-                dos.writeUTF(vn.label != null ? vn.label : "");
-                dos.writeBoolean(vn.showLabel);
-                dos.writeUTF(vn.group != null ? vn.group : "");
-                dos.writeBoolean(vn.locked);
+                dos.writeInt(context.visualNodes.size());
+                for (VisualNode vn : context.visualNodes) {
+                    dos.writeUTF(vn.node.getTypeId());
+                    dos.writeDouble(vn.x);
+                    dos.writeDouble(vn.y);
+                    dos.writeDouble(vn.rotation);
+                    dos.writeUTF(vn.label != null ? vn.label : "");
+                    dos.writeBoolean(vn.showLabel);
+                    dos.writeUTF(vn.group != null ? vn.group : "");
+                    dos.writeBoolean(vn.locked);
 
-                Map<String, String> properties = vn.node.getProperties();
-                dos.writeInt(properties.size());
-                for (Map.Entry<String, String> entry : properties.entrySet()) {
-                    dos.writeUTF(entry.getKey() != null ? entry.getKey() : "");
-                    dos.writeUTF(entry.getValue() != null ? entry.getValue() : "");
+                    Map<String, String> properties = vn.node.getProperties();
+                    dos.writeInt(properties.size());
+                    for (Map.Entry<String, String> entry : properties.entrySet()) {
+                        dos.writeUTF(entry.getKey() != null ? entry.getKey() : "");
+                        dos.writeUTF(entry.getValue() != null ? entry.getValue() : "");
+                    }
+                }
+
+                dos.writeInt(context.visualWires.size());
+                for (VisualWire vw : context.visualWires) {
+                    dos.writeInt(context.visualNodes.indexOf(vw.from));
+                    dos.writeInt(vw.outPin);
+                    dos.writeInt(context.visualNodes.indexOf(vw.to));
+                    dos.writeInt(vw.inPin);
+                    dos.writeBoolean(vw.locked);
+
+                    dos.writeUTF(vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name());
+                    dos.writeInt(vw.bendPoints.size());
+                    for (Point2D point : vw.bendPoints) {
+                        dos.writeDouble(point.getX());
+                        dos.writeDouble(point.getY());
+                    }
                 }
             }
-
-            dos.writeInt(context.visualWires.size());
-            for (VisualWire vw : context.visualWires) {
-                dos.writeInt(context.visualNodes.indexOf(vw.from));
-                dos.writeInt(vw.outPin);
-                dos.writeInt(context.visualNodes.indexOf(vw.to));
-                dos.writeInt(vw.inPin);
-                dos.writeBoolean(vw.locked);
-
-                dos.writeUTF(vw.getEffectiveRouteMode(context.projectConfig != null ? context.projectConfig.wireStyle : null).name());
-                dos.writeInt(vw.bendPoints.size());
-                for (Point2D point : vw.bendPoints) {
-                    dos.writeDouble(point.getX());
-                    dos.writeDouble(point.getY());
-                }
-            }
+            replaceAtomically(temporary, target);
+            temporary = null;
             return true;
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("회로 파일 저장 실패: " + e.getClass().getSimpleName());
             return false;
+        } finally {
+            if (temporary != null) {
+                try {
+                    Files.deleteIfExists(temporary);
+                } catch (IOException ignored) {
+                }
+            }
         }
     }
 
-    private void loadBinaryCircuit(File file) {
+    private boolean loadBinaryCircuit(File file) {
         try (java.io.DataInputStream dis = new java.io.DataInputStream(new java.io.FileInputStream(file))) {
             if (dis.readInt() != 0x4C475321) throw new IOException("유효하지 않은 LGS 파일입니다.");
             int version = dis.readInt();
 
-            context.visualNodes.clear();
-            context.visualWires.clear();
-            context.getCircuit().clear();
-
+            Circuit loadedCircuit = new Circuit();
+            java.util.List<VisualNode> loadedNodes = new java.util.ArrayList<>();
+            java.util.List<VisualWire> loadedWires = new java.util.ArrayList<>();
             int nodeCount = dis.readInt();
+            java.util.List<VisualNode> nodesByOriginalIndex = new java.util.ArrayList<>(nodeCount);
             for (int i = 0; i < nodeCount; i++) {
                 String type = dis.readUTF();
                 double x = dis.readDouble();
@@ -239,14 +264,16 @@ public class ProjectManager {
                 com.logicgate.gates.Node logicNode = com.logicgate.editor.utils.NodeFactory.createNodeByType(type);
                 if (logicNode != null) {
                     logicNode.setProperties(properties);
-                    context.getCircuit().addNode(logicNode);
+                    loadedCircuit.addNode(logicNode);
                     VisualNode vn = new VisualNode(logicNode, x, y, label);
                     vn.showLabel = showLabel;
                     vn.locked = locked;
                     vn.rotation = rotation;
                     vn.group = group;
-                    context.visualNodes.add(vn);
+                    loadedNodes.add(vn);
+                    nodesByOriginalIndex.add(vn);
                 } else {
+                    nodesByOriginalIndex.add(null);
                     loadWarnings.add("노드 타입을 찾을 수 없어 건너뜀: " + type);
                 }
             }
@@ -284,13 +311,20 @@ public class ProjectManager {
                     }
                 }
 
-                if (fromIdx >= 0 && fromIdx < context.visualNodes.size() &&
-                    toIdx >= 0 && toIdx < context.visualNodes.size()) {
+                if (fromIdx >= 0 && fromIdx < nodesByOriginalIndex.size() &&
+                    toIdx >= 0 && toIdx < nodesByOriginalIndex.size()) {
 
-                    VisualNode fromVn = context.visualNodes.get(fromIdx);
-                    VisualNode toVn = context.visualNodes.get(toIdx);
+                    VisualNode fromVn = nodesByOriginalIndex.get(fromIdx);
+                    VisualNode toVn = nodesByOriginalIndex.get(toIdx);
+                    if (fromVn == null || toVn == null ||
+                        outPin < 0 || outPin >= fromVn.node.getOutputSize() ||
+                        inPin < 0 || inPin >= toVn.node.getInputSize()) {
+                        loadWarnings.add("유효하지 않은 연결을 건너뜀: " + fromIdx + ":" + outPin +
+                            " -> " + toIdx + ":" + inPin);
+                        continue;
+                    }
 
-                    context.getCircuit().connect(fromVn.node, outPin, toVn.node, inPin);
+                    loadedCircuit.connect(fromVn.node, outPin, toVn.node, inPin);
                     VisualWire vw = new VisualWire(fromVn, outPin, toVn, inPin);
                     if (routeMode != null) {
                         vw.routeMode = routeMode;
@@ -300,13 +334,43 @@ public class ProjectManager {
                     vw.locked = wireLocked;
                     vw.bendPoints.addAll(bendPoints);
 
-                    context.visualWires.add(vw);
+                    loadedWires.add(vw);
                     // Advance once after each restored connection to reduce synchronized oscillator artifacts.
-                    context.getCircuit().tick();
+                    loadedCircuit.tick();
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            context.getCircuit().replaceContentsFrom(loadedCircuit);
+            context.visualNodes.clear();
+            context.visualNodes.addAll(loadedNodes);
+            context.visualWires.clear();
+            context.visualWires.addAll(loadedWires);
+            return true;
+        } catch (Exception e) {
+            System.err.println("회로 파일 로드 실패: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private void writeStringAtomically(Path target, String content) throws IOException {
+        Path parent = target.toAbsolutePath().getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Path temporary = Files.createTempFile(parent, target.getFileName().toString(), ".tmp");
+        try {
+            Files.writeString(temporary, content);
+            replaceAtomically(temporary, target);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
+    }
+
+    private void replaceAtomically(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

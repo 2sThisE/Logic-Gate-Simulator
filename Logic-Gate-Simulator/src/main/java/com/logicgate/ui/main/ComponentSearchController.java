@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com.logicgate.editor.model.VisualNode;
 import com.logicgate.editor.state.EditorContext;
 
+import javafx.collections.ListChangeListener;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -45,7 +46,7 @@ public class ComponentSearchController {
             }
         });
 
-        searchResultsListView.getItems().addListener((javafx.collections.ListChangeListener<SearchResult>) c -> {
+        searchResultsListView.getItems().addListener((ListChangeListener<SearchResult>) c -> {
             int count = searchResultsListView.getItems().size();
             double cellHeight = 26.0;
             double height = Math.min(count, 5) * cellHeight + 2;

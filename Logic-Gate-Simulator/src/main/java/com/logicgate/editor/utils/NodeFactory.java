@@ -27,6 +27,10 @@ public class NodeFactory {
         registry.put(clazz.getName(), clazz); // FQN으로도 등록!
     }
 
+    public static Class<? extends Node> getRegisteredClass(String typeName) {
+        return registry.get(typeName);
+    }
+
     public static Node createNodeByType(String type) {
         // 1. 레지스트리에서 검색
         Class<? extends Node> clazz = registry.get(type);

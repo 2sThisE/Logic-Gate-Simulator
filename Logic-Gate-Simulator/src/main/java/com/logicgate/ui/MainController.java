@@ -10,6 +10,7 @@ import com.logicgate.editor.interaction.MouseInteractionHandler;
 import com.logicgate.editor.interaction.WiringManager;
 import com.logicgate.editor.io.ProjectManager;
 import com.logicgate.editor.mod.ModComponentInfo;
+import com.logicgate.editor.mod.ModLoadDiagnostic;
 import com.logicgate.editor.mod.ModLoader;
 import com.logicgate.editor.mod.NotificationApi;
 import com.logicgate.editor.model.VisualNode;
@@ -369,6 +370,31 @@ public class MainController {
         ModLoader modLoader = new ModLoader(context.projectRoot);
         List<ModComponentInfo> mods = modLoader.loadSpecificMods(context.projectConfig.loadedMods);
         componentTreeController.updateMods(mods);
+        showModLoadDiagnostics(modLoader.consumeDiagnostics());
+    }
+
+    private void showModLoadDiagnostics(List<ModLoadDiagnostic> diagnostics) {
+        if (diagnostics.isEmpty()) return;
+
+        int visibleCount = Math.min(8, diagnostics.size());
+        StringBuilder body = new StringBuilder(java.text.MessageFormat.format(
+            bundle().getString("notification.mod_load_warn.body"),
+            diagnostics.size()
+        ));
+        for (int i = 0; i < visibleCount; i++) {
+            body.append("\n\n").append(diagnostics.get(i).toDisplayString());
+        }
+        if (diagnostics.size() > visibleCount) {
+            body.append("\n\n... +").append(diagnostics.size() - visibleCount);
+        }
+
+        boolean hasError = diagnostics.stream()
+            .anyMatch(diagnostic -> diagnostic.severity == ModLoadDiagnostic.Severity.ERROR);
+        showNotification(
+            hasError ? NotificationController.Type.ERROR : NotificationController.Type.WARNING,
+            bundle().getString("notification.mod_load_warn.title"),
+            body.toString()
+        );
     }
 
     public ProjectManager getProjectManager() {
